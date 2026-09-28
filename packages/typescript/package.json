@@ -1,0 +1,27 @@
+{
+  "name": "@hardcover/sdk",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TypeScript SDK for the Hardcover GraphQL API",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "scripts": {
+    "codegen": "graphql-codegen --config codegen.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@graphql-codegen/cli": "^7.4.3",
+    "@graphql-codegen/typed-document-node": "^7.0.0",
+    "@graphql-codegen/typescript-operations": "^6.0.0",
+    "@graphql-typed-document-node/core": "^3.2.0",
+    "@types/node": "^24.0.0",
+    "graphql": "^17.0.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
+  }
+}

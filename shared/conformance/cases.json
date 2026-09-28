@@ -81,7 +81,7 @@
     "call": { "op": "Me", "variables": {} },
     "client": { "maxRetries": 3 },
     "responses": [
-      { "status": 429, "headers": { "retry-after": "40000", "ratelimit": "\"Free\";r=10;t=0, \"daily\";r=0;t=40000" }, "body": { "error": "Too Many Requests" } }
+      { "status": 429, "headers": { "retry-after": "40000", "ratelimit": "\"daily\";r=0;t=40000" }, "body": { "error": "Too Many Requests" } }
     ],
     "expect": { "requests": 1, "result": { "error": "RateLimitError", "fields": { "window": "daily" } } }
   },
