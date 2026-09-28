@@ -15,6 +15,10 @@ export default defineConfig(({ mode }) => ({
     include: ["tests/live/**/*.test.ts"],
     env: { HARDCOVER_LIVE: "1", HARDCOVER_LIVE_WRITES: mode === "writes" ? "1" : "0" },
     fileParallelism: false,
-    testTimeout: 30_000,
+    // Share tests/live/setup.ts (and its one client) across files; see liveClient.
+    isolate: false,
+    // Pacing waits for the rate-limit refill instead of taking 429s, so a
+    // long flow on a small tier can legitimately take minutes.
+    testTimeout: 180_000,
   },
 }));

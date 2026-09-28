@@ -20,3 +20,11 @@ query GetList($id: Int!, $limit: Int = 50, $offset: Int = 0) {
     }
   }
 }
+
+# delete_list_book takes the list_books row id, so removing by (list, book)
+# needs this lookup first.
+query FindListBook($listId: Int!, $bookId: Int!) {
+  list_books(where: { list_id: { _eq: $listId }, book_id: { _eq: $bookId } }, limit: 1) {
+    ...ListBook
+  }
+}

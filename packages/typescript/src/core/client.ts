@@ -1,6 +1,7 @@
 import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
 import environments from "../../../../shared/environments.json" with { type: "json" };
 import { operationInfo, type OperationInfo } from "../operations.ts";
+import { requestCost } from "./cost.ts";
 import {
   ActionError,
   AuthenticationError,
@@ -16,6 +17,7 @@ import {
   UnsupportedOperationError,
 } from "./errors.ts";
 import { LibraryResource } from "../resources/library.ts";
+import { ListsResource } from "../resources/lists.ts";
 import { MeResource } from "../resources/me.ts";
 import { ReadsResource } from "../resources/reads.ts";
 import { parseRateLimit, type RateLimitState } from "./rate-limit.ts";
@@ -37,8 +39,14 @@ export interface HardcoverClientOptions {
   onRateLimit?: (state: RateLimitState) => void;
   /** Injectable for tests; defaults to setTimeout. */
   sleep?: (ms: number) => Promise<void>;
-  /** Injectable clock for date defaults; defaults to the current time. */
+  /** Injectable clock for date defaults and pacing; defaults to the current time. */
   now?: () => Date;
+  /**
+   * Wait for the burst allowance to refill before sending, when the last
+   * response said it's spent, instead of sending and getting a 429.
+   * Default true. The daily cap is never waited out.
+   */
+  pace?: boolean;
 }
 
 const NETWORK_BACKOFF_MS = [250, 1_000, 4_000];
@@ -62,12 +70,18 @@ export class HardcoverClient {
   readonly me: MeResource;
   readonly library: LibraryResource;
   readonly reads: ReadsResource;
+  readonly lists: ListsResource;
   readonly #token: string;
   readonly #transport: Transport;
   readonly #maxRetries: number;
   readonly #userAgent: string;
   readonly #sleep: (ms: number) => Promise<void>;
   readonly #onRateLimit: ((state: RateLimitState) => void) | undefined;
+  readonly #pace: boolean;
+  /** When `rateLimit` was received, in ms from `now()`. */
+  #rateLimitAt = 0;
+  /** Set after waiting out a 429; the wait already covered the refill. Cleared by the next headers. */
+  #allowanceWaited = false;
 
   constructor(options: HardcoverClientOptions) {
     this.endpoint = options.endpoint ?? environments[options.environment ?? "prod"].graphql;
@@ -78,9 +92,11 @@ export class HardcoverClient {
     this.#sleep = options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
     this.#onRateLimit = options.onRateLimit;
     this.now = options.now ?? (() => new Date());
+    this.#pace = options.pace ?? true;
     this.me = new MeResource(this);
     this.library = new LibraryResource(this);
     this.reads = new ReadsResource(this);
+    this.lists = new ListsResource(this);
   }
 
   /** Runs a generated operation, e.g. `client.request(operations.Me)`. */
@@ -98,6 +114,7 @@ export class HardcoverClient {
 
   async #execute(query: string, variables: unknown, info: OperationInfo): Promise<unknown> {
     const isMutation = info.kind === "mutation";
+    const cost = requestCost(query);
     const request = {
       url: this.endpoint,
       headers: {
@@ -112,6 +129,7 @@ export class HardcoverClient {
     for (let attempt = 0; ; attempt++) {
       const canRetry = attempt < this.#maxRetries;
       let response: HttpResponse;
+      await this.#waitForAllowance(cost);
 
       try {
         response = await this.#transport.send(request);
@@ -136,6 +154,8 @@ export class HardcoverClient {
       const rateLimit = parseRateLimit(response.headers);
       if (rateLimit) {
         this.rateLimit = rateLimit;
+        this.#rateLimitAt = this.now().getTime();
+        this.#allowanceWaited = false;
         this.#onRateLimit?.(rateLimit);
       }
 
@@ -145,6 +165,7 @@ export class HardcoverClient {
       if (failure) {
         if (failure instanceof RateLimitError && failure.window === "burst" && canRetry) {
           await this.#sleep(failure.retryAfterSeconds * 1_000);
+          this.#allowanceWaited = true;
           continue;
         }
         const transient = failure instanceof ServerError || failure instanceof TimeoutError;
@@ -166,6 +187,24 @@ export class HardcoverClient {
       assertNoActionErrors(data);
       return data;
     }
+  }
+  // Pacing: if the last response left less burst allowance than this request
+  // costs, sleep until enough has refilled, minus time already passed. Uses
+  // only headers the gateway sends; a 429 is still handled (and retried) if
+  // pacing is off or another client shares the token.
+  async #waitForAllowance(cost: number): Promise<void> {
+    const burst = this.rateLimit?.burst;
+    if (!this.#pace || this.#allowanceWaited || burst?.remaining === undefined) return;
+    const shortfall = cost - burst.remaining;
+    if (shortfall <= 0) return;
+    const perSecond = burst.perMinute ? burst.perMinute / 60 : undefined;
+    // Empty bucket: at least the announced reset. Partial: time to refill the shortfall.
+    const waitSeconds = Math.max(
+      burst.remaining === 0 ? (burst.resetSeconds ?? 0) : 0,
+      perSecond ? shortfall / perSecond : (burst.resetSeconds ?? 0),
+    );
+    const waitMs = waitSeconds * 1_000 - (this.now().getTime() - this.#rateLimitAt);
+    if (waitMs > 0) await this.#sleep(waitMs);
   }
 }
 

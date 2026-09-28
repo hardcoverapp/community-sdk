@@ -119,9 +119,11 @@ separate, explicitly triggered CI job that calls the live test command.
   (a list named `sdk-test-<runId>`, a user book on a known book) and deletes it
   in `finally` or teardown. A sweeper deletes `sdk-test-*` lists older than 1
   hour to recover from crashed runs.
-- **Stay inside the rate limit.** Run serially at a normal pace so the suite
-  fits in the free tier's burst plus refill. Never try to trigger a 429 on
-  purpose; 429 handling is covered by conformance cases.
+- **Stay inside the rate limit.** Run serially with one shared client (the
+  TypeScript live config sets `isolate: false`) so the SDK's pacing sees every
+  request made with the token. The target is zero 429s per run; count them on
+  the local gateway (`docker logs hardcover-api | grep -c "Completed 429"`).
+  Never trigger a 429 on purpose; 429 handling is covered by conformance cases.
 - **Prod is read-only.** The harness refuses `HARDCOVER_LIVE_WRITES=1` when
   `HARDCOVER_ENV=prod` unless `HARDCOVER_I_MEAN_PROD=1` is also set.
 

@@ -10,9 +10,15 @@ Where a language's idiom conflicts with a rule here, the idiom wins on
 1. **Operations are data.** Every GraphQL document lives once, in
    `shared/operations/`. Languages generate types from these files plus
    `api-snapshot/schema.graphql` and never hand-write query strings.
-2. **Thin, honest wrappers.** Resource methods map closely to operations. Any
-   convenience (percent progress, remove-book-by-ids) is documented as a
-   convenience, with its extra request count stated.
+2. **Thin, honest wrappers; the API does the work.** Resource methods map
+   closely to operations. When the API can do something (search matching,
+   journaling, starting and finishing reads), the SDK passes through instead of
+   reimplementing it, so API improvements reach SDK users without an SDK
+   release. SDK-side logic is limited to client concerns (auth, retries, rate
+   limits, input mapping) and to gaps the API doesn't cover yet. Each such gap
+   is documented as a candidate to move into the API, with its extra request
+   count stated. Current gaps: percent progress (the API takes only pages or
+   seconds) and the local-date default when marking a book Read.
 3. **Always an escape hatch.** `client.graphql(query, variables)` runs anything
    the token allows, with the same auth, retries and error mapping.
 4. **Fail loudly, typed.** Every failure becomes a class from
@@ -100,6 +106,20 @@ Where a language's idiom conflicts with a rule here, the idiom wins on
    `ActionError{operation, messages}`.
 7. Return the typed data.
 
+### Pacing
+
+On by default (`pace: false` turns it off). The gateway charges one unit per
+top-level field (introspection and `insert_reading_journal` are free), and every
+response reports the remaining burst allowance and refill rate. Before sending,
+the client counts its own request's cost the same way and, if the last known
+allowance is short, sleeps until enough has refilled. A 429 is still handled
+(and retried) when pacing is off or another client shares the token; after
+waiting one out, pacing stands down until fresh headers arrive so it never
+double-waits. The daily cap is never waited out.
+
+Measured on the local stack: the live writes suite went from hundreds of 429s
+per run to zero, with the same total duration.
+
 ### Chunking
 
 `client.batch([...ops])` packs operations into requests of at most **5**
@@ -179,7 +199,7 @@ Each method notes its operation, its required scope and any extra requests.
 | `library` | `list({status, page})`, `iterate({status})`, `count({status})`, `forBook(bookId)`, `get(id)`, `add(bookId, {status, editionId, rating, privacy})`, `update(id, patch)`, `setStatus(id, status, {date})`, `rate(id, rating)`, `remove(id)` | GetLibrary, CountLibrary, GetUserBookForBook, GetUserBook, AddUserBook, UpdateUserBook, RemoveUserBook |
 | `reads` | `list(userBookId)`, `current(userBookId)`, `setProgress(userBookId, { pages \| seconds \| percent, occurredAt })`. Starting and finishing are driven by `library.setStatus` (Currently Reading starts a read, a new one on a re-read; Read finishes it). Manual date editing (`start`/`finish`/`update`/`remove` with explicit dates) is planned | GetUserBook, UpdateUserBookRead (later: AddUserBookRead, RemoveUserBookRead) |
 | `journal` | `forBook(bookId, page)`, `add({bookId, event, entry, privacy, tags})`, `remove(id)` | GetJournalForBook, AddJournalEntry, DeleteJournalEntry |
-| `lists` | `mine(page)`, `forUser(userId, page)`, `get(id, page)`, `create`, `update`, `delete`, `addBook(listId, bookId, {editionId, position})`, `removeBook(listId, bookId)` (2 requests) | GetListsForUser, GetList, CreateList, UpdateList, DeleteList, AddBookToList, RemoveListBook |
+| `lists` | `mine(page)`, `forUser(userId, page)`, `get(id, page)`, `create`, `update`, `delete`, `addBook(listId, bookId, { editionId, position })`, `removeBook(listId, bookId)` (2 requests; returns false if absent), `addBooks(listId, codes)`: bulk add by exact ISBN-13/ISBN-10 (one lookup, adds batched 5 per request, per-item retry on a failed batch; unmatched codes such as UPCs are reported as `no_exact_edition`, never guessed) | GetListsForUser, GetList, CreateList, UpdateList, DeleteList, AddBookToList, FindListBook, RemoveListBook, FindEditionsByIsbn |
 | `goals` | `list({includeArchived})` | GetGoals |
 
 Methods scoped to "my" data resolve `userId` from `me.get()`, which is cached

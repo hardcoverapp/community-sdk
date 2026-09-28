@@ -173,6 +173,17 @@ A few table-level writes are exposed directly:
 - `delete_activities`, `insert/delete_user_blocks`
 - `update_prompt_answers`, `update_collection_import_results`
 
+### Observed write behavior (local, 2026-09-28)
+
+- **`insert_list_book` is idempotent.** Adding a book already on the list returns
+  the existing row (same id), even when a different edition is passed; the
+  stored edition doesn't change.
+- **One failing action drops the whole response.** In a request with several
+  aliased action mutations, actions run in order: those before the failure are
+  committed, the failing one and those after are not, and the response holds
+  only `errors` (no `data` for the ones that succeeded). Clients must not infer
+  "nothing happened" from a failed batch.
+
 ## Limits
 
 Source: `api/app/controllers/api/application_controller.rb`,

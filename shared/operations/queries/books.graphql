@@ -27,8 +27,13 @@ query GetEditionsForBook($bookId: Int!, $limit: Int = 25, $offset: Int = 0) {
   }
 }
 
+# Exact ISBN match. Several editions can share an ISBN (duplicate catalog
+# records); most readers first makes the choice deterministic.
 query FindEditionsByIsbn($isbns: [String!]!) {
-  editions(where: { _or: [{ isbn_13: { _in: $isbns } }, { isbn_10: { _in: $isbns } }] }) {
+  editions(
+    where: { _or: [{ isbn_13: { _in: $isbns } }, { isbn_10: { _in: $isbns } }] }
+    order_by: { users_count: desc }
+  ) {
     ...EditionSummary
     book {
       ...BookSummary

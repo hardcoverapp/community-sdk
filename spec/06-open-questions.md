@@ -15,6 +15,23 @@ a decision before the SDK depends on it. Record decisions in
 | 5 | Rate-limit error body | One documented shape | Three shapes (`{error,message}`, `{errors:[..],message}`, OAuth `{error,error_description}`) | SDK normalizes. Worth unifying server-side |
 | 6 | Action error envelopes | Not documented | Mixed `error: String` vs `errors: [String]` across output types | SDK handles both. Worth unifying in `actions.graphql` on the next breaking window |
 
+## For the API project
+
+17. **Action error responses expose internals.** A failing `insert_list_book`
+    (bad book id) returned `extensions.internal` with the Rails webhook URL, the
+    full request, and the Rails response headers, **including a
+    `_clientverse_session` Set-Cookie and an XSRF token**, to the token holder.
+    Likely Hasura dev mode on the local stack only; confirm it's off on staging
+    and prod.
+18. **Unhelpful action error for a missing book.** Rails answered 422 with an
+    empty HTML body, so Hasura reported "not a valid json response from webhook"
+    instead of a clear "book not found".
+19. **Server-side bulk add.** A user has asked for bulk scan-and-add. An action
+    like `add_list_books(list_id, isbns: [String!])` resolving on the server
+    would make `lists.addBooks` a pass-through (spec/03 principle 2).
+20. **Percent progress in the API.** Accepting `progress_percent` on
+    `DatesReadInput` would remove the SDK's client-side conversion.
+
 ## Environment and access
 
 7. **Staging web host.** `api-staging.hardcover.app` is confirmed. What's the

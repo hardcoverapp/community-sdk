@@ -27,13 +27,21 @@ export const writesAllowed =
 /** Like describeLive, but only under `pnpm test:live:writes`. */
 export const describeLiveWrites = enabled && token && writesAllowed ? describe : describe.skip;
 
+let shared: HardcoverClient | undefined;
+
+/**
+ * One client for the whole live run (the live config sets isolate: false), so
+ * its rate-limit pacing sees every request made with the token. Separate
+ * clients each start blind and can burst into an allowance another spent.
+ */
 export function liveClient(): HardcoverClient {
-  return new HardcoverClient({
+  shared ??= new HardcoverClient({
     token: token!,
     environment,
     endpoint: process.env.HARDCOVER_API_URL,
     userAgent: "hardcover-sdk-live-tests",
   });
+  return shared;
 }
 
 export const target = process.env.HARDCOVER_API_URL ?? environment;
@@ -51,7 +59,7 @@ async function printEdition(client: HardcoverClient, bookId: number) {
   return editions.find((e) => e.pages && e.pages > 0 && e.readingFormatId !== ReadingFormat.Audiobook) ?? null;
 }
 
-async function popularBookIds(client: HardcoverClient): Promise<number[]> {
+export async function popularBookIds(client: HardcoverClient): Promise<number[]> {
   try {
     // Dogfoods search: a random page of the most popular books in the index.
     const page = 1 + Math.floor(Math.random() * 8);

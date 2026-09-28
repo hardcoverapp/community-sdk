@@ -4971,6 +4971,14 @@ export type GetListQueryVariables = Exact<{
 
 export type GetListQuery = { lists_by_pk: { id: number, slug: string | null, name: string, description: string | null, ranked: boolean, privacySettingId: number, defaultView: string, booksCount: number, likesCount: number, userId: number, createdAt: string | null, updatedAt: string | null, listBooks: Array<{ id: number, position: number | null, reason: string | null, listId: number, bookId: number, editionId: number | null, dateAdded: string | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown } }> } | null };
 
+export type FindListBookQueryVariables = Exact<{
+  listId: number;
+  bookId: number;
+}>;
+
+
+export type FindListBookQuery = { list_books: Array<{ id: number, position: number | null, reason: string | null, listId: number, bookId: number, editionId: number | null, dateAdded: string | null }> };
+
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -5781,6 +5789,7 @@ export const FindEditionsByIsbnDocument = new TypedDocumentString(`
     query FindEditionsByIsbn($isbns: [String!]!) {
   editions(
     where: { _or: [{ isbn_13: { _in: $isbns } }, { isbn_10: { _in: $isbns } }] }
+    order_by: { users_count: desc }
   ) {
     ...EditionSummary
     book {
@@ -6245,6 +6254,24 @@ fragment ListBook on list_books {
   reason
   dateAdded: date_added
 }`) as unknown as TypedDocumentString<GetListQuery, GetListQueryVariables>;
+export const FindListBookDocument = new TypedDocumentString(`
+    query FindListBook($listId: Int!, $bookId: Int!) {
+  list_books(
+    where: { list_id: { _eq: $listId }, book_id: { _eq: $bookId } }
+    limit: 1
+  ) {
+    ...ListBook
+  }
+}
+    fragment ListBook on list_books {
+  id
+  listId: list_id
+  bookId: book_id
+  editionId: edition_id
+  position
+  reason
+  dateAdded: date_added
+}`) as unknown as TypedDocumentString<FindListBookQuery, FindListBookQueryVariables>;
 export const MeDocument = new TypedDocumentString(`
     query Me {
   me {
