@@ -138,7 +138,9 @@
         "auth-pat": "partial",
         "test-mock": "partial",
         "test-conformance": "done",
-        "test-contract": "partial"
+        "test-contract": "partial",
+        "test-live": "partial",
+        "rt-web": "partial"
       }
     },
     {

@@ -42,9 +42,9 @@ changing it.
 | Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ |
 | Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ |
 | Contract tests vs `api-snapshot` | 🟡 | ⬜ | ⬜ | ⬜ |
-| Live integration tests (opt-in) | ⬜ | ⬜ | ⬜ | ⬜ |
+| Live integration tests (opt-in) | 🟡 | ⬜ | ⬜ | ⬜ |
 | **Runtimes** |  |  |  |  |
-| Node + browser (docs site) | ⬜ | ➖ | ➖ | ➖ |
+| Node + browser (docs site) | 🟡 | ➖ | ➖ | ➖ |
 | React Native (Hermes) | ⬜ | ➖ | ➖ | ➖ |
 | **Release** |  |  |  |  |
 | Published to package registry | ⬜ | ⬜ | ⬜ | ⬜ |

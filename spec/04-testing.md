@@ -49,6 +49,10 @@ These assert that nothing changed underneath the SDK.
    `capability-scopes.json`, so an unmapped root, which the gateway would block,
    fails CI.
 4. **Matrix freshness.** `scripts/render-matrix.mjs --check`.
+5. **Nullable list filters.** An optional list variable used in `_in` / `_nin`
+   must declare a default. Hasura rejects `_in: null` at runtime ("expected a
+   list, but found null") instead of ignoring the filter; the first live run
+   caught this in `GetLibrary`.
 
 ### Drift check (nightly and on demand)
 
@@ -74,8 +78,12 @@ PR that breaks an SDK operation is flagged on the PR itself.
 
 ## Layer 3: live integration
 
-These run real operations against a real server. They're skipped unless
-configured, so `pnpm test` stays offline by default.
+These run real operations against a real server. **Mocks are always the
+default.** Live tests run only when explicitly invoked (`pnpm test:live` in
+TypeScript; each language provides an equivalent command). Having a key in
+`.env` or the shell never turns live calls on by itself, so the default test
+command, an IDE run button, or a bare test-runner invocation over the live
+files all stay offline.
 
 ### Environment variables
 
@@ -83,7 +91,8 @@ The same names are used in every language.
 
 | Variable | Purpose |
 |---|---|
-| `HARDCOVER_API_KEY` | Enables the live suite. A PAT for a **dedicated test account**, never a personal account |
+| `HARDCOVER_LIVE` | `1` is the explicit opt-in. Set only by the live test command, never by hand in `.env`. Without it every live test is skipped |
+| `HARDCOVER_API_KEY` | Credential for the live suite; does not enable it. A PAT for a **dedicated test account**, never a personal account |
 | `HARDCOVER_ENV` | `local`, `staging` or `prod` (default `staging`), resolved through `shared/environments.json` |
 | `HARDCOVER_API_URL` | Overrides the GraphQL URL (e.g. Conductor `http://localhost:<port+1>/v1/graphql`) |
 | `HARDCOVER_LIVE_WRITES` | `1` enables mutating tests. Off by default so a read-only key is safe |
@@ -91,8 +100,8 @@ The same names are used in every language.
 | `HARDCOVER_OAUTH_CLIENT_ID` | Enables the device-grant smoke test, which is interactive and never runs in CI |
 
 Developers put these in an untracked `.env` file. CI reads them from
-environment-scoped secrets (`staging`, `prod`), and the live job runs only
-when the secret exists.
+environment-scoped secrets (`staging`, `prod`), and the live job is a
+separate, explicitly triggered CI job that calls the live test command.
 
 ### Test design rules
 
