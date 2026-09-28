@@ -43,7 +43,6 @@ changing it.
 | `lists`: write | ✅ | ⬜ | ⬜ | ⬜ |
 | `goals` (read) | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Testing** |  |  |  |  |
-| Type-checked usage examples | 🟡 | ⬜ | ⬜ | ⬜ |
 | Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ |
 | Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ |
 | Contract tests vs `api-snapshot` | 🟡 | ⬜ | ⬜ | ⬜ |

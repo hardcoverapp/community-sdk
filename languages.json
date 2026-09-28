@@ -1,5 +1,5 @@
 {
-  "$comment": "Source for the README language matrix. Edit here, then run `node scripts/render-matrix.mjs`. Resources with both halves have separate read and write rows. Status values: done, partial, planned, n/a.",
+  "$comment": "Source for the README language matrix. Edit here, then run `node scripts/render-matrix.mjs`. Resources with both halves have separate read and write rows. Status values: done, partial, planned, n/a. A resource row (res-*) can be done only if `examples` maps it to an existing file under the language's path (spec/05).",
   "features": [
     {
       "id": "transport",
@@ -107,11 +107,6 @@
       "label": "`goals` (read)"
     },
     {
-      "id": "docs-examples",
-      "group": "Testing",
-      "label": "Type-checked usage examples"
-    },
-    {
       "id": "test-mock",
       "group": "Testing",
       "label": "Mock transport + shared fixtures"
@@ -178,8 +173,16 @@
         "res-reads-read": "done",
         "res-reads-write": "partial",
         "res-lists-read": "done",
-        "res-lists-write": "done",
-        "docs-examples": "partial"
+        "res-lists-write": "done"
+      },
+      "examples": {
+        "res-me": "examples/quick-start.ts",
+        "res-library-read": "examples/quick-start.ts",
+        "res-library-write": "examples/shelve-a-book.ts",
+        "res-reads-read": "examples/reading-progress.ts",
+        "res-reads-write": "examples/reading-progress.ts",
+        "res-lists-read": "examples/bulk-scan-to-list.ts",
+        "res-lists-write": "examples/bulk-scan-to-list.ts"
       }
     },
     {

@@ -46,7 +46,9 @@ These already exist in `shared/` and `api-snapshot/`:
       (`packages/<lang>/examples/`) covering its real-user flow. Examples are
       compiled in CI, so API changes can't silently break the docs. They are
       the source for the docs site pages (`hardcover-docs`, added on a branch
-      as each resource lands).
+      as each resource lands). Enforced: `languages.json` maps each resource
+      row to its example file, and `pnpm matrix:check` fails if a ✅ resource
+      has none.
 - [ ] The README matrix matches reality.
 
 ## Shared-layer changes
