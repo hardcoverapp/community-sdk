@@ -105,18 +105,23 @@ separate, explicitly triggered CI job that calls the live test command.
 
 ### Test design rules
 
-- **Known read targets.** Stable ids (a well-known book, author, series and
-  ISBN) live in `shared/live-targets.json` with a copy per environment, since
-  ids differ locally.
+- **Act like a real user, nothing more.** Live tests only do what a real
+  person using an app built on the SDK would do: search, shelve a book, update
+  progress, write a journal entry, build a list. They never probe access
+  control, scopes, rate limits, validation or other server-side limits. That
+  behavior belongs to the API project's own tests. The SDK's job is to
+  *handle* the errors those limits return, which the mock-based conformance
+  cases (layer 1) verify from the documented response shapes.
+- **Discover read targets.** Tests find their data at runtime (the most
+  popular book with a slug and ISBN, the token user's own lists and shelf)
+  instead of hard-coding ids, so one suite runs on local, staging and prod.
 - **Writes clean up after themselves.** Each write test creates what it needs
   (a list named `sdk-test-<runId>`, a user book on a known book) and deletes it
   in `finally` or teardown. A sweeper deletes `sdk-test-*` lists older than 1
   hour to recover from crashed runs.
-- **Rate-limit budget.** The whole live suite must fit inside the free tier's
-  burst plus refill. Run it serially and have the SDK's own rate-limit handling
-  pace it. This doubles as a live test of that handling.
-- **Scope matrix.** One run with a narrowly scoped key (`read:catalog` only)
-  asserts that library calls raise `ScopeError` with the right `requiredScope`.
+- **Stay inside the rate limit.** Run serially at a normal pace so the suite
+  fits in the free tier's burst plus refill. Never try to trigger a 429 on
+  purpose; 429 handling is covered by conformance cases.
 - **Prod is read-only.** The harness refuses `HARDCOVER_LIVE_WRITES=1` when
   `HARDCOVER_ENV=prod` unless `HARDCOVER_I_MEAN_PROD=1` is also set.
 
@@ -131,3 +136,9 @@ Against a local stack (`make` in `app/`, API on `:8081`):
 For a Conductor workspace, use `HARDCOVER_API_URL=http://localhost:$((CONDUCTOR_PORT+1))/v1/graphql`.
 Running the SDK's live suite against a workspace with an API change in flight
 is the fastest way to see whether that change breaks SDK consumers.
+
+**Search after a restore.** A restored staging dump has no Typesense index, so
+`search` returns `"Not found."` and the live search tests skip.
+`scripts/local/partial-search-index.rb` queues the app's own index jobs over a
+small popular slice (about 10k documents, all eight types, a couple of
+minutes). Its header has the two commands to run it.
