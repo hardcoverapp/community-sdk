@@ -1,0 +1,124 @@
+# 04. Testing
+
+Testing has three layers, and each answers a different question:
+
+| Layer | Question | Network | Runs |
+|---|---|---|---|
+| 1. Mock transport + fixtures | Does the SDK behave correctly? | none | every commit |
+| 2. Contract tests | Does the SDK still match the API? | none, plus a scheduled live introspection | every commit, plus nightly drift |
+| 3. Live integration | Does it actually work against a real server? | yes, opt-in | locally or in CI when a key is set |
+
+Layers 1 and 2 must pass without secrets, so forks and outside contributors
+get full CI.
+
+## Layer 1: mock transport and fixtures
+
+Every SDK's transport is an interface, and the mock implementation ships
+**publicly** (`@x/sdk/testing`, `HardcoverTesting`, …) so SDK users can
+test their own code too.
+
+- **`MockTransport`** takes a queue or a handler:
+  `(request) => response | NetworkFailure`. It records every request for
+  assertions.
+- **`mockClient({ fixtures })`** answers by operation name plus variables from
+  `shared/fixtures/`. Unknown operations fail loudly with the operation name,
+  never with a silent empty result.
+- **Fake clock.** Retry and backoff read time through an injectable clock, so
+  rate-limit tests run instantly.
+- **Conformance suite.** [`shared/conformance/cases.json`](../shared/conformance/cases.json)
+  holds the language-neutral behavior cases: error mapping, action envelopes,
+  429 handling, the no-retry-on-mutation rule. Each language ships a roughly
+  50-line runner. **These cases are the definition of parity**; a README
+  matrix cell turns ✓ only when the covering cases pass.
+- **Unit tests** cover the logic an SDK owns: progress math, date defaults and
+  timezone, rating validation, chunking, header parsing, PKCE generation.
+  Trivial pass-through methods don't need their own tests.
+
+## Layer 2: contract tests
+
+These assert that nothing changed underneath the SDK.
+
+### Static checks (every commit, offline)
+
+1. **`scripts/validate-operations.mjs`** validates every document in
+   `shared/operations` against `api-snapshot/schema.graphql`. A removed field,
+   renamed argument or changed input type fails CI.
+2. **Codegen freshness.** Regenerate each language's types and fail if the
+   output differs from what's committed.
+3. **Scope map.** Every operation's root fields exist in
+   `capability-scopes.json`, so an unmapped root, which the gateway would block,
+   fails CI.
+4. **Matrix freshness.** `scripts/render-matrix.mjs --check`.
+
+### Drift check (nightly and on demand)
+
+This needs `HARDCOVER_API_KEY`. The key needs broad read scopes; introspection
+is cost-free.
+
+1. Introspect the target environment (`prod` by default, `staging` to catch
+   changes before they ship) and fetch `/capabilities`.
+2. Diff against `api-snapshot/` with a breaking-change classifier
+   (`@graphql-inspector/core`):
+   - **Breaking, and touches a field in `shared/operations`:** fail and open
+     an issue naming the operation and the SDK methods affected.
+   - **Breaking elsewhere, or dangerous:** warn.
+   - **Additive:** report as "snapshot refresh available".
+   - **Scope changes** (an operation's required scopes changed): fail, because
+     they break callers silently.
+3. Re-run `validate-operations.mjs` against the live schema. This is the
+   definitive "would the SDK still work" check.
+
+Running the drift check against **staging** is how we find out before prod
+does. It's worth wiring into the app repo's deploy pipeline later, so an app
+PR that breaks an SDK operation is flagged on the PR itself.
+
+## Layer 3: live integration
+
+These run real operations against a real server. They're skipped unless
+configured, so `pnpm test` stays offline by default.
+
+### Environment variables
+
+The same names are used in every language.
+
+| Variable | Purpose |
+|---|---|
+| `HARDCOVER_API_KEY` | Enables the live suite. A PAT for a **dedicated test account**, never a personal account |
+| `HARDCOVER_ENV` | `local`, `staging` or `prod` (default `staging`), resolved through `shared/environments.json` |
+| `HARDCOVER_API_URL` | Overrides the GraphQL URL (e.g. Conductor `http://localhost:<port+1>/v1/graphql`) |
+| `HARDCOVER_LIVE_WRITES` | `1` enables mutating tests. Off by default so a read-only key is safe |
+| `HARDCOVER_RECORD` | `1` writes scrubbed responses into `shared/fixtures/` |
+| `HARDCOVER_OAUTH_CLIENT_ID` | Enables the device-grant smoke test, which is interactive and never runs in CI |
+
+Developers put these in an untracked `.env` file. CI reads them from
+environment-scoped secrets (`staging`, `prod`), and the live job runs only
+when the secret exists.
+
+### Test design rules
+
+- **Known read targets.** Stable ids (a well-known book, author, series and
+  ISBN) live in `shared/live-targets.json` with a copy per environment, since
+  ids differ locally.
+- **Writes clean up after themselves.** Each write test creates what it needs
+  (a list named `sdk-test-<runId>`, a user book on a known book) and deletes it
+  in `finally` or teardown. A sweeper deletes `sdk-test-*` lists older than 1
+  hour to recover from crashed runs.
+- **Rate-limit budget.** The whole live suite must fit inside the free tier's
+  burst plus refill. Run it serially and have the SDK's own rate-limit handling
+  pace it. This doubles as a live test of that handling.
+- **Scope matrix.** One run with a narrowly scoped key (`read:catalog` only)
+  asserts that library calls raise `ScopeError` with the right `requiredScope`.
+- **Prod is read-only.** The harness refuses `HARDCOVER_LIVE_WRITES=1` when
+  `HARDCOVER_ENV=prod` unless `HARDCOVER_I_MEAN_PROD=1` is also set.
+
+### Local and Conductor
+
+Against a local stack (`make` in `app/`, API on `:8081`):
+
+1. Seed or create a test user with the `api_tokens` feature flag.
+2. Mint a PAT.
+3. Set `HARDCOVER_ENV=local`.
+
+For a Conductor workspace, use `HARDCOVER_API_URL=http://localhost:$((CONDUCTOR_PORT+1))/v1/graphql`.
+Running the SDK's live suite against a workspace with an API change in flight
+is the fastest way to see whether that change breaks SDK consumers.
