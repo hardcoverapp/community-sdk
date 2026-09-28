@@ -10,7 +10,7 @@ const { features, languages } = JSON.parse(readFileSync(join(root, "languages.js
 const readmePath = join(root, "README.md");
 const readme = readFileSync(readmePath, "utf8");
 
-const SYMBOLS = { done: "✓", partial: "◐", planned: "·", "n/a": "n/a" };
+const SYMBOLS = { done: "✅", partial: "🟡", planned: "⬜", "n/a": "➖" };
 const START = "<!-- MATRIX:START -->";
 const END = "<!-- MATRIX:END -->";
 
@@ -28,7 +28,7 @@ for (const f of features) {
   rows.push(`| ${f.label} | ${cells.join(" | ")} |`);
 }
 
-const legend = "✓ done, ◐ partial, · planned, n/a not applicable";
+const legend = "✅ done · 🟡 partial · ⬜ planned · ➖ not applicable";
 const block = [START, header, divider, ...rows, "", legend, END].join("\n");
 
 const pattern = new RegExp(`${START}[\\s\\S]*?${END}`);
