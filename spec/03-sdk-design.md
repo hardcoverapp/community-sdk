@@ -177,13 +177,22 @@ Each method notes its operation, its required scope and any extra requests.
 | `books` | `get(id)`, `getBySlug(slug)`, `getMany(ids)`, `editions(bookId, page)`, `findByIsbn(isbns)`, `trending({duration, page})` (2 requests: ids, then books) | GetBook, GetBookBySlug, GetBooks, GetEditionsForBook, FindEditionsByIsbn, TrendingBookIds |
 | `search` | `books(q, opts)`, `authors`, `series`, `lists`, `users`, `characters`, `publishers`, `prompts`, `raw(q, type, opts)` | Search |
 | `library` | `list({status, page})`, `iterate({status})`, `count({status})`, `forBook(bookId)`, `get(id)`, `add(bookId, {status, editionId, rating, privacy})`, `update(id, patch)`, `setStatus(id, status, {date})`, `rate(id, rating)`, `remove(id)` | GetLibrary, CountLibrary, GetUserBookForBook, GetUserBook, AddUserBook, UpdateUserBook, RemoveUserBook |
-| `reads` | `start(userBookId, {date, editionId})`, `setProgress(readId, {pages \| seconds \| percent})`, `finish(readId, {date, precision})`, `update`, `remove` | AddUserBookRead, UpdateUserBookRead, RemoveUserBookRead |
+| `reads` | `list(userBookId)`, `current(userBookId)`, `setProgress(userBookId, { pages \| seconds \| percent, occurredAt })`. Starting and finishing are driven by `library.setStatus` (Currently Reading starts a read, a new one on a re-read; Read finishes it). Manual date editing (`start`/`finish`/`update`/`remove` with explicit dates) is planned | GetUserBook, UpdateUserBookRead (later: AddUserBookRead, RemoveUserBookRead) |
 | `journal` | `forBook(bookId, page)`, `add({bookId, event, entry, privacy, tags})`, `remove(id)` | GetJournalForBook, AddJournalEntry, DeleteJournalEntry |
 | `lists` | `mine(page)`, `forUser(userId, page)`, `get(id, page)`, `create`, `update`, `delete`, `addBook(listId, bookId, {editionId, position})`, `removeBook(listId, bookId)` (2 requests) | GetListsForUser, GetList, CreateList, UpdateList, DeleteList, AddBookToList, RemoveListBook |
 | `goals` | `list({includeArchived})` | GetGoals |
 
 Methods scoped to "my" data resolve `userId` from `me.get()`, which is cached
 per client. Callers can pass `userId` to skip that request.
+
+### Journal entries are the server's job
+
+The server journals status changes, read starts and finishes, progress,
+ratings and reviews itself (`rails/app/services/user_book_service.rb`), with a
+10-minute debounce. Resource methods never write journal entries for those, or
+every step would appear twice. `journal.add` is only for what a user writes
+(notes, quotes). `occurredAt` on library and reads methods sets `action_at`, so
+the server's entry carries when the reading actually happened.
 
 ### Pagination
 

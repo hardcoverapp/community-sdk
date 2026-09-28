@@ -11,6 +11,13 @@ fragment UserBookRead on user_book_reads {
   progress
   progress_pages
   progress_seconds
+  # Totals for converting percent to pages or seconds (spec/02 Progress).
+  edition {
+    id
+    pages
+    audio_seconds
+    reading_format_id
+  }
 }
 
 fragment UserBook on user_books {

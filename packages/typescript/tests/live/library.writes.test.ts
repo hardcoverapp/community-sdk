@@ -3,14 +3,15 @@
 // Target book rules (local vs remote) live in setup.ts writeTargetBook.
 import { expect, it } from "vitest";
 import { localDate, UserBookStatus } from "../../src/index.ts";
-import { describeLiveWrites, liveClient, target, writeTargetBook } from "./setup.ts";
+import { describeLiveWrites, liveClient, target, trackJournal, writeTargetBook } from "./setup.ts";
 
 describeLiveWrites(`library writes (${target})`, () => {
   const client = liveClient();
 
   it("add → reading → read → rate → remove", async () => {
     const userId = await client.me.id();
-    const bookId = await writeTargetBook(client);
+    const { bookId } = await writeTargetBook(client);
+    const journal = await trackJournal(client, bookId);
     expect(await client.library.forBook(bookId)).toBeNull();
 
     let entryId: number | undefined;
@@ -34,6 +35,7 @@ describeLiveWrites(`library writes (${target})`, () => {
       expect(found?.id).toBe(entryId);
     } finally {
       if (entryId !== undefined) await client.library.remove(entryId);
+      await journal.cleanup();
     }
 
     expect(await client.library.forBook(bookId)).toBeNull();

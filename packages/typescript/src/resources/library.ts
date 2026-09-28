@@ -1,5 +1,5 @@
 import type { HardcoverClient } from "../core/client.ts";
-import { localDate } from "../core/dates.ts";
+import { localDate, toActionAt, type OccurredAt } from "../core/dates.ts";
 import { HardcoverError } from "../core/errors.ts";
 import { UserBookStatus, type PrivacySetting } from "../generated/enums.ts";
 import type {
@@ -36,9 +36,11 @@ export interface LibraryEntryPatch {
   recommendedFor?: string | null;
   /** Needs `write:reviews`. */
   review?: { markdown?: string | null; hasSpoilers?: boolean; reviewedAt?: string | null };
+  /** When this happened, if not now. Backdates the journal entry the server writes. */
+  occurredAt?: OccurredAt;
 }
 
-const WIRE: Record<Exclude<keyof LibraryEntryPatch, "review">, string> = {
+const WIRE: Record<Exclude<keyof LibraryEntryPatch, "review" | "occurredAt">, string> = {
   status: "status_id",
   date: "user_date",
   startDate: "user_start_date",
@@ -70,6 +72,7 @@ function toWire(patch: LibraryEntryPatch): Record<string, unknown> {
     const value = patch.review?.[key as keyof typeof REVIEW_WIRE];
     if (value !== undefined) wire[field] = value;
   }
+  if (patch.occurredAt !== undefined) wire.action_at = toActionAt(patch.occurredAt);
   return wire;
 }
 
@@ -137,8 +140,16 @@ export class LibraryResource {
     return unwrap(update_user_book?.userBook, "update_user_book");
   }
 
-  setStatus(id: number, status: UserBookStatus, { date }: { date?: string } = {}): Promise<LibraryEntry> {
-    return this.update(id, { status, ...(date !== undefined && { date }) });
+  /**
+   * The server manages reads from status: Currently Reading starts a read (a
+   * new one on a re-read), Read finishes it. It also writes the journal entries.
+   */
+  setStatus(
+    id: number,
+    status: UserBookStatus,
+    { date, occurredAt }: { date?: string; occurredAt?: OccurredAt } = {},
+  ): Promise<LibraryEntry> {
+    return this.update(id, { status, ...(date !== undefined && { date }), ...(occurredAt !== undefined && { occurredAt }) });
   }
 
   rate(id: number, rating: number | null): Promise<LibraryEntry> {

@@ -35,8 +35,8 @@ changing it.
 | `search` (read) | ⬜ | ⬜ | ⬜ | ⬜ |
 | `library` (user books): read | ✅ | ⬜ | ⬜ | ⬜ |
 | `library` (user books): write | ✅ | ⬜ | ⬜ | ⬜ |
-| `reads` (dates + progress): read | ⬜ | ⬜ | ⬜ | ⬜ |
-| `reads` (dates + progress): write | ⬜ | ⬜ | ⬜ | ⬜ |
+| `reads` (dates + progress): read | ✅ | ⬜ | ⬜ | ⬜ |
+| `reads` (dates + progress): write | 🟡 | ⬜ | ⬜ | ⬜ |
 | `journal`: read | ⬜ | ⬜ | ⬜ | ⬜ |
 | `journal`: write | ⬜ | ⬜ | ⬜ | ⬜ |
 | `lists`: read | ⬜ | ⬜ | ⬜ | ⬜ |

@@ -169,7 +169,9 @@
         "res-me": "done",
         "res-library-read": "done",
         "res-library-write": "done",
-        "test-live-write": "partial"
+        "test-live-write": "partial",
+        "res-reads-read": "done",
+        "res-reads-write": "partial"
       }
     },
     {

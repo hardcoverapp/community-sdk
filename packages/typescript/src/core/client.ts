@@ -17,6 +17,7 @@ import {
 } from "./errors.ts";
 import { LibraryResource } from "../resources/library.ts";
 import { MeResource } from "../resources/me.ts";
+import { ReadsResource } from "../resources/reads.ts";
 import { parseRateLimit, type RateLimitState } from "./rate-limit.ts";
 import { fetchTransport, TransportFailure, type HttpResponse, type Transport } from "./transport.ts";
 
@@ -60,6 +61,7 @@ export class HardcoverClient {
   readonly now: () => Date;
   readonly me: MeResource;
   readonly library: LibraryResource;
+  readonly reads: ReadsResource;
   readonly #token: string;
   readonly #transport: Transport;
   readonly #maxRetries: number;
@@ -78,6 +80,7 @@ export class HardcoverClient {
     this.now = options.now ?? (() => new Date());
     this.me = new MeResource(this);
     this.library = new LibraryResource(this);
+    this.reads = new ReadsResource(this);
   }
 
   /** Runs a generated operation, e.g. `client.request(operations.Me)`. */
@@ -113,6 +116,10 @@ export class HardcoverClient {
       try {
         response = await this.#transport.send(request);
       } catch (cause) {
+        // Only a TransportFailure means the request may not have reached the
+        // server. Anything else is a bug in a custom or mock transport:
+        // surface it immediately instead of retrying it as a network blip.
+        if (!(cause instanceof TransportFailure)) throw cause;
         // Never replay a mutation that may have landed. Mirrors the app's
         // UserBookService/verifyThenOfferRetry.ts.
         if (!isMutation && canRetry) {
@@ -120,7 +127,7 @@ export class HardcoverClient {
           continue;
         }
         const message = cause instanceof Error ? cause.message : String(cause);
-        if (cause instanceof TransportFailure && cause.kind === "timeout") {
+        if (cause.kind === "timeout") {
           throw new TimeoutError(`Request timed out: ${message}`, isMutation, { cause });
         }
         throw new NetworkError(`Network failure: ${message}`, isMutation, { cause });

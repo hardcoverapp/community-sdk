@@ -17,3 +17,12 @@ export function localDate(at: Date, timeZone?: string | null): string {
   const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
+
+/** When something actually happened, as the API's `action_at` timestamp. */
+export type OccurredAt = Date | string;
+
+export function toActionAt(occurredAt: OccurredAt): string {
+  if (typeof occurredAt === "string") return occurredAt;
+  if (Number.isNaN(occurredAt.getTime())) throw new RangeError("occurredAt is an invalid Date");
+  return occurredAt.toISOString();
+}
