@@ -1,0 +1,14 @@
+{
+  "name": "hardcover-sdk-workspace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate:operations": "node scripts/validate-operations.mjs",
+    "matrix": "node scripts/render-matrix.mjs",
+    "matrix:check": "node scripts/render-matrix.mjs --check"
+  },
+  "devDependencies": {
+    "graphql": "^16.9.0"
+  },
+  "packageManager": "pnpm@9"
+}
