@@ -4,7 +4,8 @@ import type { CodegenConfig } from "@graphql-codegen/cli";
 // the live API. See spec/03-sdk-design.md#principles.
 const config: CodegenConfig = {
   schema: "../../api-snapshot/schema.graphql",
-  documents: "../../shared/operations/**/*.graphql",
+  // Shared operations rewritten with camelCase aliases (pnpm codegen does this first).
+  documents: ".operations/**/*.graphql",
   generates: {
     "src/generated/graphql.ts": {
       plugins: ["typescript-operations", "typed-document-node"],

@@ -19,7 +19,7 @@ These already exist in `shared/` and `api-snapshot/`:
 
 | # | Piece | Done when |
 |---|---|---|
-| 1 | Codegen config over `shared/operations` and `api-snapshot/schema.graphql` | Types are generated in CI, and the freshness check passes |
+| 1 | `scripts/case-operations.mjs --case camel` (or `snake`) for the language's convention, then codegen over the output and `api-snapshot/schema.graphql` | Rewritten operations validate; types are generated in CI; freshness check passes |
 | 2 | Enum and error generation from `shared/*.json` | No hand-written copies of ids or error names |
 | 3 | Transport interface, platform HTTP transport, mock transport | Conformance runner uses the mock |
 | 4 | Core pipeline (auth, classify, retry, unwrap, rate-limit state) | Every case in `shared/conformance` passes |

@@ -33,7 +33,7 @@ describeLive(`live reads (${target})`, () => {
     expect(book?.id).toBe(bookId);
     expect(book?.title).toBeTruthy();
     expect(editions.length).toBeGreaterThan(0);
-    expect(editions.every((e) => e.book_id === bookId)).toBe(true);
+    expect(editions.every((e) => e.bookId === bookId)).toBe(true);
   });
 
   it("GetLibrary reads the user's own shelf", async () => {
@@ -41,6 +41,6 @@ describeLive(`live reads (${target})`, () => {
     const { user_books } = await client.request(operations.GetLibrary, { userId: me[0]!.id, limit: 5 });
 
     expect(Array.isArray(user_books)).toBe(true);
-    for (const ub of user_books) expect(ub.user_id).toBe(me[0]!.id);
+    for (const ub of user_books) expect(ub.userId).toBe(me[0]!.id);
   });
 });

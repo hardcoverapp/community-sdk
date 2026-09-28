@@ -109,14 +109,38 @@ batch. Resource methods never exceed 5 on their own.
 
 ## Casing
 
-- Shared operations use the schema's **snake_case field names with no
-  aliases**, which keeps them schema-true and codegen-friendly.
-- **Each language's codegen maps to its idiom.** TS, Swift and JVM use
-  camelCase property names; Python keeps snake_case.
-- **Input objects** (`UserBookCreateInput`, etc.) are generated the same way.
-  The SDK converts back to snake_case on the wire.
-- **This differs from the app**, which aliases by hand. It's intentional: hand
-  aliases are what drifted in the old `sdk/` scaffold.
+Decided 2026-09-28: **every SDK follows its language's naming convention.**
+TypeScript, Swift and Kotlin use camelCase; Python uses snake_case.
+
+- **Shared operations stay canonical.** `shared/operations` uses the schema's
+  snake_case field names with no aliases, so they stay schema-true and match
+  the API docs.
+- **Casing is a build step, not runtime conversion.**
+  `scripts/case-operations.mjs --case <camel|snake>` rewrites the shared
+  operations for a language by aliasing each multi-word field
+  (`releaseYear: release_year`). The server returns idiomatic keys directly,
+  and codegen produces idiomatic types from the rewritten documents. There is
+  no key-renaming pass over responses, so JSON column contents
+  (`cached_image`, `search.results`) are never touched.
+- **Operation root fields are never aliased** (`insert_user_book`,
+  `user_books`). Conformance cases, the scope map and
+  `ActionError.operation` stay identical across languages. Resource methods
+  unwrap roots, so users rarely see them.
+- **Arguments and input objects can't be aliased.** Generated input types keep
+  wire names. Resource methods take idiomatic inputs and map them to wire
+  fields explicitly, which is also how "send only fields the caller set" is
+  enforced.
+- **Both documents are validated.** CI runs `validate-operations` on
+  `shared/operations` and on each language's rewritten output, which catches
+  alias collisions.
+- **Fixtures are recorded canonical** (snake_case, from `shared/operations`).
+  A language that aliases reshapes them in its mock client using the same
+  rewrite, so one fixture set serves every language.
+- **JSON column contents** keep their stored keys. Hand-written types for
+  `cached_image` and similar may expose idiomatic names, but that mapping is
+  explicit per type, never a blanket conversion.
+- **This differs from the app**, which aliases by hand in each query. Hand
+  aliases are what drifted in the old `sdk/` scaffold; generated aliases can't.
 
 ## Types for JSON columns
 
@@ -197,8 +221,9 @@ per client. Callers can pass `userId` to skip that request.
   - Isomorphic: `fetch` only, no Node built-ins in core. It runs in Node 20+,
     Deno, Bun and browsers.
   - ESM with a CJS build.
-  - Codegen: `@graphql-codegen/cli` with `typed-document-node` and
-    `namingConvention: change-case-all#camelCase` for fields.
+  - Codegen: `@graphql-codegen/cli` (`typescript-operations` and
+    `typed-document-node`) over the `--case camel` rewrite of the shared
+    operations.
   - Entry points: `@x/sdk` (client), `@x/sdk/oauth`, `@x/sdk/testing` (mock
     client and fixtures).
   - **Browser caution.** The docs contradict each other on browser use (see

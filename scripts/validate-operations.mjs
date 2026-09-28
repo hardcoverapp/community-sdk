@@ -8,7 +8,11 @@ import { fileURLToPath } from "node:url";
 import { buildSchema, parse, validate, concatAST } from "graphql";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const schemaPath = process.argv[2] ?? join(root, "api-snapshot/schema.graphql");
+// Usage: validate-operations.mjs [--dir <operations dir>] [schema.graphql]
+const dirFlag = process.argv.indexOf("--dir");
+const opsDir = dirFlag === -1 ? join(root, "shared/operations") : process.argv[dirFlag + 1];
+const positional = process.argv.slice(2).filter((a, i, all) => a !== "--dir" && all[i - 1] !== "--dir");
+const schemaPath = positional[0] ?? join(root, "api-snapshot/schema.graphql");
 const schema = buildSchema(readFileSync(schemaPath, "utf8"));
 
 const walk = (dir) =>
@@ -17,7 +21,7 @@ const walk = (dir) =>
     return statSync(p).isDirectory() ? walk(p) : p.endsWith(".graphql") ? [p] : [];
   });
 
-const files = walk(join(root, "shared/operations"));
+const files = walk(opsDir);
 const doc = concatAST(files.map((f) => parse(readFileSync(f, "utf8"))));
 const errors = validate(schema, doc);
 
@@ -28,4 +32,4 @@ if (errors.length) {
   console.error(`\n${errors.length} error(s) against ${relative(root, schemaPath)}`);
   process.exit(1);
 }
-console.log(`${ops.length} operations, ${frags.length} fragments valid against ${relative(root, schemaPath)}`);
+console.log(`${ops.length} operations, ${frags.length} fragments valid against ${relative(root, schemaPath)} (${relative(root, opsDir) || "."})`);

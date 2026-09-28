@@ -68,7 +68,7 @@ shared/
   conformance/    language-neutral behavior tests every SDK must pass
   fixtures/       recorded, scrubbed API responses for mock clients
 packages/         one directory per language (empty for now)
-scripts/          validate-operations, render-matrix
+scripts/          case-operations, validate-operations, render-matrix
 spec/             the design
 ```
 
