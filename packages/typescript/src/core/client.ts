@@ -146,9 +146,9 @@ export class HardcoverClient {
         }
         const message = cause instanceof Error ? cause.message : String(cause);
         if (cause.kind === "timeout") {
-          throw new TimeoutError(`Request timed out: ${message}`, isMutation, { cause });
+          throw new TimeoutError(`Request timed out: ${message}`, isMutation, { cause, operationName: info.name });
         }
-        throw new NetworkError(`Network failure: ${message}`, isMutation, { cause });
+        throw new NetworkError(`Network failure: ${message}`, isMutation, { cause, operationName: info.name });
       }
 
       const rateLimit = parseRateLimit(response.headers);
@@ -160,7 +160,7 @@ export class HardcoverClient {
       }
 
       const payload = parseBody(response.body);
-      const failure = classify(response, payload, rateLimit);
+      const failure = classify(response, payload, rateLimit, info.name);
 
       if (failure) {
         if (failure instanceof RateLimitError && failure.window === "burst" && canRetry) {
@@ -177,14 +177,17 @@ export class HardcoverClient {
       }
 
       if (!payload) {
-        throw new HardcoverError("Response was not valid JSON", { status: response.status });
+        throw new HardcoverError("Response was not valid JSON", { status: response.status, operationName: info.name });
       }
       if (Array.isArray(payload.errors) && payload.errors.length > 0) {
-        throw new GraphQLError(payload.errors.map(toErrorDetail), payload.data ?? null, { status: response.status });
+        throw new GraphQLError(payload.errors.map(toErrorDetail), payload.data ?? null, {
+          status: response.status,
+          operationName: info.name,
+        });
       }
 
       const data = payload.data ?? {};
-      assertNoActionErrors(data);
+      assertNoActionErrors(data, info.name);
       return data;
     }
   }
@@ -226,6 +229,7 @@ function classify(
   response: HttpResponse,
   payload: Payload | undefined,
   rateLimit: RateLimitState | undefined,
+  operationName: string | undefined,
 ): HardcoverError | undefined {
   const { status } = response;
   if (status >= 200 && status < 300) return undefined;
@@ -233,12 +237,15 @@ function classify(
   const code = str(payload?.error);
   const firstError = Array.isArray(payload?.errors) ? str(payload.errors[0]) : undefined;
   const message = str(payload?.error_description) ?? str(payload?.message) ?? code ?? firstError ?? `HTTP ${status}`;
-  const options = { status };
+  const options = { status, operationName };
 
   if (status === 401) return new AuthenticationError(message, options);
 
   if (status === 403) {
-    if (code === "insufficient_scope") return new ScopeError(message, str(payload?.scope), options);
+    // `scope` lists every missing scope, space-separated (graphql_controller.rb).
+    if (code === "insufficient_scope") {
+      return new ScopeError(message, (str(payload?.scope) ?? "").split(/\s+/).filter(Boolean), options);
+    }
     if (code === "unsupported_operation") return new UnsupportedOperationError(message, options);
     if (code === "top_level_limit_exceeded" || firstError === "request_exceeds_capacity") {
       return new RequestTooLargeError(message, options);
@@ -273,13 +280,13 @@ function toErrorDetail(raw: unknown) {
 
 // Hasura actions report failures inside `data` with HTTP 200, as either
 // `error: String` or `errors: [String]`.
-function assertNoActionErrors(data: Record<string, unknown>): void {
+function assertNoActionErrors(data: Record<string, unknown>, operationName: string | undefined): void {
   for (const [field, value] of Object.entries(data)) {
     if (!value || typeof value !== "object" || Array.isArray(value)) continue;
     const envelope = value as { error?: unknown; errors?: unknown };
     const messages: string[] = [];
     if (typeof envelope.error === "string" && envelope.error) messages.push(envelope.error);
     if (Array.isArray(envelope.errors)) messages.push(...envelope.errors.map(String));
-    if (messages.length > 0) throw new ActionError(field, messages, data);
+    if (messages.length > 0) throw new ActionError(field, messages, data, { operationName });
   }
 }

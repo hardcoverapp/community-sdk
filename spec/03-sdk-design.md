@@ -7,6 +7,15 @@ Where a language's idiom conflicts with a rule here, the idiom wins on
 
 ## Principles
 
+**Why the SDK exists.** It does what every app would otherwise have to work
+out and repeat on its own: the easy-to-forget local details (splitting a scope
+list into an array, local dates in the user's timezone, idiomatic casing),
+friendly interaction with the API (typed errors, pacing, retries that never
+double-write), and the hard parts (bulk adds with partial failures, targeting
+the right read on a re-read). What the API decides (matching, journaling,
+permissions, read lifecycles) stays in the API. Principle 2 is the other half
+of this.
+
 1. **Operations are data.** Every GraphQL document lives once, in
    `shared/operations/`. Languages generate types from these files plus
    `api-snapshot/schema.graphql` and never hand-write query strings.
@@ -116,6 +125,10 @@ allowance is short, sleeps until enough has refilled. A 429 is still handled
 (and retried) when pacing is off or another client shares the token; after
 waiting one out, pacing stands down until fresh headers arrive so it never
 double-waits. The daily cap is never waited out.
+
+The allowance is **per user, not per token**. Two clients (or two tokens) for
+the same person share one budget, and each only paces from the responses it
+has seen. Apps should use one client per user.
 
 Measured on the local stack: the live writes suite went from hundreds of 429s
 per run to zero, with the same total duration.

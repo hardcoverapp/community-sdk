@@ -3,24 +3,33 @@
 export interface HardcoverErrorOptions {
   status?: number;
   cause?: unknown;
+  /** The GraphQL operation that failed, e.g. "AddUserBook". */
+  operationName?: string;
 }
 
 export class HardcoverError extends Error {
   readonly status: number | undefined;
+  /** The GraphQL operation that failed, when the request had one (e.g. "AddUserBook"). */
+  readonly operationName: string | undefined;
 
   constructor(message: string, options: HardcoverErrorOptions = {}) {
     super(message, { cause: options.cause });
     this.name = new.target.name;
     this.status = options.status;
+    this.operationName = options.operationName;
   }
 }
 
 export class AuthenticationError extends HardcoverError {}
 
+/**
+ * The token lacks scopes this request needs. `missingScopes` lists every one,
+ * exactly as the server reported them; ask the user to grant these.
+ */
 export class ScopeError extends HardcoverError {
   constructor(
     message: string,
-    readonly requiredScope: string | undefined,
+    readonly missingScopes: string[],
     options?: HardcoverErrorOptions,
   ) {
     super(message, options);

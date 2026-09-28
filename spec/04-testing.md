@@ -92,6 +92,7 @@ The same names are used in every language.
 | Variable | Purpose |
 |---|---|
 | `HARDCOVER_LIVE` | `1` is the explicit opt-in. Set only by the live test command, never by hand in `.env`. Without it every live test is skipped |
+| `HARDCOVER_API_KEY_LIMITED` | Optional second token with only `read:catalog`, for the error-handling contract checks. Skipped without it |
 | `HARDCOVER_API_KEY` | Credential for the live suite; does not enable it. A PAT for a **dedicated test account**, never a personal account |
 | `HARDCOVER_ENV` | `local`, `staging` or `prod` (default `staging`), resolved through `shared/environments.json` |
 | `HARDCOVER_API_URL` | Overrides the GraphQL URL (e.g. Conductor `http://localhost:<port+1>/v1/graphql`) |
@@ -112,6 +113,15 @@ separate, explicitly triggered CI job that calls the live test command.
   behavior belongs to the API project's own tests. The SDK's job is to
   *handle* the errors those limits return, which the mock-based conformance
   cases (layer 1) verify from the documented response shapes.
+- **Error-handling contract checks are the exception, and stay small.** A
+  handful of live calls may deliberately cause a real error to confirm the SDK
+  handles the server's actual response (a mock written from reading the code
+  can be wrong, or drift). They check the SDK's handling, never which rules
+  the API enforces. Today: `HARDCOVER_API_KEY_LIMITED`, a token with only
+  `read:catalog`, confirms a real 403 becomes a `ScopeError` whose
+  `missingScopes` lists every scope the gateway named. Nothing is written; the
+  gateway rejects before running. That token belongs to the same user, so its
+  tests wait for the shared allowance first (the burst budget is per user).
 - **Discover read targets.** Tests find their data at runtime (the most
   popular book with a slug and ISBN, the token user's own lists and shelf)
   instead of hard-coding ids, so one suite runs on local, staging and prod.

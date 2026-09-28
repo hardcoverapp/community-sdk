@@ -1,28 +1,50 @@
 {
-  "$comment": "Every SDK maps raw API failures onto this taxonomy. Class names are canonical; languages may adapt the suffix (Error / Exception) but not the hierarchy. `match` describes how to recognize the raw response. The conformance suite in shared/conformance exercises each one.",
+  "$comment": "Every SDK maps raw API failures onto this taxonomy. Class names are canonical; languages may adapt the suffix (Error / Exception) but not the hierarchy. `match` describes how to recognize the raw response. The conformance suite in shared/conformance exercises each one. Every error carries baseFields: `operationName` is the GraphQL operation that failed (e.g. AddUserBook), when the request had one.",
   "base": "HardcoverError",
   "errors": [
     {
       "name": "AuthenticationError",
       "parent": "HardcoverError",
-      "match": [{ "status": 401, "body.error": "invalid_token" }],
-      "fields": ["description"],
+      "match": [
+        {
+          "status": 401,
+          "body.error": "invalid_token"
+        }
+      ],
+      "fields": [
+        "description"
+      ],
       "retry": false,
       "notes": "Expired, revoked or malformed token, or an anonymous JWT. With a refreshable OAuth token provider, the client refreshes once and replays before surfacing this."
     },
     {
       "name": "ScopeError",
       "parent": "HardcoverError",
-      "match": [{ "status": 403, "body.error": "insufficient_scope" }],
-      "fields": ["requiredScope", "description"],
+      "match": [
+        {
+          "status": 403,
+          "body.error": "insufficient_scope"
+        }
+      ],
+      "fields": [
+        "missingScopes",
+        "description"
+      ],
       "retry": false,
-      "notes": "body.scope names the missing scope. Also raised for protected columns (users.email, users.librarian_roles) and protected arguments (review_* fields need write:reviews)."
+      "notes": "body.scope is a SPACE-SEPARATED list of every missing scope (app/api/app/controllers/graphql_controller.rb), e.g. \"write:library write:reviews\". Split it into missingScopes. The server is authoritative; SDKs never check scopes before sending. Also raised for protected columns (users.email, users.librarian_roles) and protected arguments (review_* fields need write:reviews)."
     },
     {
       "name": "UnsupportedOperationError",
       "parent": "HardcoverError",
-      "match": [{ "status": 403, "body.error": "unsupported_operation" }],
-      "fields": ["description"],
+      "match": [
+        {
+          "status": 403,
+          "body.error": "unsupported_operation"
+        }
+      ],
+      "fields": [
+        "description"
+      ],
       "retry": false,
       "notes": "Operation is blocked for tokens entirely (e.g. update_user, insert_report)."
     },
@@ -30,18 +52,35 @@
       "name": "RequestTooLargeError",
       "parent": "HardcoverError",
       "match": [
-        { "status": 403, "body.errors[0]": "request_exceeds_capacity" },
-        { "status": 403, "body.error": "top_level_limit_exceeded" }
+        {
+          "status": 403,
+          "body.errors[0]": "request_exceeds_capacity"
+        },
+        {
+          "status": 403,
+          "body.error": "top_level_limit_exceeded"
+        }
       ],
-      "fields": ["description"],
+      "fields": [
+        "description"
+      ],
       "retry": false,
       "notes": "Too many top-level fields in one request. The SDK chunks its own batches to avoid this; users hit it only via the raw escape hatch. Two codes because docs and gateway disagree (spec/06-open-questions.md)."
     },
     {
       "name": "RateLimitError",
       "parent": "HardcoverError",
-      "match": [{ "status": 429 }],
-      "fields": ["retryAfterSeconds", "window", "limit", "remaining"],
+      "match": [
+        {
+          "status": 429
+        }
+      ],
+      "fields": [
+        "retryAfterSeconds",
+        "window",
+        "limit",
+        "remaining"
+      ],
       "retry": "after Retry-After, up to maxRetries",
       "notes": "window is 'burst' or 'daily', read from RateLimit headers. A daily exhaustion is not auto-retried."
     },
@@ -49,18 +88,35 @@
       "name": "InvalidRequestError",
       "parent": "HardcoverError",
       "match": [
-        { "status": 400, "body.error": "invalid_request" },
-        { "status": 400, "body.error": "invalid_query" }
+        {
+          "status": 400,
+          "body.error": "invalid_request"
+        },
+        {
+          "status": 400,
+          "body.error": "invalid_query"
+        }
       ],
-      "fields": ["description"],
+      "fields": [
+        "description"
+      ],
       "retry": false,
       "notes": "Unparseable query, or a banned filter operator (_like, _ilike, _regex, _similar)."
     },
     {
       "name": "GraphQLError",
       "parent": "HardcoverError",
-      "match": [{ "status": 200, "body.errors": "present" }],
-      "fields": ["errors[].message", "errors[].path", "errors[].code"],
+      "match": [
+        {
+          "status": 200,
+          "body.errors": "present"
+        }
+      ],
+      "fields": [
+        "errors[].message",
+        "errors[].path",
+        "errors[].code"
+      ],
       "retry": false,
       "notes": "Standard Hasura errors array. data may be partial; the SDK throws by default and exposes partial data on the error."
     },
@@ -68,43 +124,95 @@
       "name": "ActionError",
       "parent": "HardcoverError",
       "match": [
-        { "status": 200, "data.<field>.error": "non-null string" },
-        { "status": 200, "data.<field>.errors": "non-empty array" }
+        {
+          "status": 200,
+          "data.<field>.error": "non-null string"
+        },
+        {
+          "status": 200,
+          "data.<field>.errors": "non-empty array"
+        }
       ],
-      "fields": ["operation", "messages"],
+      "fields": [
+        "operation",
+        "messages"
+      ],
       "retry": false,
       "notes": "Hasura actions return HTTP 200 with a failure inside data. Outputs use either `error: String` (UserBookIdType, SearchOutput, FollowedUserType, TrendingBookType) or `errors: [String]` (ListIdType, GoalIdType, ReadingJournalOutput). Normalize both to messages[]."
     },
     {
       "name": "OAuthError",
       "parent": "HardcoverError",
-      "match": [{ "endpoint": "oauth2/*", "body.error": "any" }],
-      "fields": ["code", "description"],
-      "codes": ["invalid_client", "invalid_grant", "invalid_scope", "unsupported_grant_type", "unauthorized_client", "access_denied", "expired_token"],
+      "match": [
+        {
+          "endpoint": "oauth2/*",
+          "body.error": "any"
+        }
+      ],
+      "fields": [
+        "code",
+        "description"
+      ],
+      "codes": [
+        "invalid_client",
+        "invalid_grant",
+        "invalid_scope",
+        "unsupported_grant_type",
+        "unauthorized_client",
+        "access_denied",
+        "expired_token"
+      ],
       "retry": false,
       "notes": "authorization_pending and slow_down are handled inside the device-grant poll loop and never surface."
     },
     {
       "name": "ServerError",
       "parent": "HardcoverError",
-      "match": [{ "status": [500, 502, 503, 504] }],
-      "fields": ["status", "description"],
+      "match": [
+        {
+          "status": [
+            500,
+            502,
+            503,
+            504
+          ]
+        }
+      ],
+      "fields": [
+        "status",
+        "description"
+      ],
       "retry": "queries only, with backoff",
       "notes": "Includes 503 oauth_gateway_unavailable."
     },
     {
       "name": "TimeoutError",
       "parent": "HardcoverError",
-      "match": [{ "status": 408 }, { "client": "deadline exceeded" }],
+      "match": [
+        {
+          "status": 408
+        },
+        {
+          "client": "deadline exceeded"
+        }
+      ],
       "retry": "queries only",
       "notes": "Server query timeout is 30s (search 2s)."
     },
     {
       "name": "NetworkError",
       "parent": "HardcoverError",
-      "match": [{ "client": "connection failed or dropped before a response" }],
+      "match": [
+        {
+          "client": "connection failed or dropped before a response"
+        }
+      ],
       "retry": "queries only",
       "notes": "Mutations are NOT retried on a dropped connection; the write may have landed. Mirrors the app (app/rails/app/javascript/services/UserBookService/verifyThenOfferRetry.ts)."
     }
+  ],
+  "baseFields": [
+    "status",
+    "operationName"
   ]
 }

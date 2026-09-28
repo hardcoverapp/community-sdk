@@ -46,6 +46,25 @@ export function liveClient(): HardcoverClient {
 
 export const target = process.env.HARDCOVER_API_URL ?? environment;
 
+const limitedToken = process.env.HARDCOVER_API_KEY_LIMITED;
+
+/**
+ * Error-handling contract checks with a deliberately narrow token (only
+ * `read:catalog`). These verify the SDK turns the server's real error
+ * responses into the right errors; they don't explore which scopes grant
+ * what, which is the API project's job (spec/04).
+ */
+export const describeLimited = enabled && limitedToken ? describe : describe.skip;
+
+export function limitedClient(): HardcoverClient {
+  return new HardcoverClient({
+    token: limitedToken!,
+    environment,
+    endpoint: process.env.HARDCOVER_API_URL,
+    userAgent: "hardcover-sdk-live-tests",
+  });
+}
+
 export interface WriteTarget {
   bookId: number;
   title: string | null;
@@ -121,4 +140,16 @@ export async function trackJournal(client: HardcoverClient, bookId: number) {
       }
     },
   };
+}
+
+/**
+ * The burst allowance is per user, not per token, so a second client for the
+ * same user (like limitedClient) shares it without seeing its state. Before
+ * using one, wait until the shared client's last known allowance has room.
+ */
+export async function waitForAllowance(needed: number): Promise<void> {
+  const burst = liveClient().rateLimit?.burst;
+  if (burst?.remaining === undefined || burst.remaining >= needed || !burst.perMinute) return;
+  const seconds = (needed - burst.remaining) / (burst.perMinute / 60);
+  await new Promise((resolve) => setTimeout(resolve, seconds * 1_000 + 250));
 }
