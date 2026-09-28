@@ -1,0 +1,61 @@
+{
+  "$comment": "Source for the README language matrix. Edit here, then run `node scripts/render-matrix.mjs`. Status values: done, partial, planned, n/a.",
+  "features": [
+    { "id": "transport", "group": "Core", "label": "GraphQL transport + raw query escape hatch" },
+    { "id": "errors", "group": "Core", "label": "Normalized error taxonomy" },
+    { "id": "action-envelopes", "group": "Core", "label": "Action envelope unwrapping (`error` / `errors`)" },
+    { "id": "rate-limit", "group": "Core", "label": "Rate-limit headers, 429 retry, request chunking" },
+    { "id": "codegen", "group": "Core", "label": "Types generated from `shared/operations`" },
+    { "id": "auth-pat", "group": "Auth", "label": "Personal access token" },
+    { "id": "auth-pkce", "group": "Auth", "label": "OAuth authorization code + PKCE" },
+    { "id": "auth-device", "group": "Auth", "label": "OAuth device grant" },
+    { "id": "auth-refresh", "group": "Auth", "label": "Refresh rotation + revoke" },
+    { "id": "res-me", "group": "Resources", "label": "`me`" },
+    { "id": "res-books", "group": "Resources", "label": "`books` / `editions`" },
+    { "id": "res-search", "group": "Resources", "label": "`search`" },
+    { "id": "res-library", "group": "Resources", "label": "`library` (user books)" },
+    { "id": "res-reads", "group": "Resources", "label": "`reads` (dates + progress)" },
+    { "id": "res-journal", "group": "Resources", "label": "`journal`" },
+    { "id": "res-lists", "group": "Resources", "label": "`lists`" },
+    { "id": "res-goals", "group": "Resources", "label": "`goals`" },
+    { "id": "test-mock", "group": "Testing", "label": "Mock transport + shared fixtures" },
+    { "id": "test-conformance", "group": "Testing", "label": "Shared conformance suite passes" },
+    { "id": "test-contract", "group": "Testing", "label": "Contract tests vs `api-snapshot`" },
+    { "id": "test-live", "group": "Testing", "label": "Live integration tests (opt-in)" },
+    { "id": "published", "group": "Release", "label": "Published to package registry" }
+  ],
+  "languages": [
+    {
+      "id": "typescript",
+      "name": "TypeScript",
+      "path": "packages/typescript",
+      "package": "TBD (npm)",
+      "tier": "first",
+      "support": {}
+    },
+    {
+      "id": "swift",
+      "name": "Swift",
+      "path": "packages/swift",
+      "package": "TBD (SwiftPM)",
+      "tier": "next",
+      "support": {}
+    },
+    {
+      "id": "jvm",
+      "name": "Java / Kotlin (TBD)",
+      "path": "packages/jvm",
+      "package": "TBD (Maven Central)",
+      "tier": "next",
+      "support": {}
+    },
+    {
+      "id": "python",
+      "name": "Python",
+      "path": "packages/python",
+      "package": "TBD (PyPI)",
+      "tier": "next",
+      "support": {}
+    }
+  ]
+}
