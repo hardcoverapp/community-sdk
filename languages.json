@@ -1,5 +1,5 @@
 {
-  "$comment": "Source for the README language matrix. Edit here, then run `node scripts/render-matrix.mjs`. Status values: done, partial, planned, n/a.",
+  "$comment": "Source for the README language matrix. Edit here, then run `node scripts/render-matrix.mjs`. Resources with both halves have separate read and write rows. Status values: done, partial, planned, n/a.",
   "features": [
     {
       "id": "transport",
@@ -49,42 +49,62 @@
     {
       "id": "res-me",
       "group": "Resources",
-      "label": "`me`"
+      "label": "`me` (read)"
     },
     {
       "id": "res-books",
       "group": "Resources",
-      "label": "`books` / `editions`"
+      "label": "`books` / `editions` (read)"
     },
     {
       "id": "res-search",
       "group": "Resources",
-      "label": "`search`"
+      "label": "`search` (read)"
     },
     {
-      "id": "res-library",
+      "id": "res-library-read",
       "group": "Resources",
-      "label": "`library` (user books)"
+      "label": "`library` (user books): read"
     },
     {
-      "id": "res-reads",
+      "id": "res-library-write",
       "group": "Resources",
-      "label": "`reads` (dates + progress)"
+      "label": "`library` (user books): write"
     },
     {
-      "id": "res-journal",
+      "id": "res-reads-read",
       "group": "Resources",
-      "label": "`journal`"
+      "label": "`reads` (dates + progress): read"
     },
     {
-      "id": "res-lists",
+      "id": "res-reads-write",
       "group": "Resources",
-      "label": "`lists`"
+      "label": "`reads` (dates + progress): write"
+    },
+    {
+      "id": "res-journal-read",
+      "group": "Resources",
+      "label": "`journal`: read"
+    },
+    {
+      "id": "res-journal-write",
+      "group": "Resources",
+      "label": "`journal`: write"
+    },
+    {
+      "id": "res-lists-read",
+      "group": "Resources",
+      "label": "`lists`: read"
+    },
+    {
+      "id": "res-lists-write",
+      "group": "Resources",
+      "label": "`lists`: write"
     },
     {
       "id": "res-goals",
       "group": "Resources",
-      "label": "`goals`"
+      "label": "`goals` (read)"
     },
     {
       "id": "test-mock",
@@ -102,9 +122,14 @@
       "label": "Contract tests vs `api-snapshot`"
     },
     {
-      "id": "test-live",
+      "id": "test-live-read",
       "group": "Testing",
-      "label": "Live integration tests (opt-in)"
+      "label": "Live integration tests: reads (opt-in)"
+    },
+    {
+      "id": "test-live-write",
+      "group": "Testing",
+      "label": "Live integration tests: writes (opt-in, real-user flows)"
     },
     {
       "id": "rt-web",
@@ -139,8 +164,12 @@
         "test-mock": "partial",
         "test-conformance": "done",
         "test-contract": "partial",
-        "test-live": "partial",
-        "rt-web": "partial"
+        "rt-web": "partial",
+        "test-live-read": "done",
+        "res-me": "done",
+        "res-library-read": "done",
+        "res-library-write": "done",
+        "test-live-write": "partial"
       }
     },
     {

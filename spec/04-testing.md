@@ -95,7 +95,7 @@ The same names are used in every language.
 | `HARDCOVER_API_KEY` | Credential for the live suite; does not enable it. A PAT for a **dedicated test account**, never a personal account |
 | `HARDCOVER_ENV` | `local`, `staging` or `prod` (default `staging`), resolved through `shared/environments.json` |
 | `HARDCOVER_API_URL` | Overrides the GraphQL URL (e.g. Conductor `http://localhost:<port+1>/v1/graphql`) |
-| `HARDCOVER_LIVE_WRITES` | `1` enables mutating tests. Off by default so a read-only key is safe |
+| `HARDCOVER_LIVE_WRITES` | Set only by the live **writes** command (`pnpm test:live:writes` in TypeScript), never in `.env`. Without it, tests that change data are skipped even under `test:live` |
 | `HARDCOVER_RECORD` | `1` writes scrubbed responses into `shared/fixtures/` |
 | `HARDCOVER_OAUTH_CLIENT_ID` | Enables the device-grant smoke test, which is interactive and never runs in CI |
 

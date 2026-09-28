@@ -15,6 +15,8 @@ import {
   TimeoutError,
   UnsupportedOperationError,
 } from "./errors.ts";
+import { LibraryResource } from "../resources/library.ts";
+import { MeResource } from "../resources/me.ts";
 import { parseRateLimit, type RateLimitState } from "./rate-limit.ts";
 import { fetchTransport, TransportFailure, type HttpResponse, type Transport } from "./transport.ts";
 
@@ -34,6 +36,8 @@ export interface HardcoverClientOptions {
   onRateLimit?: (state: RateLimitState) => void;
   /** Injectable for tests; defaults to setTimeout. */
   sleep?: (ms: number) => Promise<void>;
+  /** Injectable clock for date defaults; defaults to the current time. */
+  now?: () => Date;
 }
 
 const NETWORK_BACKOFF_MS = [250, 1_000, 4_000];
@@ -53,6 +57,9 @@ export class HardcoverClient {
   rateLimit: RateLimitState | undefined;
 
   readonly endpoint: string;
+  readonly now: () => Date;
+  readonly me: MeResource;
+  readonly library: LibraryResource;
   readonly #token: string;
   readonly #transport: Transport;
   readonly #maxRetries: number;
@@ -68,6 +75,9 @@ export class HardcoverClient {
     this.#userAgent = options.userAgent ? `${options.userAgent} ${SDK_USER_AGENT}` : SDK_USER_AGENT;
     this.#sleep = options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
     this.#onRateLimit = options.onRateLimit;
+    this.now = options.now ?? (() => new Date());
+    this.me = new MeResource(this);
+    this.library = new LibraryResource(this);
   }
 
   /** Runs a generated operation, e.g. `client.request(operations.Me)`. */

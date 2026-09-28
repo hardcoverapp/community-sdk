@@ -30,19 +30,24 @@ changing it.
 | OAuth device grant | ⬜ | ⬜ | ⬜ | ⬜ |
 | Refresh rotation + revoke | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Resources** |  |  |  |  |
-| `me` | ⬜ | ⬜ | ⬜ | ⬜ |
-| `books` / `editions` | ⬜ | ⬜ | ⬜ | ⬜ |
-| `search` | ⬜ | ⬜ | ⬜ | ⬜ |
-| `library` (user books) | ⬜ | ⬜ | ⬜ | ⬜ |
-| `reads` (dates + progress) | ⬜ | ⬜ | ⬜ | ⬜ |
-| `journal` | ⬜ | ⬜ | ⬜ | ⬜ |
-| `lists` | ⬜ | ⬜ | ⬜ | ⬜ |
-| `goals` | ⬜ | ⬜ | ⬜ | ⬜ |
+| `me` (read) | ✅ | ⬜ | ⬜ | ⬜ |
+| `books` / `editions` (read) | ⬜ | ⬜ | ⬜ | ⬜ |
+| `search` (read) | ⬜ | ⬜ | ⬜ | ⬜ |
+| `library` (user books): read | ✅ | ⬜ | ⬜ | ⬜ |
+| `library` (user books): write | ✅ | ⬜ | ⬜ | ⬜ |
+| `reads` (dates + progress): read | ⬜ | ⬜ | ⬜ | ⬜ |
+| `reads` (dates + progress): write | ⬜ | ⬜ | ⬜ | ⬜ |
+| `journal`: read | ⬜ | ⬜ | ⬜ | ⬜ |
+| `journal`: write | ⬜ | ⬜ | ⬜ | ⬜ |
+| `lists`: read | ⬜ | ⬜ | ⬜ | ⬜ |
+| `lists`: write | ⬜ | ⬜ | ⬜ | ⬜ |
+| `goals` (read) | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Testing** |  |  |  |  |
 | Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ |
 | Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ |
 | Contract tests vs `api-snapshot` | 🟡 | ⬜ | ⬜ | ⬜ |
-| Live integration tests (opt-in) | 🟡 | ⬜ | ⬜ | ⬜ |
+| Live integration tests: reads (opt-in) | ✅ | ⬜ | ⬜ | ⬜ |
+| Live integration tests: writes (opt-in, real-user flows) | 🟡 | ⬜ | ⬜ | ⬜ |
 | **Runtimes** |  |  |  |  |
 | Node + browser (docs site) | 🟡 | ➖ | ➖ | ➖ |
 | React Native (Hermes) | ⬜ | ➖ | ➖ | ➖ |

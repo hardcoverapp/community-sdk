@@ -7,12 +7,14 @@ import { defineConfig } from "vitest/config";
 const envFile = new URL("../../.env", import.meta.url);
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
-export default defineConfig({
+// `pnpm test:live` runs reads. `pnpm test:live:writes` (--mode writes) also runs
+// tests that change data as a real user would. Both opt-ins are set here, never
+// from .env, so nothing turns live calls or writes on implicitly.
+export default defineConfig(({ mode }) => ({
   test: {
     include: ["tests/live/**/*.test.ts"],
-    // The explicit opt-in. tests/live/setup.ts skips everything without it.
-    env: { HARDCOVER_LIVE: "1" },
+    env: { HARDCOVER_LIVE: "1", HARDCOVER_LIVE_WRITES: mode === "writes" ? "1" : "0" },
     fileParallelism: false,
     testTimeout: 30_000,
   },
-});
+}));

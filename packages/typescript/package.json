@@ -9,11 +9,12 @@
     "./testing": "./src/testing/index.ts"
   },
   "scripts": {
-    "codegen": "node ../../scripts/case-operations.mjs --case camel --out .operations && graphql-codegen --config codegen.ts",
+    "codegen": "node ../../scripts/case-operations.mjs --case camel --out .operations && graphql-codegen --config codegen.ts && node scripts/gen-enums.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "test:live": "vitest run --config vitest.live.config.ts"
+    "test:live": "vitest run --config vitest.live.config.ts",
+    "test:live:writes": "vitest run --config vitest.live.config.ts --mode writes"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^7.4.3",
