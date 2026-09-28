@@ -1,0 +1,57 @@
+# All library writes go through Hasura actions. Each returns an envelope with
+# `error` that the SDK must check (shared/errors.json ActionError).
+
+mutation AddUserBook($object: UserBookCreateInput!) {
+  insert_user_book(object: $object) {
+    id
+    error
+    user_book {
+      ...UserBookFull
+    }
+  }
+}
+
+mutation UpdateUserBook($id: Int!, $object: UserBookUpdateInput!) {
+  update_user_book(id: $id, object: $object) {
+    id
+    error
+    user_book {
+      ...UserBookFull
+    }
+  }
+}
+
+mutation RemoveUserBook($id: Int!) {
+  delete_user_book(id: $id) {
+    id
+    book_id
+    user_id
+  }
+}
+
+mutation AddUserBookRead($userBookId: Int!, $read: DatesReadInput!) {
+  insert_user_book_read(user_book_id: $userBookId, user_book_read: $read) {
+    id
+    error
+    user_book_read {
+      ...UserBookRead
+    }
+  }
+}
+
+mutation UpdateUserBookRead($id: Int!, $read: DatesReadInput!) {
+  update_user_book_read(id: $id, object: $read) {
+    id
+    error
+    user_book_read {
+      ...UserBookRead
+    }
+  }
+}
+
+mutation RemoveUserBookRead($id: Int!) {
+  delete_user_book_read(id: $id) {
+    id
+    error
+  }
+}

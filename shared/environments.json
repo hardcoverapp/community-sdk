@@ -1,0 +1,29 @@
+{
+  "$comment": "Named API targets. SDKs expose these as presets; HARDCOVER_API_URL overrides graphql for anything else. Every SDK and every test harness reads this file instead of hard-coding hosts.",
+  "prod": {
+    "graphql": "https://api.hardcover.app/v1/graphql",
+    "oauth": "https://api.hardcover.app/oauth2",
+    "authorize": "https://hardcover.app/oauth2/authorize",
+    "deviceVerification": "https://hardcover.app/link",
+    "capabilities": "https://api.hardcover.app/capabilities",
+    "discovery": "https://api.hardcover.app/.well-known/oauth-authorization-server"
+  },
+  "staging": {
+    "graphql": "https://api-staging.hardcover.app/v1/graphql",
+    "oauth": "https://api-staging.hardcover.app/oauth2",
+    "authorize": null,
+    "deviceVerification": null,
+    "capabilities": "https://api-staging.hardcover.app/capabilities",
+    "discovery": "https://api-staging.hardcover.app/.well-known/oauth-authorization-server",
+    "$todo": "Confirm the staging web host for authorize and device verification (see spec/06-open-questions.md)."
+  },
+  "local": {
+    "graphql": "http://localhost:8081/v1/graphql",
+    "oauth": "http://localhost:8081/oauth2",
+    "authorize": "http://localhost:3000/oauth2/authorize",
+    "deviceVerification": "http://localhost:3000/link",
+    "capabilities": "http://localhost:8081/capabilities",
+    "discovery": "http://localhost:8081/.well-known/oauth-authorization-server",
+    "$comment": "Matches app/env.example (ROOT_URL, API_ROOT_URL). Conductor workspaces use CONDUCTOR_PORT and CONDUCTOR_PORT+1 instead; pass HARDCOVER_API_URL."
+  }
+}

@@ -1,0 +1,120 @@
+[
+  {
+    "id": "errors/invalid-token",
+    "covers": ["errors"],
+    "call": { "op": "Me", "variables": {} },
+    "responses": [
+      { "status": 401, "headers": { "www-authenticate": "Bearer realm=\"hardcover\", error=\"invalid_token\"" }, "body": { "error": "invalid_token", "error_description": "The access token is invalid or has expired" } }
+    ],
+    "expect": { "requests": 1, "result": { "error": "AuthenticationError" } }
+  },
+  {
+    "id": "errors/insufficient-scope",
+    "covers": ["errors"],
+    "call": { "op": "GetLibrary", "variables": { "userId": 1 } },
+    "responses": [
+      { "status": 403, "body": { "error": "insufficient_scope", "error_description": "Token lacks read:library", "scope": "read:library" } }
+    ],
+    "expect": { "requests": 1, "result": { "error": "ScopeError", "fields": { "requiredScope": "read:library" } } }
+  },
+  {
+    "id": "errors/graphql-errors-array",
+    "covers": ["errors"],
+    "call": { "op": "GetBook", "variables": { "id": 1 } },
+    "responses": [
+      { "status": 200, "body": { "errors": [{ "message": "field 'nope' not found in type: 'books'", "extensions": { "path": "$.selectionSet.books_by_pk.selectionSet.nope", "code": "validation-failed" } }] } }
+    ],
+    "expect": { "requests": 1, "result": { "error": "GraphQLError", "fields": { "errors[0].code": "validation-failed" } } }
+  },
+  {
+    "id": "action-envelopes/error-string",
+    "covers": ["action-envelopes"],
+    "call": { "op": "AddUserBook", "variables": { "object": { "book_id": 1, "status_id": 1 } } },
+    "responses": [
+      { "status": 200, "body": { "data": { "insert_user_book": { "id": null, "error": "Book not found", "user_book": null } } } }
+    ],
+    "expect": { "requests": 1, "result": { "error": "ActionError", "fields": { "operation": "insert_user_book", "messages": ["Book not found"] } } }
+  },
+  {
+    "id": "action-envelopes/errors-array",
+    "covers": ["action-envelopes"],
+    "call": { "op": "CreateList", "variables": { "object": { "name": "" } } },
+    "responses": [
+      { "status": 200, "body": { "data": { "insert_list": { "id": null, "errors": ["Name can't be blank"], "list": null } } } }
+    ],
+    "expect": { "requests": 1, "result": { "error": "ActionError", "fields": { "operation": "insert_list", "messages": ["Name can't be blank"] } } }
+  },
+  {
+    "id": "action-envelopes/empty-errors-is-success",
+    "covers": ["action-envelopes"],
+    "call": { "op": "CreateList", "variables": { "object": { "name": "Test" } } },
+    "responses": [
+      { "status": 200, "body": { "data": { "insert_list": { "id": 7, "errors": [], "list": { "id": 7, "name": "Test" } } } } }
+    ],
+    "expect": { "requests": 1, "result": "ok" }
+  },
+  {
+    "id": "rate-limit/retry-after",
+    "covers": ["rate-limit"],
+    "call": { "op": "Me", "variables": {} },
+    "client": { "maxRetries": 2 },
+    "responses": [
+      { "status": 429, "headers": { "retry-after": "3", "ratelimit": "\"Free\";r=0;t=3, \"daily\";r=4000;t=50000" }, "body": { "error": "Too Many Requests", "message": "Rate limit exceeded" } },
+      { "status": 200, "body": { "data": { "me": [] } } }
+    ],
+    "expect": { "requests": 2, "sleptSeconds": [3], "result": "ok" }
+  },
+  {
+    "id": "rate-limit/gives-up",
+    "covers": ["rate-limit"],
+    "call": { "op": "Me", "variables": {} },
+    "client": { "maxRetries": 1 },
+    "responses": [
+      { "status": 429, "headers": { "retry-after": "1" }, "body": { "error": "Too Many Requests" } },
+      { "status": 429, "headers": { "retry-after": "1" }, "body": { "error": "Too Many Requests" } }
+    ],
+    "expect": { "requests": 2, "sleptSeconds": [1], "result": { "error": "RateLimitError", "fields": { "retryAfterSeconds": 1 } } }
+  },
+  {
+    "id": "rate-limit/daily-not-retried",
+    "covers": ["rate-limit"],
+    "call": { "op": "Me", "variables": {} },
+    "client": { "maxRetries": 3 },
+    "responses": [
+      { "status": 429, "headers": { "retry-after": "40000", "ratelimit": "\"Free\";r=10;t=0, \"daily\";r=0;t=40000" }, "body": { "error": "Too Many Requests" } }
+    ],
+    "expect": { "requests": 1, "result": { "error": "RateLimitError", "fields": { "window": "daily" } } }
+  },
+  {
+    "id": "rate-limit/headers-exposed",
+    "covers": ["rate-limit"],
+    "call": { "op": "Me", "variables": {} },
+    "responses": [
+      { "status": 200, "headers": { "ratelimit-policy": "\"Free\";q=10;w=60;burst=10, \"daily\";q=5000;w=86400", "ratelimit": "\"Free\";r=9;t=1, \"daily\";r=4999;t=86000" }, "body": { "data": { "me": [] } } }
+    ],
+    "expect": { "requests": 1, "result": "ok", "rateLimit": { "burst": { "remaining": 9 }, "daily": { "limit": 5000, "remaining": 4999 } } }
+  },
+  {
+    "id": "retry/mutation-not-retried-on-drop",
+    "covers": ["errors"],
+    "call": { "op": "AddUserBook", "variables": { "object": { "book_id": 1 } } },
+    "client": { "maxRetries": 3 },
+    "responses": [{ "network": "reset" }],
+    "expect": { "requests": 1, "result": { "error": "NetworkError" } }
+  },
+  {
+    "id": "retry/query-retried-on-drop",
+    "covers": ["errors"],
+    "call": { "op": "Me", "variables": {} },
+    "client": { "maxRetries": 3 },
+    "responses": [{ "network": "reset" }, { "status": 200, "body": { "data": { "me": [] } } }],
+    "expect": { "requests": 2, "result": "ok" }
+  },
+  {
+    "id": "errors/request-too-large",
+    "covers": ["errors"],
+    "call": { "op": "raw", "query": "query { a: me { id } b: me { id } }" },
+    "responses": [{ "status": 403, "body": { "errors": ["request_exceeds_capacity"], "message": "Request has 11 top-level fields; limit is 10" } }],
+    "expect": { "requests": 1, "result": { "error": "RequestTooLargeError" } }
+  }
+]

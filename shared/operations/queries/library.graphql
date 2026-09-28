@@ -1,0 +1,55 @@
+# The signed-in user's library. user_id comes from Me; Hasura row permissions
+# already restrict what a token can see, but filtering by user keeps the
+# query meaning explicit.
+
+query GetLibrary(
+  $userId: Int!
+  $statusIds: [Int!]
+  $limit: Int = 25
+  $offset: Int = 0
+  $orderBy: [user_books_order_by!] = [{ updated_at: desc_nulls_last }]
+) {
+  user_books(
+    where: { user_id: { _eq: $userId }, status_id: { _in: $statusIds } }
+    order_by: $orderBy
+    limit: $limit
+    offset: $offset
+  ) {
+    ...UserBook
+    book {
+      ...BookSummary
+    }
+    edition {
+      ...EditionSummary
+    }
+  }
+}
+
+query CountLibrary($userId: Int!, $statusIds: [Int!]) {
+  user_books_aggregate(where: { user_id: { _eq: $userId }, status_id: { _in: $statusIds } }) {
+    aggregate {
+      count
+    }
+  }
+}
+
+query GetUserBookForBook($userId: Int!, $bookId: Int!) {
+  user_books(where: { user_id: { _eq: $userId }, book_id: { _eq: $bookId } }, limit: 1) {
+    ...UserBookFull
+    edition {
+      ...EditionSummary
+    }
+  }
+}
+
+query GetUserBook($id: Int!) {
+  user_books_by_pk(id: $id) {
+    ...UserBookFull
+    book {
+      ...BookSummary
+    }
+    edition {
+      ...EditionSummary
+    }
+  }
+}

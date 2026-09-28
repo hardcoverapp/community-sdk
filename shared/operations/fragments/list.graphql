@@ -1,0 +1,24 @@
+fragment ListSummary on lists {
+  id
+  slug
+  name
+  description
+  privacy_setting_id
+  ranked
+  default_view
+  books_count
+  likes_count
+  user_id
+  created_at
+  updated_at
+}
+
+fragment ListBook on list_books {
+  id
+  list_id
+  book_id
+  edition_id
+  position
+  reason
+  date_added
+}

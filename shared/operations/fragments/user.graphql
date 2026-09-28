@@ -1,0 +1,21 @@
+fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cached_image
+  books_count
+  followers_count
+  followed_users_count
+  pro
+  created_at
+}
+
+# `me` only. timezone matters for user_date handling (spec/02-app-usage.md#dates).
+fragment Me on users {
+  ...UserProfile
+  timezone
+  default_reading_format_id
+  account_privacy_setting_id
+}

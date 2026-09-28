@@ -1,0 +1,76 @@
+{
+  "$comment": "Stable ID enums the API expects as raw integers or strings. Each SDK generates idiomatic enums from this file. Sources are in the app repo, paths relative to app/rails/app/javascript unless noted.",
+  "UserBookStatus": {
+    "source": "types/UserBookStatusType.tsx",
+    "type": "int",
+    "values": [
+      { "id": 1, "key": "WANT_TO_READ", "slug": "want-to-read", "label": "Want to Read" },
+      { "id": 2, "key": "CURRENTLY_READING", "slug": "currently-reading", "label": "Currently Reading" },
+      { "id": 3, "key": "READ", "slug": "read", "label": "Read" },
+      { "id": 4, "key": "PAUSED", "slug": "paused", "label": "Paused" },
+      { "id": 5, "key": "DID_NOT_FINISH", "slug": "did-not-finish", "label": "Did Not Finish" },
+      { "id": 6, "key": "IGNORED", "slug": "ignored", "label": "Ignored" }
+    ]
+  },
+  "PrivacySetting": {
+    "source": "constants/PrivacySettings.ts",
+    "type": "int",
+    "values": [
+      { "id": 1, "key": "PUBLIC", "label": "Public", "readScopeSuffix": "public" },
+      { "id": 2, "key": "FOLLOWS", "label": "Follows", "readScopeSuffix": "following" },
+      { "id": 3, "key": "PRIVATE", "label": "Private", "readScopeSuffix": "private" }
+    ]
+  },
+  "ReadingFormat": {
+    "source": "types/ReadingFormatType.ts",
+    "type": "int",
+    "values": [
+      { "id": 1, "key": "PHYSICAL", "label": "Physical", "progressField": "progress_pages", "totalField": "pages" },
+      { "id": 2, "key": "AUDIOBOOK", "label": "Audiobook", "progressField": "progress_seconds", "totalField": "audio_seconds" },
+      { "id": 4, "key": "EBOOK", "label": "E-Book", "progressField": "progress_pages", "totalField": "pages" }
+    ],
+    "notes": "ID 3 is unused."
+  },
+  "DatePrecision": {
+    "source": "features/BookButtonDrawer/pages/EditDateReadPage/EditDateReadFormContent.tsx",
+    "type": "int",
+    "field": "finished_at_precision",
+    "values": [
+      { "id": 0, "key": "UNKNOWN" },
+      { "id": 1, "key": "DAY" },
+      { "id": 2, "key": "MONTH" },
+      { "id": 3, "key": "YEAR" }
+    ]
+  },
+  "SearchType": {
+    "source": "docs: src/content/docs/api/guides/Searching.mdx",
+    "type": "string",
+    "field": "query_type",
+    "caseInsensitive": true,
+    "default": "book",
+    "values": [
+      { "id": "author", "key": "AUTHOR" },
+      { "id": "book", "key": "BOOK" },
+      { "id": "character", "key": "CHARACTER" },
+      { "id": "list", "key": "LIST" },
+      { "id": "prompt", "key": "PROMPT" },
+      { "id": "publisher", "key": "PUBLISHER" },
+      { "id": "series", "key": "SERIES" },
+      { "id": "user", "key": "USER" }
+    ]
+  },
+  "TrendingDuration": {
+    "source": "api-snapshot/schema.graphql (enum TrendingDuration)",
+    "type": "string",
+    "generated": true,
+    "notes": "Real GraphQL enum; codegen owns it. Listed so SDK docs can link here."
+  },
+  "Rating": {
+    "type": "decimal",
+    "min": 0.5,
+    "max": 5,
+    "step": 0.5,
+    "source": "components/BookReview/InteractiveStars.tsx",
+    "notes": "null clears the rating."
+  }
+}

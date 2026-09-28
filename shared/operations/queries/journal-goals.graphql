@@ -1,0 +1,19 @@
+query GetJournalForBook($userId: Int!, $bookId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  reading_journals(
+    where: { user_id: { _eq: $userId }, book_id: { _eq: $bookId } }
+    order_by: { action_at: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    ...JournalEntry
+  }
+}
+
+query GetGoals($userId: Int!, $includeArchived: Boolean = false) {
+  goals(
+    where: { user_id: { _eq: $userId }, _or: [{ archived: { _eq: false } }, { archived: { _eq: $includeArchived } }] }
+    order_by: { end_date: desc }
+  ) {
+    ...Goal
+  }
+}

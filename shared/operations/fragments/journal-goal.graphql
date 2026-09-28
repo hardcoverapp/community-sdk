@@ -1,0 +1,26 @@
+fragment JournalEntry on reading_journals {
+  id
+  book_id
+  edition_id
+  event
+  entry
+  metadata
+  privacy_setting_id
+  action_at
+  created_at
+}
+
+fragment Goal on goals {
+  id
+  metric
+  goal
+  progress
+  description
+  start_date
+  end_date
+  conditions
+  archived
+  completed_at
+  state
+  privacy_setting_id
+}

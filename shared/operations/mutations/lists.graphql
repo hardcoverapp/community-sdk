@@ -1,0 +1,43 @@
+mutation CreateList($object: ListInput!) {
+  insert_list(object: $object) {
+    id
+    errors
+    list {
+      ...ListSummary
+    }
+  }
+}
+
+mutation UpdateList($id: Int!, $object: ListInput!) {
+  update_list(id: $id, object: $object) {
+    id
+    errors
+    list {
+      ...ListSummary
+    }
+  }
+}
+
+mutation DeleteList($id: Int!) {
+  delete_list(id: $id) {
+    success
+  }
+}
+
+mutation AddBookToList($object: ListBookInput!) {
+  insert_list_book(object: $object) {
+    id
+    list_book {
+      ...ListBook
+    }
+  }
+}
+
+# Takes the list_books row id, not (list_id, book_id). The SDK's
+# lists.removeBook(listId, bookId) convenience looks the row up first.
+mutation RemoveListBook($id: Int!) {
+  delete_list_book(id: $id) {
+    id
+    list_id
+  }
+}

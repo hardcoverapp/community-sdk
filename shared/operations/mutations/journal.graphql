@@ -1,0 +1,15 @@
+mutation AddJournalEntry($object: ReadingJournalCreateType!) {
+  insert_reading_journal(object: $object) {
+    id
+    errors
+    reading_journal {
+      ...JournalEntry
+    }
+  }
+}
+
+mutation DeleteJournalEntry($id: Int!) {
+  delete_reading_journal(id: $id) {
+    id
+  }
+}

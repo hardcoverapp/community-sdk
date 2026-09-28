@@ -1,0 +1,55 @@
+# Book shapes. Field names stay snake_case (no aliases); each SDK maps to
+# idiomatic casing in codegen. See spec/03-sdk-design.md#casing.
+
+fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  release_year
+  pages
+  audio_seconds
+  rating
+  ratings_count
+  users_count
+  cached_image
+  cached_contributors
+}
+
+fragment BookDetail on books {
+  ...BookSummary
+  headline
+  description
+  release_date
+  editions_count
+  cached_tags
+  contributions {
+    contribution
+    author {
+      ...AuthorSummary
+    }
+  }
+  book_series(where: { series: { canonical_id: { _is_null: true } } }) {
+    position
+    series {
+      ...SeriesSummary
+    }
+  }
+}
+
+fragment AuthorSummary on authors {
+  id
+  slug
+  name
+  cached_image
+  books_count
+}
+
+fragment SeriesSummary on series {
+  id
+  slug
+  name
+  books_count
+  primary_books_count
+  is_completed
+}

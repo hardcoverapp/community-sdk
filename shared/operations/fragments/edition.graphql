@@ -1,0 +1,25 @@
+fragment EditionSummary on editions {
+  id
+  book_id
+  title
+  subtitle
+  isbn_10
+  isbn_13
+  asin
+  pages
+  audio_seconds
+  release_date
+  release_year
+  reading_format_id
+  edition_format
+  cached_image
+  language {
+    code2
+    language
+  }
+  publisher {
+    id
+    name
+    slug
+  }
+}

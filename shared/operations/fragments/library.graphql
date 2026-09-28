@@ -1,0 +1,46 @@
+# The signed-in user's relationship to a book.
+
+fragment UserBookRead on user_book_reads {
+  id
+  user_book_id
+  edition_id
+  started_at
+  finished_at
+  finished_at_precision
+  paused_at
+  progress
+  progress_pages
+  progress_seconds
+}
+
+fragment UserBook on user_books {
+  id
+  book_id
+  edition_id
+  user_id
+  status_id
+  rating
+  privacy_setting_id
+  has_review
+  owned
+  read_count
+  date_added
+  first_started_reading_date
+  last_read_date
+  updated_at
+  user_book_reads(order_by: { id: desc }) {
+    ...UserBookRead
+  }
+}
+
+# Adds review and notes. Selecting review fields is fine with read:library;
+# writing them needs write:reviews.
+fragment UserBookFull on user_books {
+  ...UserBook
+  review_markdown
+  review_has_spoilers
+  reviewed_at
+  private_notes
+  recommended_by
+  recommended_for
+}

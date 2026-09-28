@@ -1,0 +1,45 @@
+query GetBook($id: Int!) {
+  books_by_pk(id: $id) {
+    ...BookDetail
+  }
+}
+
+query GetBookBySlug($slug: String!) {
+  books(where: { slug: { _eq: $slug } }, limit: 1) {
+    ...BookDetail
+  }
+}
+
+query GetBooks($ids: [Int!]!) {
+  books(where: { id: { _in: $ids } }) {
+    ...BookSummary
+  }
+}
+
+query GetEditionsForBook($bookId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  editions(
+    where: { book_id: { _eq: $bookId } }
+    order_by: { users_count: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    ...EditionSummary
+  }
+}
+
+query FindEditionsByIsbn($isbns: [String!]!) {
+  editions(where: { _or: [{ isbn_13: { _in: $isbns } }, { isbn_10: { _in: $isbns } }] }) {
+    ...EditionSummary
+    book {
+      ...BookSummary
+    }
+  }
+}
+
+# Returns ids only; resolve with GetBooks.
+query TrendingBookIds($duration: TrendingDuration = month, $limit: Int = 25, $offset: Int = 0) {
+  books_trending(duration: $duration, limit: $limit, offset: $offset) {
+    ids
+    error
+  }
+}

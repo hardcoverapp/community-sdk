@@ -1,0 +1,22 @@
+query GetListsForUser($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  lists(
+    where: { user_id: { _eq: $userId } }
+    order_by: { updated_at: desc_nulls_last }
+    limit: $limit
+    offset: $offset
+  ) {
+    ...ListSummary
+  }
+}
+
+query GetList($id: Int!, $limit: Int = 50, $offset: Int = 0) {
+  lists_by_pk(id: $id) {
+    ...ListSummary
+    list_books(order_by: { position: asc }, limit: $limit, offset: $offset) {
+      ...ListBook
+      book {
+        ...BookSummary
+      }
+    }
+  }
+}
