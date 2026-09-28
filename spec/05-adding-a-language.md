@@ -38,6 +38,9 @@ These already exist in `shared/` and `api-snapshot/`:
 - [ ] Update methods send only the fields the caller set.
 - [ ] Rotated refresh tokens are persisted before use.
 - [ ] `requiredScopes` appears in method docs.
+- [ ] Kotlin only: a Java source set in the test suite calls every resource
+      method through the Java-facing API (futures or blocking), compiled and
+      run in CI. If it reads badly from Java, the API is wrong.
 - [ ] The live suite cleans up after itself and refuses prod writes by default.
 - [ ] The README matrix matches reality.
 

@@ -57,7 +57,10 @@ API tokens and OAuth are **beta-gated** behind user feature flags
 - **Authorization code + PKCE.** `S256` only. `web_app` clients are
   confidential and must also send the client secret (Basic or
   `client_secret_post`). SPA and native clients are public and must not send one.
-  Redirect URIs match exactly; https is required except on localhost.
+  Redirect URIs match exactly. They must be https, except http on loopback
+  hosts (any port, per OAuth 2.1), and `native` apps may also register a
+  private-use custom scheme such as `myapp://oauth/callback` (RFC 8252;
+  `rails/app/models/developer_app.rb`).
 - **Device grant (RFC 8628).** `POST /oauth2/device` returns `device_code`,
   `user_code`, `verification_uri` (`/link`), `verification_uri_complete`, with
   a 15-minute expiry. Poll interval is 5s and grows 5s per `slow_down`. The app

@@ -4,10 +4,11 @@ Client libraries for the [Hardcover](https://hardcover.app) GraphQL API. There
 is one shared, language-neutral contract, and each language is a thin layer on
 top of it.
 
-**Status: spec and shared contract only.** No language package exists yet.
-TypeScript comes first because the docs site can use it directly in its
-examples. Swift, Java/Kotlin and Python follow once the shared layer has proven
-itself.
+**Status: TypeScript core in progress.** The first two official consumers
+are the Hardcover docs site (live examples) and a React Native app, so
+TypeScript comes first and must run in both the browser and React Native.
+Swift, Kotlin (Java-friendly) and Python follow once the shared layer has
+proven itself.
 
 ## Language matrix
 
@@ -15,40 +16,43 @@ Generated from [`languages.json`](languages.json). Run `pnpm matrix` after
 changing it.
 
 <!-- MATRIX:START -->
-| Feature | TypeScript | Swift | Java / Kotlin (TBD) | Python |
+| Feature | TypeScript | Swift | Kotlin (Java-friendly) | Python |
 |---|:-:|:-:|:-:|:-:|
 | **Core** |  |  |  |  |
-| GraphQL transport + raw query escape hatch | · | · | · | · |
-| Normalized error taxonomy | · | · | · | · |
-| Action envelope unwrapping (`error` / `errors`) | · | · | · | · |
-| Rate-limit headers, 429 retry, request chunking | · | · | · | · |
-| Types generated from `shared/operations` | · | · | · | · |
+| GraphQL transport + raw query escape hatch | ✅ | ⬜ | ⬜ | ⬜ |
+| Normalized error taxonomy | ✅ | ⬜ | ⬜ | ⬜ |
+| Action envelope unwrapping (`error` / `errors`) | ✅ | ⬜ | ⬜ | ⬜ |
+| Rate-limit headers, 429 retry, request chunking | 🟡 | ⬜ | ⬜ | ⬜ |
+| Types generated from `shared/operations` | ✅ | ⬜ | ⬜ | ⬜ |
 | **Auth** |  |  |  |  |
-| Personal access token | · | · | · | · |
-| OAuth authorization code + PKCE | · | · | · | · |
-| OAuth device grant | · | · | · | · |
-| Refresh rotation + revoke | · | · | · | · |
+| Personal access token | 🟡 | ⬜ | ⬜ | ⬜ |
+| OAuth authorization code + PKCE | ⬜ | ⬜ | ⬜ | ⬜ |
+| OAuth device grant | ⬜ | ⬜ | ⬜ | ⬜ |
+| Refresh rotation + revoke | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Resources** |  |  |  |  |
-| `me` | · | · | · | · |
-| `books` / `editions` | · | · | · | · |
-| `search` | · | · | · | · |
-| `library` (user books) | · | · | · | · |
-| `reads` (dates + progress) | · | · | · | · |
-| `journal` | · | · | · | · |
-| `lists` | · | · | · | · |
-| `goals` | · | · | · | · |
+| `me` | ⬜ | ⬜ | ⬜ | ⬜ |
+| `books` / `editions` | ⬜ | ⬜ | ⬜ | ⬜ |
+| `search` | ⬜ | ⬜ | ⬜ | ⬜ |
+| `library` (user books) | ⬜ | ⬜ | ⬜ | ⬜ |
+| `reads` (dates + progress) | ⬜ | ⬜ | ⬜ | ⬜ |
+| `journal` | ⬜ | ⬜ | ⬜ | ⬜ |
+| `lists` | ⬜ | ⬜ | ⬜ | ⬜ |
+| `goals` | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Testing** |  |  |  |  |
-| Mock transport + shared fixtures | · | · | · | · |
-| Shared conformance suite passes | · | · | · | · |
-| Contract tests vs `api-snapshot` | · | · | · | · |
-| Live integration tests (opt-in) | · | · | · | · |
+| Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ |
+| Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ |
+| Contract tests vs `api-snapshot` | 🟡 | ⬜ | ⬜ | ⬜ |
+| Live integration tests (opt-in) | ⬜ | ⬜ | ⬜ | ⬜ |
+| **Runtimes** |  |  |  |  |
+| Node + browser (docs site) | ⬜ | ➖ | ➖ | ➖ |
+| React Native (Hermes) | ⬜ | ➖ | ➖ | ➖ |
 | **Release** |  |  |  |  |
-| Published to package registry | · | · | · | · |
+| Published to package registry | ⬜ | ⬜ | ⬜ | ⬜ |
 
-✓ done, ◐ partial, · planned, n/a not applicable
+✅ done · 🟡 partial · ⬜ planned · ➖ not applicable
 <!-- MATRIX:END -->
 
-A cell turns ✓ only when that language passes the matching
+A cell turns ✅ only when that language passes the matching
 [conformance cases](shared/conformance). See
 [spec/05](spec/05-adding-a-language.md).
 

@@ -133,6 +133,16 @@ For v1, ship hand-written types for `cached_image`, `cached_contributors`,
 override map next to codegen, and mark them as "shape observed, not
 guaranteed". Everything else stays as untyped JSON.
 
+## First consumers
+
+The first two official uses set v1 priorities. A feature either of them needs
+ships before anything they don't.
+
+| Consumer | Runtime | Needs first |
+|---|---|---|
+| Docs site (`hardcover-docs`) | Browser, Astro build (Node) | PAT auth, `search`, `books`, `library`, `reads`; readable example code for each guide page |
+| React Native app | Hermes | OAuth PKCE with a native custom-scheme redirect, device grant, refresh rotation, `me`, `library`, `reads`, `journal`, `lists`, `search` |
+
 ## Resources (v1)
 
 Each method notes its operation, its required scope and any extra requests.
@@ -196,15 +206,32 @@ per client. Callers can pass `userId` to skip that request.
     PAT in client code.
   - **The docs site is a first-class consumer.** `GraphQLExplorer` examples can
     show an "SDK" tab rendered from the same operation name.
+  - **React Native is a first-class runtime** (Hermes), tested separately from
+    Node and browsers:
+    - No `AbortSignal.timeout`, WebCrypto or Node built-ins in core. Timeouts
+      use `AbortController` plus `setTimeout`.
+    - OAuth helpers take a pluggable crypto (`sha256`, `randomBytes`) so apps
+      can pass `expo-crypto` or `react-native-quick-crypto`.
+    - Redirects use a `native` app's custom scheme, opened with the platform
+      auth session (e.g. `expo-web-browser` `openAuthSessionAsync`).
+    - The SDK never persists tokens. `onTokens` hands them to the app for
+      Keychain/Keystore storage (e.g. `expo-secure-store`), never AsyncStorage.
+    - The published package bundles `shared/*.json`; Metro can't import
+      outside the package.
 - **Swift.**
   - async/await with `Sendable` types.
   - Codegen: `apollo-ios` codegen, or a lightweight generator over the same
     documents.
   - OAuth via `ASWebAuthenticationSession` in an optional module.
-- **Java / Kotlin.**
-  - `apollo-kotlin` generates from the same documents and supports Java-only
-    output. Choosing Kotlin gives coroutines and fits Android; Java gives the
-    broadest reach.
+- **Kotlin, Java-friendly.** One JVM package that serves Kotlin, Android and
+  plain Java callers, the way OkHttp does.
+  - Kotlin source with coroutines (`suspend`) as the primary API.
+  - A Java-facing surface on every public entry point: `CompletableFuture`
+    and blocking variants, `@JvmOverloads` on default arguments,
+    `@JvmStatic` on factories, `@file:JvmName` so there are no `*Kt`
+    classes, and nullability annotations that Java tooling respects.
+  - No `Flow`, `Result` or inline value classes in the Java-visible API.
+  - Codegen: `apollo-kotlin` Kotlin models from the shared documents.
   - OkHttp transport.
 - **Python.**
   - Sync and async clients over `httpx`.

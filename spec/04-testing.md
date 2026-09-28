@@ -29,7 +29,7 @@ test their own code too.
   holds the language-neutral behavior cases: error mapping, action envelopes,
   429 handling, the no-retry-on-mutation rule. Each language ships a roughly
   50-line runner. **These cases are the definition of parity**; a README
-  matrix cell turns ✓ only when the covering cases pass.
+  matrix cell turns ✅ only when the covering cases pass.
 - **Unit tests** cover the logic an SDK owns: progress math, date defaults and
   timezone, rating validation, chunking, header parsing, PKCE generation.
   Trivial pass-through methods don't need their own tests.

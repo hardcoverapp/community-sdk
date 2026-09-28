@@ -36,8 +36,10 @@ a decision before the SDK depends on it. Record decisions in
     "community-powered" and pointed at a nonexistent `hardcover/hardcover-sdk`
     repo. The package namespace (`@hardcover/…` on npm, PyPI name, Maven group),
     the GitHub org, and the license all depend on this.
-12. **JVM language.** Java or Kotlin? `apollo-kotlin` can emit Java-only code,
-    so codegen doesn't force the choice. The public API style does.
+12. **JVM language.** Decided 2026-09-28: Kotlin with a Java-friendly API
+    (see [03](03-sdk-design.md#language-notes)). Java apps load Kotlin
+    libraries natively; the interop cost is API design, enforced by a Java
+    test source set ([05](05-adding-a-language.md)).
 13. **Existing community SDKs.** `hardcoverpy` (Python, pydantic) and
     `hardcover-rs` (Rust) are in the docs showcase. Collaborate, bless, or
     ignore? At minimum, compare their method surfaces with ours before building
