@@ -39,10 +39,11 @@ changing it.
 | `reads` (dates + progress): write | 🟡 | ⬜ | ⬜ | ⬜ |
 | `journal`: read | ⬜ | ⬜ | ⬜ | ⬜ |
 | `journal`: write | ⬜ | ⬜ | ⬜ | ⬜ |
-| `lists`: read | ⬜ | ⬜ | ⬜ | ⬜ |
-| `lists`: write | ⬜ | ⬜ | ⬜ | ⬜ |
+| `lists`: read | ✅ | ⬜ | ⬜ | ⬜ |
+| `lists`: write | ✅ | ⬜ | ⬜ | ⬜ |
 | `goals` (read) | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Testing** |  |  |  |  |
+| Type-checked usage examples | 🟡 | ⬜ | ⬜ | ⬜ |
 | Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ |
 | Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ |
 | Contract tests vs `api-snapshot` | 🟡 | ⬜ | ⬜ | ⬜ |

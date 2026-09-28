@@ -42,6 +42,11 @@ These already exist in `shared/` and `api-snapshot/`:
       method through the Java-facing API (futures or blocking), compiled and
       run in CI. If it reads badly from Java, the API is wrong.
 - [ ] The live suite cleans up after itself and refuses prod writes by default.
+- [ ] Every resource marked ✅ has a type-checked usage example
+      (`packages/<lang>/examples/`) covering its real-user flow. Examples are
+      compiled in CI, so API changes can't silently break the docs. They are
+      the source for the docs site pages (`hardcover-docs`, added on a branch
+      as each resource lands).
 - [ ] The README matrix matches reality.
 
 ## Shared-layer changes

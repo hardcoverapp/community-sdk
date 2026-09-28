@@ -1,0 +1,14 @@
+# Examples
+
+Each file is a self-contained, type-checked function you can copy into an app.
+`pnpm typecheck` compiles them against the SDK, so an API change that breaks
+an example fails CI instead of drifting from the docs. These will move into the
+Hardcover docs site pages as each resource lands there.
+
+| Example | Shows |
+|---|---|
+| [quick-start.ts](quick-start.ts) | Creating a client, reading your shelf, rate-limit state |
+| [shelve-a-book.ts](shelve-a-book.ts) | Add, status, rating, review, remove |
+| [reading-progress.ts](reading-progress.ts) | Progress in pages / percent / seconds, backdating with `occurredAt`, a re-read |
+| [bulk-scan-to-list.ts](bulk-scan-to-list.ts) | Scanning ISBNs into a list, handling codes that don't match |
+| [errors-and-testing.ts](errors-and-testing.ts) | Error types apps handle, and testing with `MockTransport` |

@@ -107,6 +107,11 @@
       "label": "`goals` (read)"
     },
     {
+      "id": "docs-examples",
+      "group": "Testing",
+      "label": "Type-checked usage examples"
+    },
+    {
       "id": "test-mock",
       "group": "Testing",
       "label": "Mock transport + shared fixtures"
@@ -171,7 +176,10 @@
         "res-library-write": "done",
         "test-live-write": "partial",
         "res-reads-read": "done",
-        "res-reads-write": "partial"
+        "res-reads-write": "partial",
+        "res-lists-read": "done",
+        "res-lists-write": "done",
+        "docs-examples": "partial"
       }
     },
     {
