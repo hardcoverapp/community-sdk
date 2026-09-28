@@ -5842,7 +5842,7 @@ export const GetGoalsDocument = new TypedDocumentString(`
   privacy_setting_id
 }`) as unknown as TypedDocumentString<GetGoalsQuery, GetGoalsQueryVariables>;
 export const GetLibraryDocument = new TypedDocumentString(`
-    query GetLibrary($userId: Int!, $statusIds: [Int!], $limit: Int = 25, $offset: Int = 0, $orderBy: [user_books_order_by!] = [{ updated_at: desc_nulls_last }]) {
+    query GetLibrary($userId: Int!, $statusIds: [Int!] = [1, 2, 3, 4, 5, 6], $limit: Int = 25, $offset: Int = 0, $orderBy: [user_books_order_by!] = [{ updated_at: desc_nulls_last }]) {
   user_books(
     where: { user_id: { _eq: $userId }, status_id: { _in: $statusIds } }
     order_by: $orderBy
@@ -5929,7 +5929,7 @@ fragment UserBook on user_books {
   }
 }`) as unknown as TypedDocumentString<GetLibraryQuery, GetLibraryQueryVariables>;
 export const CountLibraryDocument = new TypedDocumentString(`
-    query CountLibrary($userId: Int!, $statusIds: [Int!]) {
+    query CountLibrary($userId: Int!, $statusIds: [Int!] = [1, 2, 3, 4, 5, 6]) {
   user_books_aggregate(
     where: { user_id: { _eq: $userId }, status_id: { _in: $statusIds } }
   ) {

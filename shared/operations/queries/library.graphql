@@ -1,10 +1,13 @@
 # The signed-in user's library. user_id comes from Me; Hasura row permissions
 # already restrict what a token can see, but filtering by user keeps the
 # query meaning explicit.
+#
+# Hasura rejects `_in: null`, so optional list filters need a default rather
+# than being omitted. statusIds defaults to every UserBookStatus.
 
 query GetLibrary(
   $userId: Int!
-  $statusIds: [Int!]
+  $statusIds: [Int!] = [1, 2, 3, 4, 5, 6]
   $limit: Int = 25
   $offset: Int = 0
   $orderBy: [user_books_order_by!] = [{ updated_at: desc_nulls_last }]
@@ -25,7 +28,7 @@ query GetLibrary(
   }
 }
 
-query CountLibrary($userId: Int!, $statusIds: [Int!]) {
+query CountLibrary($userId: Int!, $statusIds: [Int!] = [1, 2, 3, 4, 5, 6]) {
   user_books_aggregate(where: { user_id: { _eq: $userId }, status_id: { _in: $statusIds } }) {
     aggregate {
       count
