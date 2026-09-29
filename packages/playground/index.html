@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hardcover SDK playground</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;600;700&display=swap"
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='3' width='20' height='26' rx='2' fill='%232f4f93'/%3E%3Crect x='9' y='3' width='2' height='26' fill='%23f6f7fa'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#call">Skip to the call form</a>
+    <header class="masthead">
+      <h1>Hardcover SDK playground</h1>
+      <details class="connection" id="connection">
+        <summary><span class="connection-label">Connection:</span> <span id="connection-summary">not set</span></summary>
+        <form id="connection-form" class="connection-form">
+          <p class="note">
+            For local development. The token is kept in this browser's local storage; don't use a production token on a
+            shared machine.
+          </p>
+          <label for="token">Personal access token</label>
+          <div class="token-row">
+            <input id="token" name="token" type="password" autocomplete="off" spellcheck="false" placeholder="hc_pat_…" />
+            <button type="button" id="token-toggle" aria-pressed="false">Show</button>
+          </div>
+          <label for="environment">API</label>
+          <select id="environment" name="environment">
+            <option value="local">Local (localhost:8081)</option>
+            <option value="staging">Staging</option>
+            <option value="prod">Production</option>
+            <option value="custom">Custom URL</option>
+          </select>
+          <div id="custom-row" hidden>
+            <label for="custom-url">GraphQL URL</label>
+            <input id="custom-url" name="customUrl" type="url" placeholder="http://localhost:4001/v1/graphql" />
+          </div>
+          <div class="actions">
+            <button type="submit">Save connection</button>
+            <button type="button" id="forget">Forget token</button>
+          </div>
+        </form>
+      </details>
+    </header>
+
+    <main class="layout">
+      <section class="panel" aria-labelledby="call-heading">
+        <h2 id="call-heading">Call</h2>
+        <form id="call" class="call-form" novalidate>
+          <div class="pickers">
+            <div>
+              <label for="resource">Resource</label>
+              <select id="resource"></select>
+            </div>
+            <div>
+              <label for="method">Method</label>
+              <select id="method"></select>
+            </div>
+          </div>
+          <p id="method-summary" class="summary"></p>
+          <p id="method-badges" class="badges" hidden></p>
+          <fieldset id="inputs" class="inputs">
+            <legend>Inputs</legend>
+          </fieldset>
+          <button type="submit" id="run" class="run">Run</button>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="result-heading">
+        <h2 id="result-heading" tabindex="-1">Result</h2>
+        <p id="status" class="status" role="status" aria-live="polite">Pick a method and run it.</p>
+        <div id="error" class="error" hidden></div>
+        <pre id="output" class="output" tabindex="0" aria-label="Response" hidden></pre>
+
+        <h3>Requests sent</h3>
+        <ol id="requests" class="requests"><li class="empty">None yet.</li></ol>
+
+        <h3>Rate limit</h3>
+        <dl id="rate-limit" class="rate-limit"><div><dt>Allowance</dt><dd>Shown after the first request.</dd></div></dl>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

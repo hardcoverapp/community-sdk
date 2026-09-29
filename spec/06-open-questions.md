@@ -49,6 +49,22 @@ a decision before the SDK depends on it. Record decisions in
     etc."; the model validates exactly `book`, `page`, `hour` (singular), and
     hour goals report `progress` in seconds against a target in hours.
 
+24. **Browsers can't see the rate-limit headers.** `api/config/initializers/cors.rb`
+    exposes `RateLimit-Policy`, `RateLimit`, `Retry-After` and the legacy
+    `X-RateLimit-*` headers, and the preflight says so. But the actual POST
+    response carries Hasura's `Access-Control-Expose-Headers`
+    (`X-Hasura-Query-Cache-Key, …, Warning`), copied through by
+    `reverse_proxy` in `api/app/controllers/graphql_controller.rb`, which
+    replaces the gateway's. So in a browser the SDK can't pace proactively; it
+    falls back to 429 handling. Native React Native isn't affected (no CORS).
+    Confirmed fix (local, 2026-09-28): `HASURA_GRAPHQL_DISABLE_CORS=true` on
+    Hasura behind the gateway; the POST response then exposes the gateway's
+    list and the playground shows live rate-limit state. Stripping upstream
+    `access-control-*` headers in the proxy would also work. Still to check:
+    whether staging and prod already set it (one request with a real token, see
+    the curl in the playground section of spec/04). Found by the SDK
+    playground.
+
 ## Environment and access
 
 7. **Staging web host.** `api-staging.hardcover.app` is confirmed. What's the

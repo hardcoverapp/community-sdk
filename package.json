@@ -8,7 +8,8 @@
     "codegen": "pnpm -r codegen",
     "validate:operations": "node scripts/validate-operations.mjs",
     "matrix": "node scripts/render-matrix.mjs",
-    "matrix:check": "node scripts/render-matrix.mjs --check"
+    "matrix:check": "node scripts/render-matrix.mjs --check",
+    "playground": "pnpm --filter @hardcover/sdk-playground dev"
   },
   "devDependencies": {
     "graphql": "^17.0.2"

@@ -1,0 +1,19 @@
+{
+  "name": "@hardcover/sdk-playground",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Local test page: run any SDK call against a Hardcover API and inspect what happened",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hardcover/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
+  }
+}

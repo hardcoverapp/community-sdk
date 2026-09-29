@@ -7,7 +7,7 @@ top of it.
 **Status: TypeScript core in progress.** The first two official consumers
 are the Hardcover docs site (live examples) and a React Native app, so
 TypeScript comes first and must run in both the browser and React Native.
-Swift, Kotlin (Java-friendly) and Python follow once the shared layer has
+Swift, Kotlin (Java-friendly), Python and Ruby follow once the shared layer has
 proven itself.
 
 ## Language matrix
@@ -16,44 +16,46 @@ Generated from [`languages.json`](languages.json). Run `pnpm matrix` after
 changing it.
 
 <!-- MATRIX:START -->
-| Feature | TypeScript | Swift | Kotlin (Java-friendly) | Python |
-|---|:-:|:-:|:-:|:-:|
-| **Core** |  |  |  |  |
-| GraphQL transport + raw query escape hatch | ✅ | ⬜ | ⬜ | ⬜ |
-| Normalized error taxonomy | ✅ | ⬜ | ⬜ | ⬜ |
-| Action envelope unwrapping (`error` / `errors`) | ✅ | ⬜ | ⬜ | ⬜ |
-| Rate-limit headers, 429 retry, request chunking | 🟡 | ⬜ | ⬜ | ⬜ |
-| Types generated from `shared/operations` | ✅ | ⬜ | ⬜ | ⬜ |
-| **Auth** |  |  |  |  |
-| Personal access token | ✅ | ⬜ | ⬜ | ⬜ |
-| OAuth authorization code + PKCE | ⬜ | ⬜ | ⬜ | ⬜ |
-| OAuth device grant | ⬜ | ⬜ | ⬜ | ⬜ |
-| Refresh rotation + revoke | ⬜ | ⬜ | ⬜ | ⬜ |
-| **Resources** |  |  |  |  |
-| `me` (read) | ✅ | ⬜ | ⬜ | ⬜ |
-| `books` / `editions` (read) | ✅ | ⬜ | ⬜ | ⬜ |
-| `search` (read) | ✅ | ⬜ | ⬜ | ⬜ |
-| `library` (user books): read | ✅ | ⬜ | ⬜ | ⬜ |
-| `library` (user books): write | ✅ | ⬜ | ⬜ | ⬜ |
-| `reads` (dates + progress): read | ✅ | ⬜ | ⬜ | ⬜ |
-| `reads` (dates + progress): write | 🟡 | ⬜ | ⬜ | ⬜ |
-| `journal`: read | ✅ | ⬜ | ⬜ | ⬜ |
-| `journal`: write | ✅ | ⬜ | ⬜ | ⬜ |
-| `lists`: read | ✅ | ⬜ | ⬜ | ⬜ |
-| `lists`: write | ✅ | ⬜ | ⬜ | ⬜ |
-| `goals`: read | ✅ | ⬜ | ⬜ | ⬜ |
-| `goals`: write | ✅ | ⬜ | ⬜ | ⬜ |
-| **Testing** |  |  |  |  |
-| Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ |
-| Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ |
-| Contract tests vs `api-snapshot` | 🟡 | ⬜ | ⬜ | ⬜ |
-| Live integration tests: reads (opt-in) | ✅ | ⬜ | ⬜ | ⬜ |
-| Live integration tests: writes (opt-in, real-user flows) | ✅ | ⬜ | ⬜ | ⬜ |
-| **Runtimes** |  |  |  |  |
-| Node + browser (docs site) | 🟡 | ➖ | ➖ | ➖ |
-| React Native (Hermes) | ⬜ | ➖ | ➖ | ➖ |
-| **Release** |  |  |  |  |
-| Published to package registry | ⬜ | ⬜ | ⬜ | ⬜ |
+| Feature | TypeScript | Swift | Kotlin (Java-friendly) | Python | Ruby |
+|---|:-:|:-:|:-:|:-:|:-:|
+| **Core** |  |  |  |  |  |
+| GraphQL transport + raw query escape hatch | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Normalized error taxonomy | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Action envelope unwrapping (`error` / `errors`) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Rate-limit headers, 429 retry, request chunking | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
+| Types generated from `shared/operations` | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **Auth** |  |  |  |  |  |
+| Personal access token | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| OAuth authorization code + PKCE | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| OAuth device grant | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Refresh rotation + revoke | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **Resources** |  |  |  |  |  |
+| `me` (read) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `books` / `editions` (read) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `search` (read) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `library` (user books): read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `library` (user books): write | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `reads` (dates + progress): read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `reads` (dates + progress): write | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
+| `journal`: read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `journal`: write | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `lists`: read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `lists`: write | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `goals`: read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `goals`: write | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `vibes`: read | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `vibes`: write (Supporter perk) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **Testing** |  |  |  |  |  |
+| Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
+| Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Contract tests vs `api-snapshot` | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
+| Live integration tests: reads (opt-in) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Live integration tests: writes (opt-in, real-user flows) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| **Runtimes** |  |  |  |  |  |
+| Node + browser (docs site) | 🟡 | ➖ | ➖ | ➖ | ➖ |
+| React Native (Hermes) | 🟡 | ➖ | ➖ | ➖ | ➖ |
+| **Release** |  |  |  |  |  |
+| Published to package registry | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ✅ done · 🟡 partial · ⬜ planned · ➖ not applicable
 <!-- MATRIX:END -->
@@ -73,7 +75,7 @@ shared/
   environments.json  prod / staging / local endpoints
   conformance/    language-neutral behavior tests every SDK must pass
   fixtures/       recorded, scrubbed API responses for mock clients
-packages/         one directory per language (typescript/ first)
+packages/         one directory per language (typescript/ first), plus playground/
 scripts/          case-operations, validate-operations, render-matrix
 spec/             the design
 ```
@@ -98,6 +100,23 @@ pnpm install
 pnpm validate:operations   # shared/operations vs api-snapshot/schema.graphql
 pnpm matrix                # regenerate the table above
 ```
+
+## Playground
+
+A local page for trying any SDK call against a real API:
+
+```sh
+pnpm playground   # http://localhost:5173
+```
+
+Paste a personal access token under Connection (kept in that browser's local
+storage; local development only), pick a resource and method, fill in the
+inputs, and run it. The page shows the result, every request the SDK sent, the
+rate-limit state, and typed errors with their fields. Methods that change data
+are labeled, and anything that deletes asks first.
+
+Local setup: browsers only see the rate-limit headers if local Hasura runs with
+`HASURA_GRAPHQL_DISABLE_CORS: "true"` (spec/04, spec/06 #24).
 
 ## Live tests
 

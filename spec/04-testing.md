@@ -76,6 +76,22 @@ Running the drift check against **staging** is how we find out before prod
 does. It's worth wiring into the app repo's deploy pipeline later, so an app
 PR that breaks an SDK operation is flagged on the PR itself.
 
+### React Native (Hermes) check
+
+`pnpm hermes:smoke` bundles a smoke script and checks it two ways:
+1. **Syntax:** transforms the bundle with `@react-native/babel-preset`
+   (`hermes-stable`, as Metro ships it) and compiles it with the current
+   `hermesc` from `hermes-compiler`. Runs everywhere, including CI.
+2. **Runtime** (with `HERMES_BIN`): lowers everything and runs it on a Hermes
+   CLI engine, driving the SDK through `MockTransport`. The CLI has no `Intl`
+   time zones, so date checks skip there.
+
+`tests/runtime-globals.test.ts` guards the same ground statically (no
+Node-only or browser-only globals in `src/`, and no `await` inside an object
+spread, which React Native's async transform miscompiles). The definitive check
+is a smoke screen in the real React Native app, when that work starts; until
+then the matrix row stays 🟡.
+
 ## Layer 3: live integration
 
 These run real operations against a real server. **Mocks are always the
@@ -153,6 +169,22 @@ Against a local stack (`make` in `app/`, API on `:8081`):
 For a Conductor workspace, use `HARDCOVER_API_URL=http://localhost:$((CONDUCTOR_PORT+1))/v1/graphql`.
 Running the SDK's live suite against a workspace with an API change in flight
 is the fastest way to see whether that change breaks SDK consumers.
+
+**Browser setup (local).** Until the API fix for spec/06 #24 lands, local Hasura
+needs `HASURA_GRAPHQL_DISABLE_CORS: "true"` (e.g. in an untracked
+`app/docker-compose.override.yml` under `services.hasura.environment`, then
+`docker compose up -d hasura`). Without it browsers can't read the rate-limit
+headers, so the playground and browser apps can't pace proactively. Check a
+target with:
+
+```sh
+curl -s -D - -o /dev/null -X POST <graphql-url> -H "Origin: https://example.com" \
+  -H "content-type: application/json" -H "authorization: Bearer <token>" \
+  -d '{"query":"{ me { id } }"}' | grep -i access-control-expose
+```
+
+`RateLimit-Policy, RateLimit, …` is good; `X-Hasura-Query-Cache-Key, …` means
+the headers are hidden.
 
 **Search after a restore.** A restored staging dump has no Typesense index, so
 `search` returns `"Not found."` and the live search tests skip.
