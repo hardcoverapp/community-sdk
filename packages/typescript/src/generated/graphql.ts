@@ -21,6 +21,25 @@ export type DatesReadInput = {
   started_at?: string | null | undefined;
 };
 
+export type GoalConditionInput = {
+  authorBipoc?: number | null | undefined;
+  authorGenderIds?: Array<number | null | undefined> | null | undefined;
+  authorLgbtqia?: number | null | undefined;
+  bookCategoryIds?: Array<number | null | undefined> | null | undefined;
+  readingFormatId?: number | null | undefined;
+};
+
+export type GoalInput = {
+  archived?: boolean | null | undefined;
+  conditions: GoalConditionInput;
+  description: string;
+  end_date: string;
+  goal: number;
+  metric: string;
+  privacy_setting_id?: number | null | undefined;
+  start_date: string;
+};
+
 export type ListBookInput = {
   book_id: number;
   edition_id?: number | null | undefined;
@@ -4770,6 +4789,35 @@ export type UserProfileFragment = { id: number, username: string | null, name: s
 
 export type MeFragment = { timezone: string | null, id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, defaultReadingFormatId: number | null, accountPrivacySettingId: number, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string };
 
+export type CreateGoalMutationVariables = Exact<{
+  object: GoalInput;
+}>;
+
+
+export type CreateGoalMutation = { insert_goal: { id: number | null, errors: Array<string | null> | null, goal: { id: number, metric: string, goal: number, progress: number, description: string | null, conditions: unknown, archived: boolean, state: string, startDate: string, endDate: string, completedAt: string | null, privacySettingId: number | null } | null } | null };
+
+export type UpdateGoalMutationVariables = Exact<{
+  id: number;
+  object: GoalInput;
+}>;
+
+
+export type UpdateGoalMutation = { update_goal: { id: number | null, errors: Array<string | null> | null, goal: { id: number, metric: string, goal: number, progress: number, description: string | null, conditions: unknown, archived: boolean, state: string, startDate: string, endDate: string, completedAt: string | null, privacySettingId: number | null } | null } | null };
+
+export type RefreshGoalProgressMutationVariables = Exact<{
+  id: number;
+}>;
+
+
+export type RefreshGoalProgressMutation = { update_goal_progress: { id: number | null, errors: Array<string | null> | null, goal: { id: number, metric: string, goal: number, progress: number, description: string | null, conditions: unknown, archived: boolean, state: string, startDate: string, endDate: string, completedAt: string | null, privacySettingId: number | null } | null } | null };
+
+export type DeleteGoalMutationVariables = Exact<{
+  id: number;
+}>;
+
+
+export type DeleteGoalMutation = { delete_goal: { id: number | null, errors: Array<string | null> | null } | null };
+
 export type AddJournalEntryMutationVariables = Exact<{
   object: ReadingJournalCreateType;
 }>;
@@ -4943,6 +4991,13 @@ export type GetGoalsQueryVariables = Exact<{
 
 
 export type GetGoalsQuery = { goals: Array<{ id: number, metric: string, goal: number, progress: number, description: string | null, conditions: unknown, archived: boolean, state: string, startDate: string, endDate: string, completedAt: string | null, privacySettingId: number | null }> };
+
+export type GetGoalQueryVariables = Exact<{
+  id: number;
+}>;
+
+
+export type GetGoalQuery = { goals_by_pk: { id: number, metric: string, goal: number, progress: number, description: string | null, conditions: unknown, archived: boolean, state: string, startDate: string, endDate: string, completedAt: string | null, privacySettingId: number | null } | null };
 
 export type GetLibraryQueryVariables = Exact<{
   userId: number;
@@ -5350,6 +5405,86 @@ export const MeFragmentDoc = new TypedDocumentString(`
   pro
   createdAt: created_at
 }`, {"fragmentName":"Me"}) as unknown as TypedDocumentString<MeFragment, unknown>;
+export const CreateGoalDocument = new TypedDocumentString(`
+    mutation CreateGoal($object: GoalInput!) {
+  insert_goal(object: $object) {
+    id
+    errors
+    goal {
+      ...Goal
+    }
+  }
+}
+    fragment Goal on goals {
+  id
+  metric
+  goal
+  progress
+  description
+  startDate: start_date
+  endDate: end_date
+  conditions
+  archived
+  completedAt: completed_at
+  state
+  privacySettingId: privacy_setting_id
+}`) as unknown as TypedDocumentString<CreateGoalMutation, CreateGoalMutationVariables>;
+export const UpdateGoalDocument = new TypedDocumentString(`
+    mutation UpdateGoal($id: Int!, $object: GoalInput!) {
+  update_goal(id: $id, object: $object) {
+    id
+    errors
+    goal {
+      ...Goal
+    }
+  }
+}
+    fragment Goal on goals {
+  id
+  metric
+  goal
+  progress
+  description
+  startDate: start_date
+  endDate: end_date
+  conditions
+  archived
+  completedAt: completed_at
+  state
+  privacySettingId: privacy_setting_id
+}`) as unknown as TypedDocumentString<UpdateGoalMutation, UpdateGoalMutationVariables>;
+export const RefreshGoalProgressDocument = new TypedDocumentString(`
+    mutation RefreshGoalProgress($id: Int!) {
+  update_goal_progress(id: $id) {
+    id
+    errors
+    goal {
+      ...Goal
+    }
+  }
+}
+    fragment Goal on goals {
+  id
+  metric
+  goal
+  progress
+  description
+  startDate: start_date
+  endDate: end_date
+  conditions
+  archived
+  completedAt: completed_at
+  state
+  privacySettingId: privacy_setting_id
+}`) as unknown as TypedDocumentString<RefreshGoalProgressMutation, RefreshGoalProgressMutationVariables>;
+export const DeleteGoalDocument = new TypedDocumentString(`
+    mutation DeleteGoal($id: Int!) {
+  delete_goal(id: $id) {
+    id
+    errors
+  }
+}
+    `) as unknown as TypedDocumentString<DeleteGoalMutation, DeleteGoalMutationVariables>;
 export const AddJournalEntryDocument = new TypedDocumentString(`
     mutation AddJournalEntry($object: ReadingJournalCreateType!) {
   insert_reading_journal(object: $object) {
@@ -5945,6 +6080,26 @@ export const GetGoalsDocument = new TypedDocumentString(`
   state
   privacySettingId: privacy_setting_id
 }`) as unknown as TypedDocumentString<GetGoalsQuery, GetGoalsQueryVariables>;
+export const GetGoalDocument = new TypedDocumentString(`
+    query GetGoal($id: Int!) {
+  goals_by_pk(id: $id) {
+    ...Goal
+  }
+}
+    fragment Goal on goals {
+  id
+  metric
+  goal
+  progress
+  description
+  startDate: start_date
+  endDate: end_date
+  conditions
+  archived
+  completedAt: completed_at
+  state
+  privacySettingId: privacy_setting_id
+}`) as unknown as TypedDocumentString<GetGoalQuery, GetGoalQueryVariables>;
 export const GetLibraryDocument = new TypedDocumentString(`
     query GetLibrary($userId: Int!, $statusIds: [Int!] = [1, 2, 3, 4, 5, 6], $limit: Int = 25, $offset: Int = 0, $orderBy: [user_books_order_by!] = [{ updated_at: desc_nulls_last }]) {
   user_books(

@@ -22,3 +22,4 @@ export { SearchResource, type RawSearch, type SearchOptions, type SearchResults 
 export type * from "./resources/search-types.ts";
 export { BooksResource, type Book, type BookSummary, type Edition, type EditionWithBook } from "./resources/books.ts";
 export { JournalResource, type JournalEntry, type JournalEntryInput, type JournalTag } from "./resources/journal.ts";
+export { GoalsResource, goalProgress, type Goal, type GoalFields } from "./resources/goals.ts";

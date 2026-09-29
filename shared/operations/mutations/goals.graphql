@@ -1,0 +1,40 @@
+# update_goal takes the whole GoalInput (every field but privacy and archived
+# is required), so partial updates must merge with the current goal first.
+# Creating and updating both recalculate progress on the server.
+
+mutation CreateGoal($object: GoalInput!) {
+  insert_goal(object: $object) {
+    id
+    errors
+    goal {
+      ...Goal
+    }
+  }
+}
+
+mutation UpdateGoal($id: Int!, $object: GoalInput!) {
+  update_goal(id: $id, object: $object) {
+    id
+    errors
+    goal {
+      ...Goal
+    }
+  }
+}
+
+mutation RefreshGoalProgress($id: Int!) {
+  update_goal_progress(id: $id) {
+    id
+    errors
+    goal {
+      ...Goal
+    }
+  }
+}
+
+mutation DeleteGoal($id: Int!) {
+  delete_goal(id: $id) {
+    id
+    errors
+  }
+}

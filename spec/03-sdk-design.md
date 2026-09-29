@@ -27,7 +27,8 @@ of this.
    limits, input mapping) and to gaps the API doesn't cover yet. Each such gap
    is documented as a candidate to move into the API, with its extra request
    count stated. Current gaps: percent progress (the API takes only pages or
-   seconds) and the local-date default when marking a book Read.
+   seconds), the local-date default when marking a book Read, and applying
+   privacy after goal creation (spec/06 #22).
 3. **Always an escape hatch.** `client.graphql(query, variables)` runs anything
    the token allows, with the same auth, retries and error mapping.
 4. **Fail loudly, typed.** Every failure becomes a class from
@@ -221,7 +222,7 @@ Each method notes its operation, its required scope and any extra requests.
 | `reads` | `list(userBookId)`, `current(userBookId)`, `setProgress(userBookId, { pages \| seconds \| percent, occurredAt })`. Starting and finishing are driven by `library.setStatus` (Currently Reading starts a read, a new one on a re-read; Read finishes it). Manual date editing (`start`/`finish`/`update`/`remove` with explicit dates) is planned | GetUserBook, UpdateUserBookRead (later: AddUserBookRead, RemoveUserBookRead) |
 | `journal` | `forBook(bookId, page)`, `add({ bookId, event = note, entry, privacy = the user's account setting, editionId, date, tags = [], metadata })`, `update(id, patch)`, `remove(id)`, `clearForBook(bookId)`. Everything the API allows, any `JournalEvent`; each server-written event's doc comment names the call that already writes it (adding it manually duplicates it; a manual `progress_updated` merges into the day's entry). Journal `date` is a day (the API's `action_at` here is a date, not a timestamp) | GetJournalForBook, AddJournalEntry, UpdateJournalEntry, DeleteJournalEntry, ClearJournalForBook |
 | `lists` | `mine(page)`, `forUser(userId, page)`, `get(id, page)`, `create`, `update`, `delete`, `addBook(listId, bookId, { editionId, position })`, `removeBook(listId, bookId)` (2 requests; returns false if absent), `addBooks(listId, codes)`: bulk add by exact ISBN-13/ISBN-10 (one lookup, adds batched 5 per request, per-item retry on a failed batch; unmatched codes such as UPCs are reported as `no_exact_edition`, never guessed) | GetListsForUser, GetList, CreateList, UpdateList, DeleteList, AddBookToList, FindListBook, RemoveListBook, FindEditionsByIsbn |
-| `goals` | `list({ includeArchived })`, `create`, `update`, `archive`, `delete`, plus progress per the API (`update_goal_progress`; if the server calculates progress, documented as the server's job like the journal) | GetGoals, (new) CreateGoal, UpdateGoal, DeleteGoal, UpdateGoalProgress |
+| `goals` | `list({ includeArchived })`, `get(id)`, `create(fields)`, `update(id, patch)` (2 requests: the API's update takes the whole goal, so the SDK reads and merges), `archive`/`unarchive`, `refreshProgress(id)`, `delete(id)`; plus `goalProgress(goal)` → `{ current, target, percent }` in the goal's unit (hour goals: target in hours, API progress in seconds). Progress is server-calculated. `create` applies a requested privacy with one follow-up update while the API ignores it on create (spec/06 #22) | GetGoals, GetGoal, CreateGoal, UpdateGoal, RefreshGoalProgress, DeleteGoal |
 
 Methods scoped to "my" data resolve `userId` from `me.get()`, which is cached
 per client. Callers can pass `userId` to skip that request.

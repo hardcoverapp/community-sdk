@@ -273,5 +273,29 @@
         "doc": "Written by the server from a library entry's recommendedBy."
       }
     ]
+  },
+  "GoalMetric": {
+    "source": "app/rails/app/models/goal.rb (validates :metric, inclusion: book page hour)",
+    "type": "string",
+    "field": "metric",
+    "notes": "Progress is calculated by the server; apps never set it. For hour goals, `goal` is hours and `progress` is seconds (app/rails/app/models/goal.rb computed_progress).",
+    "values": [
+      {
+        "id": "book",
+        "key": "BOOK",
+        "label": "Books finished"
+      },
+      {
+        "id": "page",
+        "key": "PAGE",
+        "label": "Pages read"
+      },
+      {
+        "id": "hour",
+        "key": "HOUR",
+        "label": "Hours listened or read",
+        "doc": "The goal is in hours but the API's `progress` is in seconds. Compare them with goalProgress()."
+      }
+    ]
   }
 }

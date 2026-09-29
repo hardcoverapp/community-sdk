@@ -17,3 +17,9 @@ query GetGoals($userId: Int!, $includeArchived: Boolean = false) {
     ...Goal
   }
 }
+
+query GetGoal($id: Int!) {
+  goals_by_pk(id: $id) {
+    ...Goal
+  }
+}

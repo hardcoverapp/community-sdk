@@ -40,6 +40,15 @@ a decision before the SDK depends on it. Record decisions in
     when a read starts and finishes. `shared/enums.json` JournalEvent has the
     full list with labels; use it on the docs branch.
 
+22. **Goal privacy is ignored on create.** `GoalsController#new_goal` merges
+    `privacy_setting_id: current_user.account_privacy_setting_id` over the
+    input, so `insert_goal` always uses the account default even though
+    `GoalInput.privacy_setting_id` is accepted. `update_goal` respects it.
+    The SDK works around it with one follow-up update; remove that once fixed.
+23. **Docs site: goal metrics.** `field-descriptions.json` says "books, pages,
+    etc."; the model validates exactly `book`, `page`, `hour` (singular), and
+    hour goals report `progress` in seconds against a target in hours.
+
 ## Environment and access
 
 7. **Staging web host.** `api-staging.hardcover.app` is confirmed. What's the

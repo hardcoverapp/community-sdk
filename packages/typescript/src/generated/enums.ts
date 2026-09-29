@@ -97,3 +97,14 @@ export const JournalEvent = {
   ReferredBy: "referred_by",
 } as const;
 export type JournalEvent = (typeof JournalEvent)[keyof typeof JournalEvent];
+
+/** Progress is calculated by the server; apps never set it. For hour goals, `goal` is hours and `progress` is seconds (app/rails/app/models/goal.rb computed_progress). Source: app/rails/app/models/goal.rb (validates :metric, inclusion: book page hour) */
+export const GoalMetric = {
+  /** Books finished */
+  Book: "book",
+  /** Pages read */
+  Page: "page",
+  /** Hours listened or read. The goal is in hours but the API's `progress` is in seconds. Compare them with goalProgress(). */
+  Hour: "hour",
+} as const;
+export type GoalMetric = (typeof GoalMetric)[keyof typeof GoalMetric];

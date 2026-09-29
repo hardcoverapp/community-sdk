@@ -41,14 +41,14 @@ changing it.
 | `journal`: write | ✅ | ⬜ | ⬜ | ⬜ |
 | `lists`: read | ✅ | ⬜ | ⬜ | ⬜ |
 | `lists`: write | ✅ | ⬜ | ⬜ | ⬜ |
-| `goals`: read | ⬜ | ⬜ | ⬜ | ⬜ |
-| `goals`: write | ⬜ | ⬜ | ⬜ | ⬜ |
+| `goals`: read | ✅ | ⬜ | ⬜ | ⬜ |
+| `goals`: write | ✅ | ⬜ | ⬜ | ⬜ |
 | **Testing** |  |  |  |  |
 | Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ |
 | Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ |
 | Contract tests vs `api-snapshot` | 🟡 | ⬜ | ⬜ | ⬜ |
 | Live integration tests: reads (opt-in) | ✅ | ⬜ | ⬜ | ⬜ |
-| Live integration tests: writes (opt-in, real-user flows) | 🟡 | ⬜ | ⬜ | ⬜ |
+| Live integration tests: writes (opt-in, real-user flows) | ✅ | ⬜ | ⬜ | ⬜ |
 | **Runtimes** |  |  |  |  |
 | Node + browser (docs site) | 🟡 | ➖ | ➖ | ➖ |
 | React Native (Hermes) | ⬜ | ➖ | ➖ | ➖ |

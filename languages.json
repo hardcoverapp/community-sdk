@@ -174,7 +174,7 @@
         "res-me": "done",
         "res-library-read": "done",
         "res-library-write": "done",
-        "test-live-write": "partial",
+        "test-live-write": "done",
         "res-reads-read": "done",
         "res-reads-write": "partial",
         "res-lists-read": "done",
@@ -182,7 +182,9 @@
         "res-search": "done",
         "res-books": "done",
         "res-journal-read": "done",
-        "res-journal-write": "done"
+        "res-journal-write": "done",
+        "res-goals-read": "done",
+        "res-goals-write": "done"
       },
       "examples": {
         "res-me": "examples/quick-start.ts",
@@ -195,7 +197,9 @@
         "res-search": "examples/search.ts",
         "res-books": "examples/books.ts",
         "res-journal-read": "examples/journal.ts",
-        "res-journal-write": "examples/journal.ts"
+        "res-journal-write": "examples/journal.ts",
+        "res-goals-read": "examples/goals.ts",
+        "res-goals-write": "examples/goals.ts"
       }
     },
     {
