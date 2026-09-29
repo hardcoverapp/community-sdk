@@ -112,6 +112,16 @@
       "label": "`goals`: write"
     },
     {
+      "id": "res-vibes-read",
+      "group": "Resources",
+      "label": "`vibes`: read"
+    },
+    {
+      "id": "res-vibes-write",
+      "group": "Resources",
+      "label": "`vibes`: write (Supporter perk)"
+    },
+    {
       "id": "test-mock",
       "group": "Testing",
       "label": "Mock transport + shared fixtures"
@@ -184,7 +194,8 @@
         "res-journal-read": "done",
         "res-journal-write": "done",
         "res-goals-read": "done",
-        "res-goals-write": "done"
+        "res-goals-write": "done",
+        "rt-react-native": "partial"
       },
       "examples": {
         "res-me": "examples/quick-start.ts",
@@ -234,6 +245,18 @@
         "rt-web": "n/a",
         "rt-react-native": "n/a"
       }
+    },
+    {
+      "id": "ruby",
+      "name": "Ruby",
+      "path": "packages/ruby",
+      "package": "TBD (RubyGems)",
+      "tier": "next",
+      "support": {
+        "rt-web": "n/a",
+        "rt-react-native": "n/a"
+      },
+      "examples": {}
     }
   ]
 }

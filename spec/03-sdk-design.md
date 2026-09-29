@@ -361,6 +361,16 @@ the server's entry carries when the reading actually happened.
   - No `Flow`, `Result` or inline value classes in the Java-visible API.
   - Codegen: `apollo-kotlin` Kotlin models from the shared documents.
   - OkHttp transport.
+- **Ruby** (requested by the API side, 2026-09-28; Hardcover itself runs on
+  Rails).
+  - snake_case (`--case snake`: the canonical operations, unchanged), Ruby
+    naming (`library.set_status`, `goals.refresh_progress`), keyword arguments
+    for options.
+  - A plain-Ruby gem with no Rails dependency, so it works in scripts, bots and
+    Rails apps alike. `Net::HTTP` transport (or Faraday if an adapter is
+    wanted), Zeitwerk loading, RBS signatures generated from the operations.
+  - Same shared contract: enums, errors, conformance cases and environments
+    from `shared/`.
 - **Python.**
   - Sync and async clients over `httpx`.
   - Codegen: `ariadne-codegen` (pydantic models) from the same documents.
