@@ -199,7 +199,9 @@ Source: `api/app/controllers/api/application_controller.rb`,
   | supporter | 15 | 1/s | 50,000 |
 
 - **Cost** is the number of top-level fields in the request, with fragments
-  expanded. Introspection and `insert_reading_journal` cost 0.
+  expanded, with a minimum of 1 per request. Introspection and
+  `insert_reading_journal` fields add nothing, so a request of only those
+  costs 1.
 - **Oversized requests.** A request with more top-level fields than the burst
   capacity is refused with 403. The docs state a flat limit of 5 top-level
   fields and 1 `search` per request, so **the SDK chunks at 5**, which is safe

@@ -26,8 +26,12 @@ describe("requestCost", () => {
     expect(requestCost('query { # a { b } c\n search(query: "x { y } z", per_page: 1) { ids } }')).toBe(1);
   });
 
-  it("does not charge introspection or the allowlisted journal insert", () => {
-    expect(requestCost("query { __schema { types { name } } }")).toBe(0);
+  it("free fields don't add to the count, but every request costs at least 1", () => {
+    // The gateway: [total_fields, 1].max (api/app/controllers/api/application_controller.rb).
+    expect(requestCost("query { __schema { types { name } } }")).toBe(1);
+    expect(requestCost("mutation { insert_reading_journal(object: {}) { id } }")).toBe(1);
+    expect(requestCost("mutation { a: insert_reading_journal(object: {}) { id } b: insert_reading_journal(object: {}) { id } }")).toBe(1);
     expect(requestCost("mutation { insert_reading_journal(object: {}) { id } other: delete_list(id: 1) { success } }")).toBe(1);
+    expect(requestCost("mutation { x: delete_list(id: 1) { success } y: delete_list(id: 2) { success } }")).toBe(2);
   });
 });

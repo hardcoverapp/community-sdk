@@ -1,6 +1,8 @@
 // Mirrors the gateway's request weighting: one unit per top-level field
-// (app/api/app/services/graphql_query_limit.rb). Introspection and the
-// allowlisted insert_reading_journal are free. Used only to pace requests,
+// (app/api/app/services/graphql_query_limit.rb), with a minimum of 1 per
+// request ([total_fields, 1].max in api/app/controllers/api/application_controller.rb).
+// Introspection and the allowlisted insert_reading_journal add nothing, but a
+// request made only of them still costs 1. Used only to pace requests,
 // so a small scanner is enough; no GraphQL parser ships in the SDK.
 const FREE = new Set(["__schema", "__type", "__typename", "insert_reading_journal"]);
 
@@ -28,7 +30,7 @@ export function requestCost(query: string): number {
   for (;;) {
     const rest = src.slice(i);
     const m = /\S/.exec(rest);
-    if (!m) return 0;
+    if (!m) return 1; // nothing parseable still costs 1 at the gateway
     i += m.index;
     if (src.startsWith("fragment", i)) skipBlock();
     else break;
@@ -66,5 +68,5 @@ export function requestCost(query: string): number {
     }
     if (!/\s/.test(ch)) prevSignificant = ch;
   }
-  return cost;
+  return Math.max(cost, 1);
 }

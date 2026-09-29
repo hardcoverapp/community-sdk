@@ -163,7 +163,8 @@ packaging and test tooling.
 ### Pacing
 
 On by default (`pace: false` turns it off). The gateway charges one unit per
-top-level field (introspection and `insert_reading_journal` are free), and every
+top-level field, minimum 1 per request (introspection and
+`insert_reading_journal` fields add nothing), and every
 response reports the remaining burst allowance and refill rate. Before sending,
 the client counts its own request's cost the same way and, if the last known
 allowance is short, sleeps until enough has refilled. A 429 is still handled
