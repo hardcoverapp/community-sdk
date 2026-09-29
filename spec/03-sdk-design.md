@@ -246,7 +246,7 @@ Each method notes its operation, its required scope and any extra requests.
 |---|---|---|
 | `me` | `get()` (cached per client) | Me |
 | `books` | `get(id)`, `getBySlug(slug)`, `getMany(ids)` (in the order given; missing ids skipped), `editions(bookId, page)`, `findByIsbn(isbns)` (exact ISBN-13/10, spaces and hyphens fine), `trending({ duration, limit, offset })` (2 requests: ids, then books, in trending order). Read-only; catalog writes need librarian roles and come later | GetBook, GetBookBySlug, GetBooks, GetEditionsForBook, FindEditionsByIsbn, TrendingBookIds |
-| `search` | `books`, `authors`, `series`, `characters`, `lists`, `prompts`, `publishers`, `users` (query, `{ page, perPage, fields, weights, typos, sort, filterBy }`) → `{ hits, ids, found, page, perPage }` with numeric ids and idiomatic keys; `raw(query, { type })` untouched. The query passes straight through (a scanned ISBN works as-is); the API owns matching | Search |
+| `search` | `books`, `authors`, `series`, `characters`, `lists`, `prompts`, `publishers`, `users` (query, `{ page, perPage, fields, weights, typos, sort, filterBy }`) → `{ hits, ids, found, page, perPage }` with numeric ids and idiomatic keys; `raw(query, { type })` untouched. The query passes straight through; the API owns matching. Barcode scans use exact ISBN lookup instead (see Search below) | Search |
 | `library` | `list({ status, limit, offset })`, `count({ status })`, `forBook(bookId)`, `get(id)`, `add(bookId, options)`, `update(id, patch)`, `setStatus(id, status, { date, occurredAt })`, `rate(id, rating)`, `remove(id)`. `status` is one value or a list. Planned: `iterate({ status })` | GetLibrary, CountLibrary, GetUserBookForBook, GetUserBook, AddUserBook, UpdateUserBook, RemoveUserBook |
 | `reads` | `list(userBookId)`, `current(userBookId)`, `setProgress(userBookId, { pages \| seconds \| percent, occurredAt })`. Starting and finishing are driven by `library.setStatus` (Currently Reading starts a read, a new one on a re-read; Read finishes it). Manual date editing (`start`/`finish`/`update`/`remove` with explicit dates) is planned | GetUserBook, UpdateUserBookRead (later: AddUserBookRead, RemoveUserBookRead) |
 | `journal` | `forBook(bookId, page)`, `add({ bookId, event = note, entry, privacy = the user's account setting, editionId, date, tags = [], metadata })`, `update(id, patch)`, `delete(id)`, `clearForBook(bookId)`. Everything the API allows, any `JournalEvent`; each server-written event's doc comment names the call that already writes it (adding it manually duplicates it; a manual `progress_updated` merges into the day's entry). Journal `date` is a day (the API's `action_at` here is a date, not a timestamp) | GetJournalForBook, AddJournalEntry, UpdateJournalEntry, DeleteJournalEntry, ClearJournalForBook |
@@ -281,6 +281,12 @@ the server's entry carries when the reading actually happened.
   through untouched; the API's own defaults apply. It returns typed hits with
   numeric ids and idiomatic keys, plus `found`.
 - `raw()` returns the untouched response.
+- **Barcode scans don't use search** (decided with the API side, 2026-09-28):
+  a scan identifies one edition, so apps match it exactly with
+  `books.findByIsbn` (single) or `lists.addBooks` (bulk) against
+  `isbn_13`/`isbn_10`. Search is only a fallback the app offers when there's
+  no exact match. (The web app's scanner currently feeds search; switching it
+  is an app-side change.)
 - Every call is 1 request, which counts as 1 of the 5 allowed top-level fields
   and is the only `search` allowed in that request.
 

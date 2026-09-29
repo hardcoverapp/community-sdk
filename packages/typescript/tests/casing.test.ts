@@ -3,6 +3,7 @@
 // before codegen, so the server returns camelCase keys and types match.
 import { describe, expect, it } from "vitest";
 import { caseOperations } from "../../../scripts/case-operations.mjs";
+import type { GetLibraryQuery } from "../src/index.ts";
 import { operations } from "../src/operations.ts";
 
 describe("caseOperations (camel)", () => {
@@ -57,8 +58,7 @@ describe("generated TypeScript operations", () => {
   it("produce camelCase result types", () => {
     // Compile-time check: these property accesses only type-check if codegen
     // produced camelCase fields. The runtime assertion keeps vitest honest.
-    type Library = Awaited<ReturnType<() => import("../src/index.ts").GetLibraryQuery>>;
-    const sample: Library["user_books"][number]["book"] = {
+    const sample: GetLibraryQuery["user_books"][number]["book"] = {
       id: 1, slug: null, title: null, subtitle: null, releaseYear: null, pages: null,
       audioSeconds: null, rating: null, ratingsCount: 0, usersCount: 0, cachedImage: null, cachedContributors: null,
     };

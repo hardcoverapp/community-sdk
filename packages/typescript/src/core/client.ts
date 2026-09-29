@@ -65,12 +65,21 @@ type Payload = {
   scope?: unknown;
 };
 
+// The injected clock stays off the public surface; resources read it here.
+const clocks = new WeakMap<HardcoverClient, () => Date>();
+
+/** Internal: the client's clock (the `now` option, or the system time). Not exported from the package. */
+export function clientNow(client: HardcoverClient): Date {
+  return (clocks.get(client) ?? (() => new Date()))();
+}
+
 export class HardcoverClient {
-  /** Rate-limit state from the most recent response that carried headers. */
-  rateLimit: RateLimitState | undefined;
+  /** Rate-limit state from the most recent response that carried headers. Read-only: pacing relies on it. */
+  get rateLimit(): RateLimitState | undefined {
+    return this.#rateLimit;
+  }
 
   readonly endpoint: string;
-  readonly now: () => Date;
   readonly me: MeResource;
   readonly library: LibraryResource;
   readonly reads: ReadsResource;
@@ -86,7 +95,9 @@ export class HardcoverClient {
   readonly #sleep: (ms: number) => Promise<void>;
   readonly #onRateLimit: ((state: RateLimitState) => void) | undefined;
   readonly #pace: boolean;
-  /** When `rateLimit` was received, in ms from `now()`. */
+  #rateLimit: RateLimitState | undefined;
+  readonly #now: () => Date;
+  /** When `rateLimit` was received, in ms from `#now()`. */
   #rateLimitAt = 0;
   /** Set after waiting out a 429; the wait already covered the refill. Cleared by the next headers. */
   #allowanceWaited = false;
@@ -99,7 +110,8 @@ export class HardcoverClient {
     this.#userAgent = options.userAgent ? `${options.userAgent} ${SDK_USER_AGENT}` : SDK_USER_AGENT;
     this.#sleep = options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
     this.#onRateLimit = options.onRateLimit;
-    this.now = options.now ?? (() => new Date());
+    this.#now = options.now ?? (() => new Date());
+    clocks.set(this, this.#now);
     this.#pace = options.pace ?? true;
     this.me = new MeResource(this);
     this.library = new LibraryResource(this);
@@ -165,8 +177,8 @@ export class HardcoverClient {
 
       const rateLimit = parseRateLimit(response.headers);
       if (rateLimit) {
-        this.rateLimit = rateLimit;
-        this.#rateLimitAt = this.now().getTime();
+        this.#rateLimit = rateLimit;
+        this.#rateLimitAt = this.#now().getTime();
         this.#allowanceWaited = false;
         this.#onRateLimit?.(rateLimit);
       }
@@ -208,7 +220,7 @@ export class HardcoverClient {
   // only headers the gateway sends; a 429 is still handled (and retried) if
   // pacing is off or another client shares the token.
   async #waitForAllowance(cost: number): Promise<void> {
-    const burst = this.rateLimit?.burst;
+    const burst = this.#rateLimit?.burst;
     if (!this.#pace || this.#allowanceWaited || burst?.remaining === undefined) return;
     const shortfall = cost - burst.remaining;
     if (shortfall <= 0) return;
@@ -218,7 +230,7 @@ export class HardcoverClient {
       burst.remaining === 0 ? (burst.resetSeconds ?? 0) : 0,
       perSecond ? shortfall / perSecond : (burst.resetSeconds ?? 0),
     );
-    const waitMs = waitSeconds * 1_000 - (this.now().getTime() - this.#rateLimitAt);
+    const waitMs = waitSeconds * 1_000 - (this.#now().getTime() - this.#rateLimitAt);
     if (waitMs > 0) await this.#sleep(waitMs);
   }
 }

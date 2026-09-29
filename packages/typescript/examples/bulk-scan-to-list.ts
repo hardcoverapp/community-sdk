@@ -1,5 +1,9 @@
 /**
- * Scanning a shelf of books into a list.
+ * Scanning barcodes into a list.
+ *
+ * Scans match the edition exactly by ISBN-13 or ISBN-10, never through
+ * search: the barcode identifies one specific edition, and that's the one
+ * that should land on the list. (Decided with the API side, 2026-09-28.)
  *
  * lists.addBooks takes the raw scanner output. It matches exact ISBN-13 and
  * ISBN-10 only (spaces and hyphens are fine) and never guesses:
@@ -11,6 +15,17 @@
  */
 import { HardcoverClient, PrivacySetting } from "@hardcover/sdk";
 
+/** One scan: the exact edition, or nothing. */
+export async function scanToList(hc: HardcoverClient, scanned: string, listId: number) {
+  const [edition] = await hc.books.findByIsbn([scanned]); // "978-0-593-13520-4" works as-is
+  if (!edition) {
+    // Not an ISBN we know, or a UPC. Offer a title search instead of guessing.
+    return console.log("No exact match. Try the ISBN barcode, usually inside the cover, or search by title.");
+  }
+  await hc.lists.addBook(listId, edition.bookId, { editionId: edition.id });
+}
+
+/** A whole shelf at once. */
 export async function bulkScanToList(hc: HardcoverClient, scannedCodes: string[]) {
   const list = await hc.lists.create({ name: "Book club shelf", privacy: PrivacySetting.Private });
 

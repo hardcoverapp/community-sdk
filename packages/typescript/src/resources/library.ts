@@ -1,4 +1,4 @@
-import type { HardcoverClient } from "../core/client.ts";
+import { clientNow, type HardcoverClient } from "../core/client.ts";
 import { localDate, toActionAt, type OccurredAt } from "../core/dates.ts";
 import { NotFoundError } from "../core/errors.ts";
 import { UserBookStatus, type PrivacySetting } from "../generated/enums.ts";
@@ -56,7 +56,7 @@ const WIRE: Record<Exclude<keyof LibraryEntryPatch, "review" | "occurredAt">, st
 
 const REVIEW_WIRE = { markdown: "review_markdown", hasSpoilers: "review_has_spoilers", reviewedAt: "reviewed_at" } as const;
 
-export function assertRating(rating: number | null | undefined): void {
+function assertRating(rating: number | null | undefined): void {
   if (rating === null || rating === undefined) return;
   if (!Number.isFinite(rating) || rating < 0.5 || rating > 5 || !Number.isInteger(rating * 2)) {
     throw new RangeError(`Rating must be 0.5 to 5 in steps of 0.5, or null to clear it (got ${rating})`);
@@ -168,6 +168,6 @@ export class LibraryResource {
     assertRating(patch.rating);
     if (patch.status !== UserBookStatus.Read || patch.date !== undefined) return patch;
     const { timezone } = await this.client.me.get();
-    return { ...patch, date: localDate(this.client.now(), timezone) };
+    return { ...patch, date: localDate(clientNow(this.client), timezone) };
   }
 }

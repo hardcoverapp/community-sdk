@@ -86,6 +86,7 @@ export class ActionError extends HardcoverError {
   }
 }
 
+/** Reserved for the OAuth helpers (planned; spec/03 Auth). Nothing raises it yet. */
 export class OAuthError extends HardcoverError {
   constructor(
     readonly code: string,
