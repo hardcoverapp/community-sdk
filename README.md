@@ -32,7 +32,7 @@ changing it.
 | **Resources** |  |  |  |  |
 | `me` (read) | ✅ | ⬜ | ⬜ | ⬜ |
 | `books` / `editions` (read) | ⬜ | ⬜ | ⬜ | ⬜ |
-| `search` (read) | ⬜ | ⬜ | ⬜ | ⬜ |
+| `search` (read) | ✅ | ⬜ | ⬜ | ⬜ |
 | `library` (user books): read | ✅ | ⬜ | ⬜ | ⬜ |
 | `library` (user books): write | ✅ | ⬜ | ⬜ | ⬜ |
 | `reads` (dates + progress): read | ✅ | ⬜ | ⬜ | ⬜ |
@@ -41,7 +41,8 @@ changing it.
 | `journal`: write | ⬜ | ⬜ | ⬜ | ⬜ |
 | `lists`: read | ✅ | ⬜ | ⬜ | ⬜ |
 | `lists`: write | ✅ | ⬜ | ⬜ | ⬜ |
-| `goals` (read) | ⬜ | ⬜ | ⬜ | ⬜ |
+| `goals`: read | ⬜ | ⬜ | ⬜ | ⬜ |
+| `goals`: write | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Testing** |  |  |  |  |
 | Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ |
 | Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ |

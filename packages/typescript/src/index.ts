@@ -18,3 +18,5 @@ export {
 } from "./resources/library.ts";
 export { ReadsResource, type ProgressInput, type Read, type UpdatedRead } from "./resources/reads.ts";
 export { ListsResource, type AddBooksResult, type List, type ListBookRow, type ListInput, type ListWithBooks } from "./resources/lists.ts";
+export { SearchResource, type RawSearch, type SearchOptions, type SearchResults } from "./resources/search.ts";
+export type * from "./resources/search-types.ts";

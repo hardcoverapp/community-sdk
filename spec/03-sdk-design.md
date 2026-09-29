@@ -172,6 +172,14 @@ TypeScript, Swift and Kotlin use camelCase; Python uses snake_case.
 - **JSON column contents** keep their stored keys. Hand-written types for
   `cached_image` and similar may expose idiomatic names, but that mapping is
   explicit per type, never a blanket conversion.
+- **Exception: search hits.** Search documents come from the index as JSON
+  with snake_case keys and string ids. Their keys are index field names, never
+  user content, so the SDK converts them all to the language's casing and ids
+  to numbers. `search.raw()` keeps the untouched response.
+- **Planned: field descriptions as doc comments.** The docs site's
+  hand-written `field-descriptions.json` (e.g. "Category ID (1=Book,
+  2=Novella, …)") can feed codegen so generated types carry them as hover
+  tooltips in every language. Nice-to-have, not a v1 requirement.
 - **This differs from the app**, which aliases by hand in each query. Hand
   aliases are what drifted in the old `sdk/` scaffold; generated aliases can't.
 
@@ -208,12 +216,12 @@ Each method notes its operation, its required scope and any extra requests.
 |---|---|---|
 | `me` | `get()` (cached per client) | Me |
 | `books` | `get(id)`, `getBySlug(slug)`, `getMany(ids)`, `editions(bookId, page)`, `findByIsbn(isbns)`, `trending({duration, page})` (2 requests: ids, then books) | GetBook, GetBookBySlug, GetBooks, GetEditionsForBook, FindEditionsByIsbn, TrendingBookIds |
-| `search` | `books(q, opts)`, `authors`, `series`, `lists`, `users`, `characters`, `publishers`, `prompts`, `raw(q, type, opts)` | Search |
+| `search` | `books`, `authors`, `series`, `characters`, `lists`, `prompts`, `publishers`, `users` (query, `{ page, perPage, fields, weights, typos, sort, filterBy }`) → `{ hits, ids, found, page, perPage }` with numeric ids and idiomatic keys; `raw(query, { type })` untouched. The query passes straight through (a scanned ISBN works as-is); the API owns matching | Search |
 | `library` | `list({status, page})`, `iterate({status})`, `count({status})`, `forBook(bookId)`, `get(id)`, `add(bookId, {status, editionId, rating, privacy})`, `update(id, patch)`, `setStatus(id, status, {date})`, `rate(id, rating)`, `remove(id)` | GetLibrary, CountLibrary, GetUserBookForBook, GetUserBook, AddUserBook, UpdateUserBook, RemoveUserBook |
 | `reads` | `list(userBookId)`, `current(userBookId)`, `setProgress(userBookId, { pages \| seconds \| percent, occurredAt })`. Starting and finishing are driven by `library.setStatus` (Currently Reading starts a read, a new one on a re-read; Read finishes it). Manual date editing (`start`/`finish`/`update`/`remove` with explicit dates) is planned | GetUserBook, UpdateUserBookRead (later: AddUserBookRead, RemoveUserBookRead) |
-| `journal` | `forBook(bookId, page)`, `add({bookId, event, entry, privacy, tags})`, `remove(id)` | GetJournalForBook, AddJournalEntry, DeleteJournalEntry |
+| `journal` | `forBook(bookId, page)`, `add({ bookId, event, entry, privacy, tags, occurredAt })`, `update(id, patch)`, `remove(id)`, `clearForBook(bookId)`. Everything the API allows; docs steer users to let `library`/`reads` produce status, progress, rating and review entries (the server writes those; adding them manually duplicates them) and to use `add` for notes, quotes and backfill | GetJournalForBook, AddJournalEntry, (new) UpdateJournalEntry, DeleteJournalEntry, (new) ClearJournalForBook |
 | `lists` | `mine(page)`, `forUser(userId, page)`, `get(id, page)`, `create`, `update`, `delete`, `addBook(listId, bookId, { editionId, position })`, `removeBook(listId, bookId)` (2 requests; returns false if absent), `addBooks(listId, codes)`: bulk add by exact ISBN-13/ISBN-10 (one lookup, adds batched 5 per request, per-item retry on a failed batch; unmatched codes such as UPCs are reported as `no_exact_edition`, never guessed) | GetListsForUser, GetList, CreateList, UpdateList, DeleteList, AddBookToList, FindListBook, RemoveListBook, FindEditionsByIsbn |
-| `goals` | `list({includeArchived})` | GetGoals |
+| `goals` | `list({ includeArchived })`, `create`, `update`, `archive`, `delete`, plus progress per the API (`update_goal_progress`; if the server calculates progress, documented as the server's job like the journal) | GetGoals, (new) CreateGoal, UpdateGoal, DeleteGoal, UpdateGoalProgress |
 
 Methods scoped to "my" data resolve `userId` from `me.get()`, which is cached
 per client. Callers can pass `userId` to skip that request.

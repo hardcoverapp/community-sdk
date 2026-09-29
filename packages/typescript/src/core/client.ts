@@ -20,6 +20,7 @@ import { LibraryResource } from "../resources/library.ts";
 import { ListsResource } from "../resources/lists.ts";
 import { MeResource } from "../resources/me.ts";
 import { ReadsResource } from "../resources/reads.ts";
+import { SearchResource } from "../resources/search.ts";
 import { parseRateLimit, type RateLimitState } from "./rate-limit.ts";
 import { fetchTransport, TransportFailure, type HttpResponse, type Transport } from "./transport.ts";
 
@@ -71,6 +72,7 @@ export class HardcoverClient {
   readonly library: LibraryResource;
   readonly reads: ReadsResource;
   readonly lists: ListsResource;
+  readonly search: SearchResource;
   readonly #token: string;
   readonly #transport: Transport;
   readonly #maxRetries: number;
@@ -97,6 +99,7 @@ export class HardcoverClient {
     this.library = new LibraryResource(this);
     this.reads = new ReadsResource(this);
     this.lists = new ListsResource(this);
+    this.search = new SearchResource(this);
   }
 
   /** Runs a generated operation, e.g. `client.request(operations.Me)`. */

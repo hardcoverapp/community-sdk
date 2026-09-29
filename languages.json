@@ -102,9 +102,14 @@
       "label": "`lists`: write"
     },
     {
-      "id": "res-goals",
+      "id": "res-goals-read",
       "group": "Resources",
-      "label": "`goals` (read)"
+      "label": "`goals`: read"
+    },
+    {
+      "id": "res-goals-write",
+      "group": "Resources",
+      "label": "`goals`: write"
     },
     {
       "id": "test-mock",
@@ -173,7 +178,8 @@
         "res-reads-read": "done",
         "res-reads-write": "partial",
         "res-lists-read": "done",
-        "res-lists-write": "done"
+        "res-lists-write": "done",
+        "res-search": "done"
       },
       "examples": {
         "res-me": "examples/quick-start.ts",
@@ -182,7 +188,8 @@
         "res-reads-read": "examples/reading-progress.ts",
         "res-reads-write": "examples/reading-progress.ts",
         "res-lists-read": "examples/bulk-scan-to-list.ts",
-        "res-lists-write": "examples/bulk-scan-to-list.ts"
+        "res-lists-write": "examples/bulk-scan-to-list.ts",
+        "res-search": "examples/search.ts"
       }
     },
     {
