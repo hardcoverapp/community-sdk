@@ -41,6 +41,13 @@ of this.
    the server owns (goal progress, journal entries the server writes) have no
    setter. Decided 2026-09-28: if users shouldn't write it, the SDK doesn't
    invite them to.
+7. **Never break on something the SDK has the pieces to fix, durably.**
+   (Decided 2026-09-28.) A pasted token with whitespace or a `Bearer ` prefix
+   is cleaned up, not rejected. But a fix must give the same result on every
+   run and must not depend on state the SDK can't keep. A fix that works
+   today and breaks tomorrow is worse than a clear error. The SDK only refuses
+   when it genuinely can't proceed, and then says exactly what's wrong and what
+   to use instead.
 
 ## Layers
 
@@ -86,6 +93,7 @@ of this.
 | `timeoutMs` | 35000 | Just above the server's 30s |
 | `userAgent` | `hardcover-sdk-<lang>/<version>` | Callers append their app name. The gateway logs it per token |
 | `onRateLimit` | none | Hook called with parsed headers after each response |
+| `onWarning` | `console.warn` | Problems that don't stop the client, e.g. a deprecated legacy JWT |
 | `pace` | true | Wait for the rate-limit allowance before sending (see Pacing) |
 | `sleep` | `setTimeout` | Injectable for tests |
 | `now` | current time | Injectable clock for tests (date defaults, pacing) |
@@ -95,13 +103,21 @@ zone. (A `timezone` option to override it: planned.)
 
 ## Auth
 
-Status: static tokens work today; everything below the first bullet is planned
-(OAuth comes after packaging and test tooling).
+Status: static tokens are built (checks below); OAuth is planned, after
+packaging and test tooling.
 
 - **`TokenProvider`** (planned) is the only thing the core knows about. It
   exposes `getToken()` and optionally `refresh()`.
-- **Static token (PAT).** Planned checks: detect the prefix, warn once on a
-  legacy JWT, and reject `hc_rt_` / `hc_ac_` with a clear message.
+- **Static token (built).** At construction: whitespace and a pasted `Bearer `
+  prefix are cleaned up; a missing token, a refresh token (`hc_rt_`) or an
+  authorization code (`hc_ac_`) throws a `TypeError` saying what to use
+  instead; a legacy JWT works but triggers one `onWarning` (default
+  `console.warn`); any other format is sent as-is for the server to judge.
+  A refresh token is always refused as `token`, even once OAuth exists:
+  refresh tokens rotate, so exchanging one would spend the copy in the user's
+  `.env`; the next run would replay it and the API would revoke the whole
+  token family. Refresh tokens only go through `tokenProvider`, which hands
+  every rotated token to the app to store (`onTokens`).
 - **OAuth helpers** live in a separate entry point so PAT-only users don't pay
   for them:
   - `buildAuthorizeUrl({clientId, redirectUri, scopes, state})` returns

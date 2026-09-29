@@ -25,13 +25,19 @@ import { MeResource } from "../resources/me.ts";
 import { ReadsResource } from "../resources/reads.ts";
 import { SearchResource } from "../resources/search.ts";
 import { parseRateLimit, type RateLimitState } from "./rate-limit.ts";
+import { normalizeToken } from "./token.ts";
 import { fetchTransport, TransportFailure, type HttpResponse, type Transport } from "./transport.ts";
 
 export type { Environment };
 
 export interface HardcoverClientOptions {
-  /** A personal access token (`hc_pat_...`) or OAuth access token. */
+  /**
+   * A personal access token (`hc_pat_...`) or OAuth access token. Whitespace
+   * and a pasted `Bearer ` prefix are cleaned up.
+   */
   token: string;
+  /** Called for problems that don't stop the client, e.g. a deprecated legacy JWT. Defaults to console.warn. */
+  onWarning?: (message: string) => void;
   environment?: Environment;
   /** Overrides the GraphQL URL from `environment`. */
   endpoint?: string;
@@ -104,7 +110,7 @@ export class HardcoverClient {
 
   constructor(options: HardcoverClientOptions) {
     this.endpoint = options.endpoint ?? environments[options.environment ?? "prod"].graphql;
-    this.#token = options.token;
+    this.#token = normalizeToken(options.token, options.onWarning ?? ((message) => console.warn(message)));
     this.#transport = options.transport ?? fetchTransport({ timeoutMs: options.timeoutMs });
     this.#maxRetries = options.maxRetries ?? 3;
     this.#userAgent = options.userAgent ? `${options.userAgent} ${SDK_USER_AGENT}` : SDK_USER_AGENT;

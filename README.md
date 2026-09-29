@@ -25,7 +25,7 @@ changing it.
 | Rate-limit headers, 429 retry, request chunking | 🟡 | ⬜ | ⬜ | ⬜ |
 | Types generated from `shared/operations` | ✅ | ⬜ | ⬜ | ⬜ |
 | **Auth** |  |  |  |  |
-| Personal access token | 🟡 | ⬜ | ⬜ | ⬜ |
+| Personal access token | ✅ | ⬜ | ⬜ | ⬜ |
 | OAuth authorization code + PKCE | ⬜ | ⬜ | ⬜ | ⬜ |
 | OAuth device grant | ⬜ | ⬜ | ⬜ | ⬜ |
 | Refresh rotation + revoke | ⬜ | ⬜ | ⬜ | ⬜ |

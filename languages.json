@@ -165,7 +165,7 @@
         "action-envelopes": "done",
         "rate-limit": "partial",
         "codegen": "done",
-        "auth-pat": "partial",
+        "auth-pat": "done",
         "test-mock": "partial",
         "test-conformance": "done",
         "test-contract": "partial",
