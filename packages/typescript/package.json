@@ -15,15 +15,20 @@
     "typecheck": "tsc --noEmit",
     "test:live": "vitest run --config vitest.live.config.ts",
     "test:live:writes": "vitest run --config vitest.live.config.ts --mode writes",
-    "codegen:check": "pnpm codegen && git diff --exit-code -- src/generated"
+    "codegen:check": "pnpm codegen && git diff --exit-code -- src/generated",
+    "hermes:smoke": "node scripts/hermes-smoke.mjs"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
     "@graphql-codegen/cli": "^7.4.3",
     "@graphql-codegen/typed-document-node": "^7.0.0",
     "@graphql-codegen/typescript-operations": "^6.0.0",
     "@graphql-typed-document-node/core": "^3.2.0",
+    "@react-native/babel-preset": "^0.87.1",
     "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2",
     "graphql": "^17.0.2",
+    "hermes-compiler": "^250829098.0.19",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
   }

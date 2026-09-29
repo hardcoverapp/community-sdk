@@ -41,3 +41,5 @@ jobs:
       - run: pnpm codegen:check
       - run: pnpm typecheck
       - run: pnpm test
+      # Syntax check with the current Hermes compiler (runtime checks need HERMES_BIN).
+      - run: pnpm hermes:smoke

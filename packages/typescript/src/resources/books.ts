@@ -68,7 +68,9 @@ export class BooksResource {
   async trending({ duration = "month", limit = DEFAULT_LIMIT, offset = 0 }: PageOptions & { duration?: TrendingDuration } = {}): Promise<Page<BookSummary>> {
     const { books_trending } = await this.client.request(operations.TrendingBookIds, { duration, limit, offset });
     const ids = nonNull(required(books_trending, "books_trending", "result").ids);
+    const books = await this.getMany(ids);
     // hasMore follows the id page, even if a few of those books no longer exist.
-    return { ...toPage(await this.getMany(ids), limit, offset), hasMore: ids.length === limit };
+    // (No `await` inside the spread: React Native's Babel transform mishandles it.)
+    return { ...toPage(books, limit, offset), hasMore: ids.length === limit };
   }
 }

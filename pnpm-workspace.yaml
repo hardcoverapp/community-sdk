@@ -1,3 +1,7 @@
 packages:
   - "packages/*"
 minimumReleaseAgeStrict: true
+allowBuilds:
+  # esbuild runs from its prebuilt platform package (@esbuild/<os>-<arch>);
+  # its install script only re-checks that binary, so it stays off.
+  esbuild: false
