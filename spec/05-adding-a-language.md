@@ -30,6 +30,25 @@ These already exist in `shared/` and `api-snapshot/`:
 | 9 | Row in `languages.json`, with support flags set honestly | `matrix:check` passes |
 | 10 | Release component in release-please config | First pre-release published |
 
+## Adding a resource (TypeScript today; the same steps per language)
+
+1. Operations in `shared/operations/` (canonical, snake_case), then
+   `pnpm codegen` (validates the rewritten output too).
+2. Any new ids or string values go in `shared/enums.json`, with a label and,
+   where it matters, a `doc` that becomes the hover tooltip.
+3. `src/resources/<name>.ts`: thin methods over the operations, using
+   `pickDefined`, `required` and `nonNull` from `resources/shared.ts`. Follow
+   spec/03 Naming (ids first, options last, `Page` for lists, `NotFoundError`,
+   remove vs delete) and end every public method's doc with a `Scopes:` line.
+4. Wire it: import, field and constructor in `core/client.ts`, export in
+   `index.ts` (`tests/wiring.test.ts` fails if one is missed).
+5. Tests first: mock tests with `tests/helpers.ts`, then a targeted live test
+   (`tests/live/<name>.test.ts`, or `.writes.test.ts` for real-user writes).
+6. A type-checked example in `examples/`, mapped in `languages.json`
+   `examples`, plus the matrix row (`pnpm matrix`; `matrix:check` refuses a ✅
+   resource without an example).
+7. The spec/03 resources table row.
+
 ## Review checklist for a new language
 
 - [ ] Shared data is consumed from disk or generated from it. Nothing is copied

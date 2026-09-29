@@ -1,19 +1,17 @@
 // The registry must expose every operation in shared/operations, so resources
 // and the conformance runner can look documents up by name.
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { walk } from "../../../scripts/lib.mjs";
 import { operationInfo, operations } from "../src/operations.ts";
 
 const opsDir = join(import.meta.dirname, "../../../shared/operations");
 
-function sharedOperations(dir = opsDir): { name: string; kind: string }[] {
-  return readdirSync(dir).flatMap((entry) => {
-    const path = join(dir, entry);
-    if (statSync(path).isDirectory()) return sharedOperations(path);
-    const source = readFileSync(path, "utf8");
-    return [...source.matchAll(/^(query|mutation)\s+(\w+)/gm)].map((m) => ({ kind: m[1]!, name: m[2]! }));
-  });
+function sharedOperations(): { name: string; kind: string }[] {
+  return walk(opsDir).flatMap((path) =>
+    [...readFileSync(path, "utf8").matchAll(/^(query|mutation|subscription)\s+(\w+)/gm)].map((m) => ({ kind: m[1]!, name: m[2]! })),
+  );
 }
 
 describe("operations registry", () => {

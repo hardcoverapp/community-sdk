@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Validates every document in shared/operations against api-snapshot/schema.graphql.
 // This is the offline half of the contract tests (spec/04-testing.md).
-// Usage: node scripts/validate-operations.mjs [path/to/schema.graphql]
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSchema, parse, validate, concatAST } from "graphql";
+import { walk } from "./lib.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 // Usage: validate-operations.mjs [--dir <operations dir>] [schema.graphql]
@@ -15,11 +15,6 @@ const positional = process.argv.slice(2).filter((a, i, all) => a !== "--dir" && 
 const schemaPath = positional[0] ?? join(root, "api-snapshot/schema.graphql");
 const schema = buildSchema(readFileSync(schemaPath, "utf8"));
 
-const walk = (dir) =>
-  readdirSync(dir).flatMap((name) => {
-    const p = join(dir, name);
-    return statSync(p).isDirectory() ? walk(p) : p.endsWith(".graphql") ? [p] : [];
-  });
 
 const files = walk(opsDir);
 const doc = concatAST(files.map((f) => parse(readFileSync(f, "utf8"))));

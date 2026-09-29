@@ -11,10 +11,11 @@
 // Arguments and input objects are untouched; they can't be aliased.
 //
 // CLI: node scripts/case-operations.mjs --case camel --out <dir>
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Kind, parse, print, visit } from "graphql";
+import { walk } from "./lib.mjs";
 
 const toCamel = (name) => name.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
 
@@ -44,12 +45,6 @@ export function caseOperations(source, casing) {
   return print(document);
 }
 
-function walk(dir) {
-  return readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name);
-    return statSync(path).isDirectory() ? walk(path) : path.endsWith(".graphql") ? [path] : [];
-  });
-}
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const arg = (flag) => {
