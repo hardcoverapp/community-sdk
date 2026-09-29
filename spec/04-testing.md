@@ -17,10 +17,10 @@ Every SDK's transport is an interface, and the mock implementation ships
 **publicly** (`@x/sdk/testing`, `HardcoverTesting`, …) so SDK users can
 test their own code too.
 
-- **`MockTransport`** takes a queue or a handler:
-  `(request) => response | NetworkFailure`. It records every request for
+- **`MockTransport`** takes a queue of responses (a request handler form is
+  planned). It records every request for
   assertions.
-- **`mockClient({ fixtures })`** answers by operation name plus variables from
+- Planned: **`mockClient({ fixtures })`** answers by operation name plus variables from
   `shared/fixtures/`. Unknown operations fail loudly with the operation name,
   never with a silent empty result.
 - **Fake clock.** Retry and backoff read time through an injectable clock, so
@@ -97,7 +97,9 @@ The same names are used in every language.
 | `HARDCOVER_ENV` | `local`, `staging` or `prod` (default `staging`), resolved through `shared/environments.json` |
 | `HARDCOVER_API_URL` | Overrides the GraphQL URL (e.g. Conductor `http://localhost:<port+1>/v1/graphql`) |
 | `HARDCOVER_LIVE_WRITES` | Set only by the live **writes** command (`pnpm test:live:writes` in TypeScript), never in `.env`. Without it, tests that change data are skipped even under `test:live` |
-| `HARDCOVER_RECORD` | `1` writes scrubbed responses into `shared/fixtures/` |
+| `HARDCOVER_RECORD` | Planned: `1` writes scrubbed responses into `shared/fixtures/` |
+| `HARDCOVER_TEST_BOOK_ID` | Pins the write tests' randomly chosen book, to repeat a run exactly. Each run logs the one it chose |
+| `HARDCOVER_ALLOW_REMOTE_WRITES` | Required, on top of the writes command, for writes against any remote target (staging or prod). Local data is disposable; remote data isn't |
 | `HARDCOVER_OAUTH_CLIENT_ID` | Enables the device-grant smoke test, which is interactive and never runs in CI |
 
 Developers put these in an untracked `.env` file. CI reads them from
@@ -127,15 +129,18 @@ separate, explicitly triggered CI job that calls the live test command.
   instead of hard-coding ids, so one suite runs on local, staging and prod.
 - **Writes clean up after themselves.** Each write test creates what it needs
   (a list named `sdk-test-<runId>`, a user book on a known book) and deletes it
-  in `finally` or teardown. A sweeper deletes `sdk-test-*` lists older than 1
+  in `finally` or teardown. Planned: a sweeper that deletes `sdk-test-*` lists older than 1
   hour to recover from crashed runs.
 - **Stay inside the rate limit.** Run serially with one shared client (the
   TypeScript live config sets `isolate: false`) so the SDK's pacing sees every
   request made with the token. The target is zero 429s per run; count them on
   the local gateway (`docker logs hardcover-api | grep -c "Completed 429"`).
   Never trigger a 429 on purpose; 429 handling is covered by conformance cases.
-- **Prod is read-only.** The harness refuses `HARDCOVER_LIVE_WRITES=1` when
-  `HARDCOVER_ENV=prod` unless `HARDCOVER_I_MEAN_PROD=1` is also set.
+- **Remote data is read-only by default.** Writes run only under the writes
+  command, and against staging or prod only with
+  `HARDCOVER_ALLOW_REMOTE_WRITES=1` as well. Local data is disposable, so local
+  write tests may use any book; remote ones only touch books not already on the
+  shelf, and always clean up.
 
 ### Local and Conductor
 

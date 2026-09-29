@@ -36,6 +36,11 @@ of this.
    leak out of resource methods.
 5. **Never double-write.** Mutations are not retried when it's unknown whether
    they landed.
+6. **Don't expose what users shouldn't write.** State the SDK owns (rate-limit
+   state, the clock, request internals) is read-only or private, and values
+   the server owns (goal progress, journal entries the server writes) have no
+   setter. Decided 2026-09-28: if users shouldn't write it, the SDK doesn't
+   invite them to.
 
 ## Layers
 
@@ -51,29 +56,52 @@ of this.
 ├──────────────────────────────────────────────────────────┤
 │ Transport   HTTP (fetch / URLSession / OkHttp / httpx)    │  pluggable; mock in tests
 └──────────────────────────────────────────────────────────┘
-      Auth       TokenProvider: static PAT | OAuth (refreshing)
+      Auth       static token today; TokenProvider (OAuth, refreshing) planned
 ```
+
+### Naming
+
+- **Consistency first** (decided 2026-09-28): the same kind of thing always
+  has the same shape. What a method acts on comes first as positional ids,
+  container before item (`lists.addBook(listId, bookId, options)`,
+  `journal.add(bookId, entry)`); options come last as one object. Every paged
+  method returns a `Page`. Every "doesn't exist" is a `NotFoundError`.
+- **remove** takes a book off something the user keeps (`library.remove`,
+  `lists.removeBook`). **delete** destroys something the user owns
+  (`lists.delete`, `goals.delete`, `journal.delete`).
+- `get(id)` returns `null` when nothing exists; methods that change something
+  missing throw.
+- Every public method's doc comment ends with one `Scopes:` line (tested), so
+  editors show the scopes it needs on hover.
 
 ## Client configuration
 
 | Option | Default | Notes |
 |---|---|---|
-| `token` or `tokenProvider` | required | A string is treated as a static token |
+| `token` | required | A PAT or OAuth access token. (`tokenProvider` for refreshing OAuth tokens: planned) |
 | `environment` | `prod` | `prod`, `staging` or `local`, from `shared/environments.json` |
 | `endpoint` | from environment | Overrides the GraphQL URL (Conductor ports, proxies) |
 | `transport` | platform HTTP | Swap in the mock transport for tests |
 | `maxRetries` | 3 | Applies to 429 and to query-only network/5xx retries |
 | `timeoutMs` | 35000 | Just above the server's 30s |
 | `userAgent` | `hardcover-sdk-<lang>/<version>` | Callers append their app name. The gateway logs it per token |
-| `timezone` | `me.timezone`, then the runtime zone | Used for `user_date` defaults |
 | `onRateLimit` | none | Hook called with parsed headers after each response |
+| `pace` | true | Wait for the rate-limit allowance before sending (see Pacing) |
+| `sleep` | `setTimeout` | Injectable for tests |
+| `now` | current time | Injectable clock for tests (date defaults, pacing) |
+
+The timezone for date defaults comes from `me.timezone`, then the runtime
+zone. (A `timezone` option to override it: planned.)
 
 ## Auth
 
-- **`TokenProvider`** is the only thing the core knows about. It exposes
-  `getToken()` and optionally `refresh()`.
-- **Static token (PAT).** Detect the prefix. Warn once on a legacy JWT, and
-  reject `hc_rt_` / `hc_ac_` with a clear message.
+Status: static tokens work today; everything below the first bullet is planned
+(OAuth comes after packaging and test tooling).
+
+- **`TokenProvider`** (planned) is the only thing the core knows about. It
+  exposes `getToken()` and optionally `refresh()`.
+- **Static token (PAT).** Planned checks: detect the prefix, warn once on a
+  legacy JWT, and reject `hc_rt_` / `hc_ac_` with a clear message.
 - **OAuth helpers** live in a separate entry point so PAT-only users don't pay
   for them:
   - `buildAuthorizeUrl({clientId, redirectUri, scopes, state})` returns
@@ -136,7 +164,8 @@ per run to zero, with the same total duration.
 
 ### Chunking
 
-`client.batch([...ops])` packs operations into requests of at most **5**
+Today `lists.addBooks` batches its own adds (5 per request). Planned: a
+general `client.batch([...ops])` that packs operations into requests of at most **5**
 top-level fields each, and at most **1** `search` per request. It merges the
 results in order and reports per-item failures without failing the whole
 batch. Resource methods never exceed 5 on their own.
@@ -218,22 +247,23 @@ Each method notes its operation, its required scope and any extra requests.
 | `me` | `get()` (cached per client) | Me |
 | `books` | `get(id)`, `getBySlug(slug)`, `getMany(ids)` (in the order given; missing ids skipped), `editions(bookId, page)`, `findByIsbn(isbns)` (exact ISBN-13/10, spaces and hyphens fine), `trending({ duration, limit, offset })` (2 requests: ids, then books, in trending order). Read-only; catalog writes need librarian roles and come later | GetBook, GetBookBySlug, GetBooks, GetEditionsForBook, FindEditionsByIsbn, TrendingBookIds |
 | `search` | `books`, `authors`, `series`, `characters`, `lists`, `prompts`, `publishers`, `users` (query, `{ page, perPage, fields, weights, typos, sort, filterBy }`) → `{ hits, ids, found, page, perPage }` with numeric ids and idiomatic keys; `raw(query, { type })` untouched. The query passes straight through (a scanned ISBN works as-is); the API owns matching | Search |
-| `library` | `list({status, page})`, `iterate({status})`, `count({status})`, `forBook(bookId)`, `get(id)`, `add(bookId, {status, editionId, rating, privacy})`, `update(id, patch)`, `setStatus(id, status, {date})`, `rate(id, rating)`, `remove(id)` | GetLibrary, CountLibrary, GetUserBookForBook, GetUserBook, AddUserBook, UpdateUserBook, RemoveUserBook |
+| `library` | `list({ status, limit, offset })`, `count({ status })`, `forBook(bookId)`, `get(id)`, `add(bookId, options)`, `update(id, patch)`, `setStatus(id, status, { date, occurredAt })`, `rate(id, rating)`, `remove(id)`. `status` is one value or a list. Planned: `iterate({ status })` | GetLibrary, CountLibrary, GetUserBookForBook, GetUserBook, AddUserBook, UpdateUserBook, RemoveUserBook |
 | `reads` | `list(userBookId)`, `current(userBookId)`, `setProgress(userBookId, { pages \| seconds \| percent, occurredAt })`. Starting and finishing are driven by `library.setStatus` (Currently Reading starts a read, a new one on a re-read; Read finishes it). Manual date editing (`start`/`finish`/`update`/`remove` with explicit dates) is planned | GetUserBook, UpdateUserBookRead (later: AddUserBookRead, RemoveUserBookRead) |
-| `journal` | `forBook(bookId, page)`, `add({ bookId, event = note, entry, privacy = the user's account setting, editionId, date, tags = [], metadata })`, `update(id, patch)`, `remove(id)`, `clearForBook(bookId)`. Everything the API allows, any `JournalEvent`; each server-written event's doc comment names the call that already writes it (adding it manually duplicates it; a manual `progress_updated` merges into the day's entry). Journal `date` is a day (the API's `action_at` here is a date, not a timestamp) | GetJournalForBook, AddJournalEntry, UpdateJournalEntry, DeleteJournalEntry, ClearJournalForBook |
+| `journal` | `forBook(bookId, page)`, `add({ bookId, event = note, entry, privacy = the user's account setting, editionId, date, tags = [], metadata })`, `update(id, patch)`, `delete(id)`, `clearForBook(bookId)`. Everything the API allows, any `JournalEvent`; each server-written event's doc comment names the call that already writes it (adding it manually duplicates it; a manual `progress_updated` merges into the day's entry). Journal `date` is a day (the API's `action_at` here is a date, not a timestamp) | GetJournalForBook, AddJournalEntry, UpdateJournalEntry, DeleteJournalEntry, ClearJournalForBook |
 | `lists` | `mine(page)`, `forUser(userId, page)`, `get(id, page)`, `create`, `update`, `delete`, `addBook(listId, bookId, { editionId, position })`, `removeBook(listId, bookId)` (2 requests; returns false if absent), `addBooks(listId, codes)`: bulk add by exact ISBN-13/ISBN-10 (one lookup, adds batched 5 per request, per-item retry on a failed batch; unmatched codes such as UPCs are reported as `no_exact_edition`, never guessed) | GetListsForUser, GetList, CreateList, UpdateList, DeleteList, AddBookToList, FindListBook, RemoveListBook, FindEditionsByIsbn |
 | `goals` | `list({ includeArchived })`, `get(id)`, `create(fields)`, `update(id, patch)` (2 requests: the API's update takes the whole goal, so the SDK reads and merges), `archive`/`unarchive`, `refreshProgress(id)`, `delete(id)`; plus `goalProgress(goal)` → `{ current, target, percent }` in the goal's unit (hour goals: target in hours, API progress in seconds). Progress is server-calculated. `create` applies a requested privacy with one follow-up update while the API ignores it on create (spec/06 #22) | GetGoals, GetGoal, CreateGoal, UpdateGoal, RefreshGoalProgress, DeleteGoal |
 
 Methods scoped to "my" data resolve `userId` from `me.get()`, which is cached
-per client. Callers can pass `userId` to skip that request.
+per client, so it costs one request per client, not per call.
 
 ### Journal entries are the server's job
 
 The server journals status changes, read starts and finishes, progress,
 ratings and reviews itself (`rails/app/services/user_book_service.rb`), with a
 10-minute debounce. Resource methods never write journal entries for those, or
-every step would appear twice. `journal.add` is only for what a user writes
-(notes, quotes). `occurredAt` on library and reads methods sets `action_at`, so
+every step would appear twice. `journal.add` accepts any event, but apps
+normally use it for what only the reader writes (notes, quotes); each
+`JournalEvent` doc comment names the call that already journals it. `occurredAt` on library and reads methods sets `action_at`, so
 the server's entry carries when the reading actually happened.
 
 ### Pagination
@@ -241,16 +271,16 @@ the server's entry carries when the reading actually happened.
 - Page methods take `{limit, offset}` and return
   `{items, limit, offset, hasMore}`. `hasMore` is true when
   `items.length === limit`; no count request is made.
-- `iterate()` is a lazy async sequence. It stops at the table's row cap (see
-  [01](01-api-surface.md#query-roots-reachable-by-tokens)) and **respects rate
-  limits** by awaiting the bucket.
+- Planned: `iterate()`, a lazy async sequence that stops at the table's row
+  cap (see [01](01-api-surface.md#query-roots-reachable-by-tokens)) and paces
+  itself like every request.
 
 ### Search
 
-- `search.<type>()` sets `query_type`, applies the docs' default
-  `fields`/`weights`/`sort` for that type, and decodes `results` into typed
-  hits.
-- `raw()` returns the undecoded JSON.
+- `search.<type>()` sets `query_type` and passes the query and options
+  through untouched; the API's own defaults apply. It returns typed hits with
+  numeric ids and idiomatic keys, plus `found`.
+- `raw()` returns the untouched response.
 - Every call is 1 request, which counts as 1 of the 5 allowed top-level fields
   and is the only `search` allowed in that request.
 
@@ -263,15 +293,15 @@ the server's entry carries when the reading actually happened.
   every language that exposes the affected surface.
 - **Pre-1.0 while the API is beta-gated.** 1.0 waits until tokens and OAuth
   are generally available.
-- Every package records the `api-snapshot` commit it was generated against,
-  exposed as `SDK.apiSnapshot`.
+- Planned: every package records the `api-snapshot` commit it was generated
+  against, exposed as `SDK.apiSnapshot`.
 
 ## Language notes
 
 - **TypeScript (first).**
   - Isomorphic: `fetch` only, no Node built-ins in core. It runs in Node 20+,
     Deno, Bun and browsers.
-  - ESM with a CJS build.
+  - ESM today; a CJS build comes with packaging.
   - Codegen: `@graphql-codegen/cli` (`typescript-operations` and
     `typed-document-node`) over the `--case camel` rewrite of the shared
     operations.

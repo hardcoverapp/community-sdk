@@ -73,7 +73,7 @@ shared/
   environments.json  prod / staging / local endpoints
   conformance/    language-neutral behavior tests every SDK must pass
   fixtures/       recorded, scrubbed API responses for mock clients
-packages/         one directory per language (empty for now)
+packages/         one directory per language (typescript/ first)
 scripts/          case-operations, validate-operations, render-matrix
 spec/             the design
 ```
@@ -101,11 +101,13 @@ pnpm matrix                # regenerate the table above
 
 ## Live tests
 
-These are off by default and arrive with the TypeScript package. To run them against a real server, set a test
+These are off by default; mocks always come first. To run them against a real server, set a test
 account's token:
 
 ```sh
-HARDCOVER_API_KEY=hc_pat_... HARDCOVER_ENV=staging pnpm test:live
+cd packages/typescript
+HARDCOVER_API_KEY=hc_pat_... HARDCOVER_ENV=staging pnpm test:live          # reads
+HARDCOVER_API_KEY=hc_pat_... HARDCOVER_ENV=local pnpm test:live:writes      # plus real-user writes
 ```
 
 See [spec/04](spec/04-testing.md#layer-3-live-integration) for every variable,

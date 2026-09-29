@@ -37,4 +37,6 @@ A fixture is matched by operation name plus a canonical JSON of its
 variables. Keep one `default.json` per operation; add named cases only when
 a response shape actually differs (empty, partial, error envelope).
 
-Empty until the TypeScript live suite exists.
+Empty for now: the recorder (`HARDCOVER_RECORD=1`) is planned as part of the
+test tooling work. Until then, mock tests use small inline responses and the
+live suites cover real response shapes.

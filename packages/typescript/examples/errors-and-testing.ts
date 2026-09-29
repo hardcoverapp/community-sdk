@@ -5,7 +5,8 @@
  * call failed (e.g. "AddUserBook"). The ones apps usually handle:
  * - ScopeError: the token lacks scopes; `missingScopes` lists every one.
  * - AuthenticationError: expired or revoked token.
- * - RateLimitError: only when the *daily* cap is spent; bursts are paced for you.
+ * - RateLimitError: the daily cap is spent, or a burst limit outlasted the
+ *   retries (rare: the client paces itself from the rate-limit headers).
  * - ActionError: the API rejected a write; `messages` explain why.
  * - NetworkError / TimeoutError: `mayHaveSucceeded` is true for writes that
  *   may have landed. Check before retrying.

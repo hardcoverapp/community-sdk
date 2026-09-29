@@ -37,7 +37,8 @@ These already exist in `shared/` and `api-snapshot/`:
 - [ ] Mutations are never retried after a network failure.
 - [ ] Update methods send only the fields the caller set.
 - [ ] Rotated refresh tokens are persisted before use.
-- [ ] `requiredScopes` appears in method docs.
+- [ ] Every public method's doc comment lists the scopes it needs, including
+      `read:me` where it looks up the user (TypeScript enforces this with a test).
 - [ ] Kotlin only: a Java source set in the test suite calls every resource
       method through the Java-facing API (futures or blocking), compiled and
       run in CI. If it reads badly from Java, the API is wrong.
