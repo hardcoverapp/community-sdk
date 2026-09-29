@@ -1,5 +1,6 @@
 import type { HardcoverClient } from "../core/client.ts";
 import { HardcoverError } from "../core/errors.ts";
+import { cleanIsbn } from "../core/isbn.ts";
 import type { PrivacySetting } from "../generated/enums.ts";
 import type { AddBookToListMutation, GetListQuery, ListSummaryFragment } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
@@ -51,8 +52,6 @@ export interface AddBooksResult {
 /** The API allows 5 top-level fields per request (spec/01 Limits). */
 const BATCH_SIZE = 5;
 
-// Scanners and people add spaces and hyphens; ISBN-10 may end in x/X.
-const cleanCode = (code: string) => code.replace(/[\s-]/g, "").toUpperCase();
 
 type Pending = { key: string; bookId: number; editionId: number };
 
@@ -134,7 +133,7 @@ export class ListsResource {
    * Requires `read:catalog` and `write:lists`.
    */
   async addBooks(listId: number, codes: string[]): Promise<AddBooksResult> {
-    const keys = [...new Set(codes.map(cleanCode).filter(Boolean))];
+    const keys = [...new Set(codes.map(cleanIsbn).filter(Boolean))];
     if (keys.length === 0) return { added: [], notAdded: [] };
 
     const { editions } = await this.client.request(operations.FindEditionsByIsbn, { isbns: keys });
@@ -170,7 +169,7 @@ export class ListsResource {
     const result: AddBooksResult = { added: [], notAdded: [] };
     const byKey = new Map(pending.map((p) => [p.key, p]));
     for (const code of codes) {
-      const key = cleanCode(code);
+      const key = cleanIsbn(code);
       const match = byKey.get(key);
       const outcome = outcomes.get(key);
       if (!match || !outcome) result.notAdded.push({ code, reason: "no_exact_edition" });

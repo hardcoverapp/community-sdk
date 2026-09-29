@@ -179,7 +179,8 @@
         "res-reads-write": "partial",
         "res-lists-read": "done",
         "res-lists-write": "done",
-        "res-search": "done"
+        "res-search": "done",
+        "res-books": "done"
       },
       "examples": {
         "res-me": "examples/quick-start.ts",
@@ -189,7 +190,8 @@
         "res-reads-write": "examples/reading-progress.ts",
         "res-lists-read": "examples/bulk-scan-to-list.ts",
         "res-lists-write": "examples/bulk-scan-to-list.ts",
-        "res-search": "examples/search.ts"
+        "res-search": "examples/search.ts",
+        "res-books": "examples/books.ts"
       }
     },
     {

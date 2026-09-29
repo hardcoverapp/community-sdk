@@ -31,7 +31,7 @@ changing it.
 | Refresh rotation + revoke | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Resources** |  |  |  |  |
 | `me` (read) | ✅ | ⬜ | ⬜ | ⬜ |
-| `books` / `editions` (read) | ⬜ | ⬜ | ⬜ | ⬜ |
+| `books` / `editions` (read) | ✅ | ⬜ | ⬜ | ⬜ |
 | `search` (read) | ✅ | ⬜ | ⬜ | ⬜ |
 | `library` (user books): read | ✅ | ⬜ | ⬜ | ⬜ |
 | `library` (user books): write | ✅ | ⬜ | ⬜ | ⬜ |

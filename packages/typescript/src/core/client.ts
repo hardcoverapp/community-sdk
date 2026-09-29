@@ -16,6 +16,7 @@ import {
   TimeoutError,
   UnsupportedOperationError,
 } from "./errors.ts";
+import { BooksResource } from "../resources/books.ts";
 import { LibraryResource } from "../resources/library.ts";
 import { ListsResource } from "../resources/lists.ts";
 import { MeResource } from "../resources/me.ts";
@@ -73,6 +74,7 @@ export class HardcoverClient {
   readonly reads: ReadsResource;
   readonly lists: ListsResource;
   readonly search: SearchResource;
+  readonly books: BooksResource;
   readonly #token: string;
   readonly #transport: Transport;
   readonly #maxRetries: number;
@@ -100,6 +102,7 @@ export class HardcoverClient {
     this.reads = new ReadsResource(this);
     this.lists = new ListsResource(this);
     this.search = new SearchResource(this);
+    this.books = new BooksResource(this);
   }
 
   /** Runs a generated operation, e.g. `client.request(operations.Me)`. */
