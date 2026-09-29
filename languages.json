@@ -180,7 +180,9 @@
         "res-lists-read": "done",
         "res-lists-write": "done",
         "res-search": "done",
-        "res-books": "done"
+        "res-books": "done",
+        "res-journal-read": "done",
+        "res-journal-write": "done"
       },
       "examples": {
         "res-me": "examples/quick-start.ts",
@@ -191,7 +193,9 @@
         "res-lists-read": "examples/bulk-scan-to-list.ts",
         "res-lists-write": "examples/bulk-scan-to-list.ts",
         "res-search": "examples/search.ts",
-        "res-books": "examples/books.ts"
+        "res-books": "examples/books.ts",
+        "res-journal-read": "examples/journal.ts",
+        "res-journal-write": "examples/journal.ts"
       }
     },
     {

@@ -49,6 +49,16 @@ export type ReadingJournalCreateType = {
   tags: Array<BasicTag | null | undefined>;
 };
 
+export type ReadingJournalUpdateType = {
+  action_at?: string | null | undefined;
+  edition_id?: number | null | undefined;
+  entry?: string | null | undefined;
+  event?: string | null | undefined;
+  metadata?: unknown;
+  privacy_setting_id?: number | null | undefined;
+  tags?: Array<BasicTag | null | undefined> | null | undefined;
+};
+
 export type TrendingDuration =
   | 'all'
   | 'month'
@@ -4767,12 +4777,27 @@ export type AddJournalEntryMutationVariables = Exact<{
 
 export type AddJournalEntryMutation = { insert_reading_journal: { id: number | null, errors: Array<string | null> | null, readingJournal: { id: number, event: string | null, entry: string | null, metadata: unknown, bookId: number | null, editionId: number | null, privacySettingId: number, actionAt: string, createdAt: string } | null } | null };
 
+export type UpdateJournalEntryMutationVariables = Exact<{
+  id: number;
+  object: ReadingJournalUpdateType;
+}>;
+
+
+export type UpdateJournalEntryMutation = { update_reading_journal: { id: number | null, errors: Array<string | null> | null, readingJournal: { id: number, event: string | null, entry: string | null, metadata: unknown, bookId: number | null, editionId: number | null, privacySettingId: number, actionAt: string, createdAt: string } | null } | null };
+
 export type DeleteJournalEntryMutationVariables = Exact<{
   id: number;
 }>;
 
 
 export type DeleteJournalEntryMutation = { delete_reading_journal: { id: number } | null };
+
+export type ClearJournalForBookMutationVariables = Exact<{
+  bookId: number;
+}>;
+
+
+export type ClearJournalForBookMutation = { delete_reading_journals_for_book: { ids: Array<number | null> | null } | null };
 
 export type AddUserBookMutationVariables = Exact<{
   object: UserBookCreateInput;
@@ -5346,6 +5371,27 @@ export const AddJournalEntryDocument = new TypedDocumentString(`
   actionAt: action_at
   createdAt: created_at
 }`) as unknown as TypedDocumentString<AddJournalEntryMutation, AddJournalEntryMutationVariables>;
+export const UpdateJournalEntryDocument = new TypedDocumentString(`
+    mutation UpdateJournalEntry($id: Int!, $object: ReadingJournalUpdateType!) {
+  update_reading_journal(id: $id, object: $object) {
+    id
+    errors
+    readingJournal: reading_journal {
+      ...JournalEntry
+    }
+  }
+}
+    fragment JournalEntry on reading_journals {
+  id
+  bookId: book_id
+  editionId: edition_id
+  event
+  entry
+  metadata
+  privacySettingId: privacy_setting_id
+  actionAt: action_at
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<UpdateJournalEntryMutation, UpdateJournalEntryMutationVariables>;
 export const DeleteJournalEntryDocument = new TypedDocumentString(`
     mutation DeleteJournalEntry($id: Int!) {
   delete_reading_journal(id: $id) {
@@ -5353,6 +5399,13 @@ export const DeleteJournalEntryDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<DeleteJournalEntryMutation, DeleteJournalEntryMutationVariables>;
+export const ClearJournalForBookDocument = new TypedDocumentString(`
+    mutation ClearJournalForBook($bookId: Int!) {
+  delete_reading_journals_for_book(book_id: $bookId) {
+    ids
+  }
+}
+    `) as unknown as TypedDocumentString<ClearJournalForBookMutation, ClearJournalForBookMutationVariables>;
 export const AddUserBookDocument = new TypedDocumentString(`
     mutation AddUserBook($object: UserBookCreateInput!) {
   insert_user_book(object: $object) {

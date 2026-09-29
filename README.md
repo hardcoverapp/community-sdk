@@ -37,8 +37,8 @@ changing it.
 | `library` (user books): write | ✅ | ⬜ | ⬜ | ⬜ |
 | `reads` (dates + progress): read | ✅ | ⬜ | ⬜ | ⬜ |
 | `reads` (dates + progress): write | 🟡 | ⬜ | ⬜ | ⬜ |
-| `journal`: read | ⬜ | ⬜ | ⬜ | ⬜ |
-| `journal`: write | ⬜ | ⬜ | ⬜ | ⬜ |
+| `journal`: read | ✅ | ⬜ | ⬜ | ⬜ |
+| `journal`: write | ✅ | ⬜ | ⬜ | ⬜ |
 | `lists`: read | ✅ | ⬜ | ⬜ | ⬜ |
 | `lists`: write | ✅ | ⬜ | ⬜ | ⬜ |
 | `goals`: read | ⬜ | ⬜ | ⬜ | ⬜ |

@@ -17,6 +17,7 @@ import {
   UnsupportedOperationError,
 } from "./errors.ts";
 import { BooksResource } from "../resources/books.ts";
+import { JournalResource } from "../resources/journal.ts";
 import { LibraryResource } from "../resources/library.ts";
 import { ListsResource } from "../resources/lists.ts";
 import { MeResource } from "../resources/me.ts";
@@ -75,6 +76,7 @@ export class HardcoverClient {
   readonly lists: ListsResource;
   readonly search: SearchResource;
   readonly books: BooksResource;
+  readonly journal: JournalResource;
   readonly #token: string;
   readonly #transport: Transport;
   readonly #maxRetries: number;
@@ -103,6 +105,7 @@ export class HardcoverClient {
     this.lists = new ListsResource(this);
     this.search = new SearchResource(this);
     this.books = new BooksResource(this);
+    this.journal = new JournalResource(this);
   }
 
   /** Runs a generated operation, e.g. `client.request(operations.Me)`. */

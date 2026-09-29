@@ -60,3 +60,40 @@ export const SearchType = {
   User: "user",
 } as const;
 export type SearchType = (typeof SearchType)[keyof typeof SearchType];
+
+/** The API accepts any of these from journal.add. Only notes and quotes are normally written by apps; the rest are journaled by the server as a side effect of library, reads, lists and prompts calls (spec/03 'Journal entries are the server's job'). A manual progress_updated merges into that day's entry. Source: app/rails/app/models/reading_journal.rb (event constants, EVENT_FILTERS labels) */
+export const JournalEvent = {
+  /** Notes */
+  Note: "note",
+  /** Quotes */
+  Quote: "quote",
+  /** Progress updates. Written by the server when you use reads.setProgress. A manual entry merges into that day's progress entry. */
+  ProgressUpdated: "progress_updated",
+  /** Ratings. Written by the server when you use library.rate or library.update; adding it yourself duplicates it. */
+  Rated: "rated",
+  /** Reviews. Written by the server when you use library.update with a review; adding it yourself duplicates it. */
+  Reviewed: "reviewed",
+  /** Want to read. Written by the server when you use library.add or library.setStatus; adding it yourself duplicates it. */
+  StatusWantToRead: "status_want_to_read",
+  /** Started reading. Written by the server when you use library.setStatus; adding it yourself duplicates it. */
+  StatusCurrentlyReading: "status_currently_reading",
+  /** Finished reading. Written by the server when you use library.setStatus; adding it yourself duplicates it. */
+  StatusRead: "status_read",
+  /** Paused. Written by the server when you use library.setStatus; adding it yourself duplicates it. */
+  StatusPaused: "status_paused",
+  /** Stopped. Written by the server when you use library.setStatus; adding it yourself duplicates it. */
+  StatusStopped: "status_stopped",
+  /** Started an edition. Written by the server when you use library.setStatus (Currently Reading starts a read); adding it yourself duplicates it. */
+  UserBookReadStarted: "user_book_read_started",
+  /** Finished an edition. Written by the server when you use library.setStatus (Read finishes the read); adding it yourself duplicates it. */
+  UserBookReadFinished: "user_book_read_finished",
+  /** Added to a list. Written by the server when you use lists.addBook or lists.addBooks; adding it yourself duplicates it. */
+  ListBook: "list_book",
+  /** Prompt answers. Written by the server when a book is added to a prompt answer. */
+  PromptBook: "prompt_book",
+  /** Recommendations sent. Written by the server from a library entry's recommendedFor. */
+  ReferralTo: "referral_to",
+  /** Recommendations received. Written by the server from a library entry's recommendedBy. */
+  ReferredBy: "referred_by",
+} as const;
+export type JournalEvent = (typeof JournalEvent)[keyof typeof JournalEvent];

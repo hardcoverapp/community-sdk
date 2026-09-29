@@ -4,30 +4,93 @@
     "source": "types/UserBookStatusType.tsx",
     "type": "int",
     "values": [
-      { "id": 1, "key": "WANT_TO_READ", "slug": "want-to-read", "label": "Want to Read" },
-      { "id": 2, "key": "CURRENTLY_READING", "slug": "currently-reading", "label": "Currently Reading" },
-      { "id": 3, "key": "READ", "slug": "read", "label": "Read" },
-      { "id": 4, "key": "PAUSED", "slug": "paused", "label": "Paused" },
-      { "id": 5, "key": "DID_NOT_FINISH", "slug": "did-not-finish", "label": "Did Not Finish" },
-      { "id": 6, "key": "IGNORED", "slug": "ignored", "label": "Ignored" }
+      {
+        "id": 1,
+        "key": "WANT_TO_READ",
+        "slug": "want-to-read",
+        "label": "Want to Read"
+      },
+      {
+        "id": 2,
+        "key": "CURRENTLY_READING",
+        "slug": "currently-reading",
+        "label": "Currently Reading"
+      },
+      {
+        "id": 3,
+        "key": "READ",
+        "slug": "read",
+        "label": "Read"
+      },
+      {
+        "id": 4,
+        "key": "PAUSED",
+        "slug": "paused",
+        "label": "Paused"
+      },
+      {
+        "id": 5,
+        "key": "DID_NOT_FINISH",
+        "slug": "did-not-finish",
+        "label": "Did Not Finish"
+      },
+      {
+        "id": 6,
+        "key": "IGNORED",
+        "slug": "ignored",
+        "label": "Ignored"
+      }
     ]
   },
   "PrivacySetting": {
     "source": "constants/PrivacySettings.ts",
     "type": "int",
     "values": [
-      { "id": 1, "key": "PUBLIC", "label": "Public", "readScopeSuffix": "public" },
-      { "id": 2, "key": "FOLLOWS", "label": "Follows", "readScopeSuffix": "following" },
-      { "id": 3, "key": "PRIVATE", "label": "Private", "readScopeSuffix": "private" }
+      {
+        "id": 1,
+        "key": "PUBLIC",
+        "label": "Public",
+        "readScopeSuffix": "public"
+      },
+      {
+        "id": 2,
+        "key": "FOLLOWS",
+        "label": "Follows",
+        "readScopeSuffix": "following"
+      },
+      {
+        "id": 3,
+        "key": "PRIVATE",
+        "label": "Private",
+        "readScopeSuffix": "private"
+      }
     ]
   },
   "ReadingFormat": {
     "source": "types/ReadingFormatType.ts",
     "type": "int",
     "values": [
-      { "id": 1, "key": "PHYSICAL", "label": "Physical", "progressField": "progress_pages", "totalField": "pages" },
-      { "id": 2, "key": "AUDIOBOOK", "label": "Audiobook", "progressField": "progress_seconds", "totalField": "audio_seconds" },
-      { "id": 4, "key": "EBOOK", "label": "E-Book", "progressField": "progress_pages", "totalField": "pages" }
+      {
+        "id": 1,
+        "key": "PHYSICAL",
+        "label": "Physical",
+        "progressField": "progress_pages",
+        "totalField": "pages"
+      },
+      {
+        "id": 2,
+        "key": "AUDIOBOOK",
+        "label": "Audiobook",
+        "progressField": "progress_seconds",
+        "totalField": "audio_seconds"
+      },
+      {
+        "id": 4,
+        "key": "EBOOK",
+        "label": "E-Book",
+        "progressField": "progress_pages",
+        "totalField": "pages"
+      }
     ],
     "notes": "ID 3 is unused."
   },
@@ -36,10 +99,22 @@
     "type": "int",
     "field": "finished_at_precision",
     "values": [
-      { "id": 0, "key": "UNKNOWN" },
-      { "id": 1, "key": "DAY" },
-      { "id": 2, "key": "MONTH" },
-      { "id": 3, "key": "YEAR" }
+      {
+        "id": 0,
+        "key": "UNKNOWN"
+      },
+      {
+        "id": 1,
+        "key": "DAY"
+      },
+      {
+        "id": 2,
+        "key": "MONTH"
+      },
+      {
+        "id": 3,
+        "key": "YEAR"
+      }
     ]
   },
   "SearchType": {
@@ -49,14 +124,38 @@
     "caseInsensitive": true,
     "default": "book",
     "values": [
-      { "id": "author", "key": "AUTHOR" },
-      { "id": "book", "key": "BOOK" },
-      { "id": "character", "key": "CHARACTER" },
-      { "id": "list", "key": "LIST" },
-      { "id": "prompt", "key": "PROMPT" },
-      { "id": "publisher", "key": "PUBLISHER" },
-      { "id": "series", "key": "SERIES" },
-      { "id": "user", "key": "USER" }
+      {
+        "id": "author",
+        "key": "AUTHOR"
+      },
+      {
+        "id": "book",
+        "key": "BOOK"
+      },
+      {
+        "id": "character",
+        "key": "CHARACTER"
+      },
+      {
+        "id": "list",
+        "key": "LIST"
+      },
+      {
+        "id": "prompt",
+        "key": "PROMPT"
+      },
+      {
+        "id": "publisher",
+        "key": "PUBLISHER"
+      },
+      {
+        "id": "series",
+        "key": "SERIES"
+      },
+      {
+        "id": "user",
+        "key": "USER"
+      }
     ]
   },
   "TrendingDuration": {
@@ -72,5 +171,107 @@
     "step": 0.5,
     "source": "components/BookReview/InteractiveStars.tsx",
     "notes": "null clears the rating."
+  },
+  "JournalEvent": {
+    "source": "app/rails/app/models/reading_journal.rb (event constants, EVENT_FILTERS labels)",
+    "type": "string",
+    "field": "event",
+    "notes": "The API accepts any of these from journal.add. Only notes and quotes are normally written by apps; the rest are journaled by the server as a side effect of library, reads, lists and prompts calls (spec/03 'Journal entries are the server's job'). A manual progress_updated merges into that day's entry.",
+    "values": [
+      {
+        "id": "note",
+        "key": "NOTE",
+        "label": "Notes"
+      },
+      {
+        "id": "quote",
+        "key": "QUOTE",
+        "label": "Quotes"
+      },
+      {
+        "id": "progress_updated",
+        "key": "PROGRESS_UPDATED",
+        "label": "Progress updates",
+        "doc": "Written by the server when you use reads.setProgress. A manual entry merges into that day's progress entry."
+      },
+      {
+        "id": "rated",
+        "key": "RATED",
+        "label": "Ratings",
+        "doc": "Written by the server when you use library.rate or library.update; adding it yourself duplicates it."
+      },
+      {
+        "id": "reviewed",
+        "key": "REVIEWED",
+        "label": "Reviews",
+        "doc": "Written by the server when you use library.update with a review; adding it yourself duplicates it."
+      },
+      {
+        "id": "status_want_to_read",
+        "key": "STATUS_WANT_TO_READ",
+        "label": "Want to read",
+        "doc": "Written by the server when you use library.add or library.setStatus; adding it yourself duplicates it."
+      },
+      {
+        "id": "status_currently_reading",
+        "key": "STATUS_CURRENTLY_READING",
+        "label": "Started reading",
+        "doc": "Written by the server when you use library.setStatus; adding it yourself duplicates it."
+      },
+      {
+        "id": "status_read",
+        "key": "STATUS_READ",
+        "label": "Finished reading",
+        "doc": "Written by the server when you use library.setStatus; adding it yourself duplicates it."
+      },
+      {
+        "id": "status_paused",
+        "key": "STATUS_PAUSED",
+        "label": "Paused",
+        "doc": "Written by the server when you use library.setStatus; adding it yourself duplicates it."
+      },
+      {
+        "id": "status_stopped",
+        "key": "STATUS_STOPPED",
+        "label": "Stopped",
+        "doc": "Written by the server when you use library.setStatus; adding it yourself duplicates it."
+      },
+      {
+        "id": "user_book_read_started",
+        "key": "USER_BOOK_READ_STARTED",
+        "label": "Started an edition",
+        "doc": "Written by the server when you use library.setStatus (Currently Reading starts a read); adding it yourself duplicates it."
+      },
+      {
+        "id": "user_book_read_finished",
+        "key": "USER_BOOK_READ_FINISHED",
+        "label": "Finished an edition",
+        "doc": "Written by the server when you use library.setStatus (Read finishes the read); adding it yourself duplicates it."
+      },
+      {
+        "id": "list_book",
+        "key": "LIST_BOOK",
+        "label": "Added to a list",
+        "doc": "Written by the server when you use lists.addBook or lists.addBooks; adding it yourself duplicates it."
+      },
+      {
+        "id": "prompt_book",
+        "key": "PROMPT_BOOK",
+        "label": "Prompt answers",
+        "doc": "Written by the server when a book is added to a prompt answer."
+      },
+      {
+        "id": "referral_to",
+        "key": "REFERRAL_TO",
+        "label": "Recommendations sent",
+        "doc": "Written by the server from a library entry's recommendedFor."
+      },
+      {
+        "id": "referred_by",
+        "key": "REFERRED_BY",
+        "label": "Recommendations received",
+        "doc": "Written by the server from a library entry's recommendedBy."
+      }
+    ]
   }
 }

@@ -8,8 +8,25 @@ mutation AddJournalEntry($object: ReadingJournalCreateType!) {
   }
 }
 
+mutation UpdateJournalEntry($id: Int!, $object: ReadingJournalUpdateType!) {
+  update_reading_journal(id: $id, object: $object) {
+    id
+    errors
+    reading_journal {
+      ...JournalEntry
+    }
+  }
+}
+
 mutation DeleteJournalEntry($id: Int!) {
   delete_reading_journal(id: $id) {
     id
+  }
+}
+
+# Removes every journal entry the user has for a book, server-written ones included.
+mutation ClearJournalForBook($bookId: Int!) {
+  delete_reading_journals_for_book(book_id: $bookId) {
+    ids
   }
 }

@@ -32,6 +32,14 @@ a decision before the SDK depends on it. Record decisions in
 20. **Percent progress in the API.** Accepting `progress_percent` on
     `DatesReadInput` would remove the SDK's client-side conversion.
 
+21. **Docs site: journal event list is incomplete.** `field-descriptions.json`
+    lists journal events as "note, quote, status_currently_reading,
+    status_read, rated, reviewed, progress_updated, etc." The model has 16
+    (`app/rails/app/models/reading_journal.rb`), including
+    `user_book_read_started`/`_finished`, which are what the server writes
+    when a read starts and finishes. `shared/enums.json` JournalEvent has the
+    full list with labels; use it on the docs branch.
+
 ## Environment and access
 
 7. **Staging web host.** `api-staging.hardcover.app` is confirmed. What's the

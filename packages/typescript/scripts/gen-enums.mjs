@@ -16,7 +16,8 @@ for (const [name, spec] of Object.entries(enums)) {
   const doc = [spec.notes, spec.source && `Source: ${spec.source}`].filter(Boolean).join(" ");
   out += `\n${doc ? `/** ${doc} */\n` : ""}export const ${name} = {\n`;
   for (const value of spec.values) {
-    if (value.label) out += `  /** ${value.label} */\n`;
+    const doc = [value.label, value.doc].filter(Boolean).join(". ");
+    if (doc) out += `  /** ${doc} */\n`;
     out += `  ${pascal(value.key)}: ${JSON.stringify(value.id)},\n`;
   }
   out += `} as const;\nexport type ${name} = (typeof ${name})[keyof typeof ${name}];\n`;
