@@ -2,8 +2,9 @@
 // plus the local chores every app would repeat: numeric ids, idiomatic keys,
 // the total count, and list-style options.
 import { describe, expect, it } from "vitest";
-import { ActionError, HardcoverClient, SearchType } from "../../src/index.ts";
-import { MockTransport, type MockResponse } from "../../src/testing/index.ts";
+import { ActionError, SearchType } from "../../src/index.ts";
+import type { MockResponse } from "../../src/testing/index.ts";
+import { setup } from "../helpers.ts";
 
 const bookHit = {
   document: {
@@ -36,12 +37,6 @@ const envelope = (queryType: string, hits: unknown[], found = hits.length): Mock
   },
 });
 
-function setup(...responses: MockResponse[]) {
-  const transport = new MockTransport(responses);
-  const client = new HardcoverClient({ token: "hc_pat_test", transport });
-  const sent = () => transport.requests.map((r) => JSON.parse(r.body) as { operationName: string; variables: Record<string, unknown> });
-  return { client, sent };
-}
 
 describe("search", () => {
   it("passes the query straight through, e.g. a scanned barcode", async () => {

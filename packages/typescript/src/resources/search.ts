@@ -1,8 +1,8 @@
 import type { HardcoverClient } from "../core/client.ts";
-import { HardcoverError } from "../core/errors.ts";
 import { SearchType } from "../generated/enums.ts";
 import type { SearchQuery } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
+import { nonNull, required } from "./shared.ts";
 import type {
   AuthorHit, BookHit, CharacterHit, ListHit, PromptHit, PublisherHit, SeriesHit, UserHit,
 } from "./search-types.ts";
@@ -56,21 +56,53 @@ function toHit<T>(document: unknown): T {
 /**
  * Search passes your query straight to the API, which owns matching (titles,
  * authors, ISBNs from a scanner, and whatever it learns next). The SDK only
- * tidies the response. One search per request; requires `read:catalog:search`.
+ * tidies the response. One search per request.
  */
 export class SearchResource {
   constructor(private readonly client: HardcoverClient) {}
 
-  books = (query: string, options?: SearchOptions) => this.#typed<BookHit>(query, SearchType.Book, options);
-  authors = (query: string, options?: SearchOptions) => this.#typed<AuthorHit>(query, SearchType.Author, options);
-  series = (query: string, options?: SearchOptions) => this.#typed<SeriesHit>(query, SearchType.Series, options);
-  characters = (query: string, options?: SearchOptions) => this.#typed<CharacterHit>(query, SearchType.Character, options);
-  lists = (query: string, options?: SearchOptions) => this.#typed<ListHit>(query, SearchType.List, options);
-  prompts = (query: string, options?: SearchOptions) => this.#typed<PromptHit>(query, SearchType.Prompt, options);
-  publishers = (query: string, options?: SearchOptions) => this.#typed<PublisherHit>(query, SearchType.Publisher, options);
-  users = (query: string, options?: SearchOptions) => this.#typed<UserHit>(query, SearchType.User, options);
+  /** Scopes: `read:catalog`. */
+  books(query: string, options?: SearchOptions): Promise<SearchResults<BookHit>> {
+    return this.#typed<BookHit>(query, SearchType.Book, options);
+  }
 
-  /** The untouched API response, including Typesense's raw `results`. */
+  /** Scopes: `read:catalog`. */
+  authors(query: string, options?: SearchOptions): Promise<SearchResults<AuthorHit>> {
+    return this.#typed<AuthorHit>(query, SearchType.Author, options);
+  }
+
+  /** Scopes: `read:catalog`. */
+  series(query: string, options?: SearchOptions): Promise<SearchResults<SeriesHit>> {
+    return this.#typed<SeriesHit>(query, SearchType.Series, options);
+  }
+
+  /** Scopes: `read:catalog`. */
+  characters(query: string, options?: SearchOptions): Promise<SearchResults<CharacterHit>> {
+    return this.#typed<CharacterHit>(query, SearchType.Character, options);
+  }
+
+  /** Scopes: `read:catalog`. */
+  lists(query: string, options?: SearchOptions): Promise<SearchResults<ListHit>> {
+    return this.#typed<ListHit>(query, SearchType.List, options);
+  }
+
+  /** Scopes: `read:catalog`. */
+  prompts(query: string, options?: SearchOptions): Promise<SearchResults<PromptHit>> {
+    return this.#typed<PromptHit>(query, SearchType.Prompt, options);
+  }
+
+  /** Scopes: `read:catalog`. */
+  publishers(query: string, options?: SearchOptions): Promise<SearchResults<PublisherHit>> {
+    return this.#typed<PublisherHit>(query, SearchType.Publisher, options);
+  }
+
+  /** Scopes: `read:catalog`. */
+  users(query: string, options?: SearchOptions): Promise<SearchResults<UserHit>> {
+    return this.#typed<UserHit>(query, SearchType.User, options);
+  }
+
+
+  /** The untouched API response, including Typesense's raw `results`. Scopes: `read:catalog`. */
   async raw(query: string, { type = SearchType.Book, ...options }: SearchOptions & { type?: SearchType } = {}): Promise<RawSearch> {
     const { search } = await this.client.request(operations.Search, {
       query,
@@ -83,8 +115,7 @@ export class SearchResource {
       ...(options.sort !== undefined && { sort: options.sort }),
       ...(options.filterBy !== undefined && { filterBy: options.filterBy }),
     });
-    if (!search) throw new HardcoverError("search returned nothing");
-    return search;
+    return required(search, "search", "result");
   }
 
   async #typed<T>(query: string, type: SearchType, options?: SearchOptions): Promise<SearchResults<T>> {
@@ -92,7 +123,7 @@ export class SearchResource {
     const results = (search.results ?? {}) as { hits?: { document: unknown }[]; found?: number };
     return {
       hits: (results.hits ?? []).map((h) => toHit<T>(h.document)),
-      ids: (search.ids ?? []).filter((id): id is number => id !== null),
+      ids: nonNull(search.ids),
       found: results.found ?? 0,
       page: search.page ?? options?.page ?? 1,
       perPage: search.perPage ?? options?.perPage ?? 25,

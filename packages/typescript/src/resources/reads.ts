@@ -1,6 +1,7 @@
 import type { HardcoverClient } from "../core/client.ts";
 import { toActionAt, type OccurredAt } from "../core/dates.ts";
-import { HardcoverError } from "../core/errors.ts";
+import { HardcoverError, NotFoundError } from "../core/errors.ts";
+import { required } from "./shared.ts";
 import { ReadingFormat } from "../generated/enums.ts";
 import type { UpdateUserBookReadMutation, UserBookReadFragment } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
@@ -61,14 +62,14 @@ function progressFields(read: Read, input: ProgressInput): Record<string, number
 export class ReadsResource {
   constructor(private readonly client: HardcoverClient) {}
 
-  /** All reads for a library entry, newest first. Requires `read:library`. */
+  /** All reads for a library entry, newest first. Scopes: `read:library`. */
   async list(userBookId: number): Promise<Read[]> {
     const { user_books_by_pk } = await this.client.request(operations.GetUserBook, { id: userBookId });
-    if (!user_books_by_pk) throw new HardcoverError(`Library entry ${userBookId} not found`);
+    if (!user_books_by_pk) throw new NotFoundError("library entry", userBookId);
     return user_books_by_pk.userBookReads;
   }
 
-  /** The read in progress (started, not finished), or null. Requires `read:library`. */
+  /** The read in progress (started, not finished), or null. Scopes: `read:library`. */
   async current(userBookId: number): Promise<Read | null> {
     return openRead(await this.list(userBookId));
   }
@@ -77,7 +78,7 @@ export class ReadsResource {
    * Records progress on the read in progress. Always looks up the current read
    * (one extra request) so a re-read never lands on a finished read.
    * Progress of 100% finishes the read and marks the book Read on the server.
-   * Requires `write:library`.
+   * Scopes: `read:library`, `write:library`.
    */
   async setProgress(userBookId: number, input: ProgressInput): Promise<UpdatedRead> {
     assertProgressInput(input);
@@ -92,8 +93,6 @@ export class ReadsResource {
       id: read.id,
       read: { ...fields, ...(input.occurredAt !== undefined && { action_at: toActionAt(input.occurredAt) }) },
     });
-    const updated = update_user_book_read?.userBookRead;
-    if (!updated) throw new HardcoverError("update_user_book_read returned no read");
-    return updated;
+    return required(update_user_book_read?.userBookRead, "update_user_book_read", "read");
   }
 }

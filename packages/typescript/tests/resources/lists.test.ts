@@ -2,21 +2,11 @@
 // that's awkward by hand (one lookup, batching, partial failures); all book
 // matching stays an exact API lookup, with no guessing.
 import { describe, expect, it } from "vitest";
-import { ActionError, HardcoverClient, PrivacySetting } from "../../src/index.ts";
-import { MockTransport, type MockResponse } from "../../src/testing/index.ts";
+import { ActionError, NotFoundError, PrivacySetting } from "../../src/index.ts";
+import { me, ok, setup } from "../helpers.ts";
 
-const ME = { status: 200, body: { data: { me: [{ id: 42, username: "reader", timezone: "UTC" }] } } };
-const ok = (data: unknown): MockResponse => ({ status: 200, body: { data } });
+const ME = me();
 
-function setup(...responses: MockResponse[]) {
-  const transport = new MockTransport(responses);
-  const client = new HardcoverClient({ token: "hc_pat_test", transport, sleep: async () => {} });
-  const sent = () =>
-    transport.requests.map(
-      (r) => JSON.parse(r.body) as { query: string; operationName?: string; variables?: Record<string, unknown> },
-    );
-  return { client, sent };
-}
 
 describe("lists CRUD", () => {
   it("create maps idiomatic input and unwraps the list", async () => {
@@ -41,10 +31,10 @@ describe("lists CRUD", () => {
     expect(sent()[0]!.variables).toEqual({ id: 9, object: { description: "Picks for 2027" } });
   });
 
-  it("delete throws when the server reports no success", async () => {
+  it("delete of a list that isn't there is a NotFoundError", async () => {
     const { client } = setup(ok({ delete_list: { success: true } }), ok({ delete_list: { success: false } }));
     await expect(client.lists.delete(9)).resolves.toBeUndefined();
-    await expect(client.lists.delete(9)).rejects.toThrow(/not deleted/i);
+    await expect(client.lists.delete(9)).rejects.toThrow(NotFoundError);
   });
 
   it("mine pages the signed-in user's lists", async () => {

@@ -24,10 +24,11 @@ export async function exactIsbnLookup(hc: HardcoverClient, isbns: string[]) {
 }
 
 export async function trendingAndBatches(hc: HardcoverClient) {
-  // Trending books, in trending order.
+  // Trending books, in trending order, a page at a time like every list.
   const trending = await hc.books.trending({ duration: "week", limit: 10 });
+  if (trending.hasMore) console.log("more trending books on the next page");
 
   // Many books at once, returned in the order you asked for.
-  const books = await hc.books.getMany(trending.map((b) => b.id).reverse());
+  const books = await hc.books.getMany(trending.items.map((b) => b.id).reverse());
   console.log(books.map((b) => b.title));
 }

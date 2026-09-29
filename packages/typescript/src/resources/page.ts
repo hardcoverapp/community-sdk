@@ -6,6 +6,9 @@ export interface Page<T> {
   hasMore: boolean;
 }
 
+/** Page size when none is given. */
+export const DEFAULT_LIMIT = 25;
+
 export interface PageOptions {
   limit?: number;
   offset?: number;

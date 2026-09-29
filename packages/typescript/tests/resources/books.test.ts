@@ -1,18 +1,10 @@
 // books: catalog reads. Pass-through, plus the chores every app repeats:
 // results in the order you asked for, and trending as books rather than ids.
 import { describe, expect, it } from "vitest";
-import { HardcoverClient } from "../../src/index.ts";
-import { MockTransport, type MockResponse } from "../../src/testing/index.ts";
+import { ok, setup } from "../helpers.ts";
 
-const ok = (data: unknown): MockResponse => ({ status: 200, body: { data } });
 const book = (id: number) => ({ id, title: `Book ${id}` });
 
-function setup(...responses: MockResponse[]) {
-  const transport = new MockTransport(responses);
-  const client = new HardcoverClient({ token: "hc_pat_test", transport });
-  const sent = () => transport.requests.map((r) => JSON.parse(r.body) as { operationName: string; variables: Record<string, unknown> });
-  return { client, sent };
-}
 
 describe("books", () => {
   it("get returns the book or null", async () => {
@@ -61,8 +53,9 @@ describe("books", () => {
       ok({ books_trending: { ids: [9, 4, 6], error: null } }),
       ok({ books: [book(4), book(6), book(9)] }),
     );
-    const books = await client.books.trending({ duration: "week", limit: 3 });
-    expect(books.map((b) => b.id)).toEqual([9, 4, 6]);
+    const page = await client.books.trending({ duration: "week", limit: 3 });
+    expect(page.items.map((b) => b.id)).toEqual([9, 4, 6]);
+    expect(page).toMatchObject({ limit: 3, offset: 0, hasMore: true });
     expect(sent().map((r) => r.operationName)).toEqual(["TrendingBookIds", "GetBooks"]);
     expect(sent()[0]!.variables).toEqual({ duration: "week", limit: 3, offset: 0 });
   });

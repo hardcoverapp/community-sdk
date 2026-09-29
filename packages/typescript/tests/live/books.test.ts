@@ -13,7 +13,7 @@ describeLive(`books (${target})`, () => {
     expect(byId?.contributions.some((c) => c.author?.name === "Andy Weir")).toBe(true);
 
     const trending = await client.books.trending({ limit: 3 });
-    const ids = [bySlug!.id, ...trending.map((b) => b.id)].reverse();
+    const ids = [bySlug!.id, ...trending.items.map((b) => b.id)].reverse();
     expect((await client.books.getMany(ids)).map((b) => b.id)).toEqual(ids);
   });
 
@@ -26,8 +26,8 @@ describeLive(`books (${target})`, () => {
   });
 
   it("trending returns books", async () => {
-    const books = await client.books.trending({ duration: "all", limit: 5 });
-    expect(books.length).toBeGreaterThan(0);
-    expect(books[0]?.title).toBeTruthy();
+    const { items } = await client.books.trending({ duration: "all", limit: 5 });
+    expect(items.length).toBeGreaterThan(0);
+    expect(items[0]?.title).toBeTruthy();
   });
 });

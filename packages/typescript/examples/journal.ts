@@ -11,11 +11,10 @@ import { HardcoverClient, JournalEvent, PrivacySetting } from "@hardcover/sdk";
 
 export async function notesAndQuotes(hc: HardcoverClient, bookId: number) {
   // A note (the default event), using the reader's account privacy setting.
-  const note = await hc.journal.add({ bookId, entry: "The Rocky chapters are the best part." });
+  const note = await hc.journal.add(bookId, { entry: "The Rocky chapters are the best part." });
 
   // A private quote from a specific day, tagged.
-  await hc.journal.add({
-    bookId,
+  await hc.journal.add(bookId, {
     event: JournalEvent.Quote,
     entry: "Fist my bump.",
     privacy: PrivacySetting.Private,
@@ -32,7 +31,7 @@ export async function notesAndQuotes(hc: HardcoverClient, bookId: number) {
 }
 
 export async function tidyUp(hc: HardcoverClient, bookId: number, entryId: number) {
-  await hc.journal.remove(entryId);
+  await hc.journal.delete(entryId);
   // Careful: this removes every entry for the book, including the server's.
   await hc.journal.clearForBook(bookId);
 }
@@ -41,5 +40,5 @@ export async function tidyUp(hc: HardcoverClient, bookId: number, entryId: numbe
 // when you call library.setStatus(..., UserBookStatus.Read). Adding it here
 // creates a second entry.
 export async function manualStatusEntry(hc: HardcoverClient, bookId: number) {
-  await hc.journal.add({ bookId, event: JournalEvent.StatusRead, date: "2025-12-31" });
+  await hc.journal.add(bookId, { event: JournalEvent.StatusRead, date: "2025-12-31" });
 }

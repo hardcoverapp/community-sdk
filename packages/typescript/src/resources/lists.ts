@@ -1,10 +1,11 @@
 import type { HardcoverClient } from "../core/client.ts";
-import { HardcoverError } from "../core/errors.ts";
+import { HardcoverError, NotFoundError } from "../core/errors.ts";
 import { cleanIsbn } from "../core/isbn.ts";
 import type { PrivacySetting } from "../generated/enums.ts";
 import type { AddBookToListMutation, GetListQuery, ListSummaryFragment } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { toPage, type Page, type PageOptions } from "./page.ts";
+import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { pickDefined, required } from "./shared.ts";
 
 export type List = ListSummaryFragment;
 export type ListWithBooks = NonNullable<GetListQuery["lists_by_pk"]>;
@@ -30,14 +31,7 @@ const LIST_WIRE: Record<keyof ListInput, string> = {
   url: "url",
 };
 
-function listToWire(input: ListInput): Record<string, unknown> {
-  const wire: Record<string, unknown> = {};
-  for (const [key, field] of Object.entries(LIST_WIRE)) {
-    const value = input[key as keyof ListInput];
-    if (value !== undefined) wire[field] = value;
-  }
-  return wire;
-}
+
 
 export interface AddBooksResult {
   /** Codes added with the exact edition they identify. */
@@ -58,46 +52,51 @@ type Pending = { key: string; bookId: number; editionId: number };
 export class ListsResource {
   constructor(private readonly client: HardcoverClient) {}
 
-  /** The signed-in user's lists. Requires `read:lists`. */
+  /** The signed-in user's lists. Scopes: `read:me`, `read:lists`. */
   async mine(options: PageOptions = {}): Promise<Page<List>> {
     return this.forUser(await this.client.me.id(), options);
   }
 
-  /** Requires `read:lists`; you only see lists their privacy allows. */
-  async forUser(userId: number, { limit = 25, offset = 0 }: PageOptions = {}): Promise<Page<List>> {
+  /**
+   * Scopes: `read:lists`.
+   */
+  async forUser(userId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<List>> {
     const { lists } = await this.client.request(operations.GetListsForUser, { userId, limit, offset });
     return toPage(lists, limit, offset);
   }
 
-  /** A list with a page of its books, or null. Requires `read:lists`. */
+  /** A list with a page of its books, or null. Scopes: `read:lists`. */
   async get(id: number, { limit = 50, offset = 0 }: PageOptions = {}): Promise<ListWithBooks | null> {
     const { lists_by_pk } = await this.client.request(operations.GetList, { id, limit, offset });
     return lists_by_pk ?? null;
   }
 
-  /** Requires `write:lists`. */
+  /**
+   * Scopes: `write:lists`.
+   */
   async create(input: ListInput & { name: string }): Promise<List> {
-    const { insert_list } = await this.client.request(operations.CreateList, { object: listToWire(input) });
-    if (!insert_list?.list) throw new HardcoverError("insert_list returned no list");
-    return insert_list.list;
+    const { insert_list } = await this.client.request(operations.CreateList, { object: pickDefined(input, LIST_WIRE) });
+    return required(insert_list?.list, "insert_list", "list");
   }
 
-  /** Sends only the fields you set. Requires `write:lists`. */
+  /** Sends only the fields you set. Scopes: `write:lists`. */
   async update(id: number, patch: ListInput): Promise<List> {
-    const { update_list } = await this.client.request(operations.UpdateList, { id, object: listToWire(patch) });
-    if (!update_list?.list) throw new HardcoverError("update_list returned no list");
-    return update_list.list;
+    const { update_list } = await this.client.request(operations.UpdateList, { id, object: pickDefined(patch, LIST_WIRE) });
+    return required(update_list?.list, "update_list", "list");
   }
 
-  /** Requires `write:lists`. */
+  /**
+   * Scopes: `write:lists`.
+   */
   async delete(id: number): Promise<void> {
     const { delete_list } = await this.client.request(operations.DeleteList, { id });
-    if (!delete_list?.success) throw new HardcoverError(`List ${id} was not deleted`);
+    if (!delete_list?.success) throw new NotFoundError("list", id);
   }
 
   /**
    * Adds a book. Adding a book that's already on the list returns the existing
-   * row unchanged, so this is safe to repeat. Requires `write:lists`.
+   * row unchanged, so this is safe to repeat.
+   * Scopes: `write:lists`.
    */
   async addBook(listId: number, bookId: number, { editionId, position }: { editionId?: number; position?: number } = {}): Promise<ListBookRow> {
     const { insert_list_book } = await this.client.request(operations.AddBookToList, {
@@ -108,14 +107,13 @@ export class ListsResource {
         ...(position !== undefined && { position }),
       },
     });
-    if (!insert_list_book?.listBook) throw new HardcoverError("insert_list_book returned no row");
-    return insert_list_book.listBook;
+    return required(insert_list_book?.listBook, "insert_list_book", "list book");
   }
 
   /**
    * Removes a book. Returns false if it wasn't on the list. Two requests: the
    * API deletes by list_books row id, so the row is looked up first.
-   * Requires `write:lists`.
+   * Scopes: `read:lists`, `write:lists`.
    */
   async removeBook(listId: number, bookId: number): Promise<boolean> {
     const { list_books } = await this.client.request(operations.FindListBook, { listId, bookId });
@@ -130,7 +128,7 @@ export class ListsResource {
    * every code is looked up against ISBN-13 and ISBN-10 in one request, exact
    * editions are added in batches, and anything else is reported, never
    * guessed. Search for the leftovers yourself if you want fuzzy matching.
-   * Requires `read:catalog` and `write:lists`.
+   * Scopes: `read:catalog`, `write:lists`.
    */
   async addBooks(listId: number, codes: string[]): Promise<AddBooksResult> {
     const keys = [...new Set(codes.map(cleanIsbn).filter(Boolean))];
@@ -192,8 +190,7 @@ export class ListsResource {
     );
     return items.map((_, i) => {
       const id = data[`b${i}`]?.id;
-      if (!id) throw new HardcoverError("insert_list_book returned no row");
-      return id;
+      return required(id, "insert_list_book", "list book");
     });
   }
 }

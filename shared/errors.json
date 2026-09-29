@@ -166,6 +166,21 @@
       "notes": "authorization_pending and slow_down are handled inside the device-grant poll loop and never surface."
     },
     {
+      "name": "NotFoundError",
+      "parent": "HardcoverError",
+      "match": [
+        {
+          "client": "a method that changes or reads through something by id found nothing (e.g. update a goal that doesn't exist, remove an entry that isn't there)"
+        }
+      ],
+      "fields": [
+        "resource",
+        "id"
+      ],
+      "retry": false,
+      "notes": "Raised by SDK resource methods, not mapped from an HTTP status. Lookups that can legitimately find nothing (get, forBook, current) return null instead."
+    },
+    {
       "name": "ServerError",
       "parent": "HardcoverError",
       "match": [

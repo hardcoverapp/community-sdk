@@ -1,5 +1,6 @@
 import type { HardcoverClient } from "../core/client.ts";
-import { HardcoverError } from "../core/errors.ts";
+import { NotFoundError } from "../core/errors.ts";
+import { required } from "./shared.ts";
 import { GoalMetric, type PrivacySetting } from "../generated/enums.ts";
 import type { GoalConditionInput, GoalFragment, GoalInput } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
@@ -64,66 +65,71 @@ export function goalProgress(goal: Pick<Goal, "metric" | "goal" | "progress">): 
 export class GoalsResource {
   constructor(private readonly client: HardcoverClient) {}
 
-  /** The signed-in user's goals, newest end date first. Requires `read:goals`. */
+  /** The signed-in user's goals, newest end date first. Scopes: `read:me`, `read:goals`. */
   async list({ includeArchived = false }: { includeArchived?: boolean } = {}): Promise<Goal[]> {
     const userId = await this.client.me.id();
     const { goals } = await this.client.request(operations.GetGoals, { userId, includeArchived });
     return goals;
   }
 
-  /** Requires `read:goals`. */
+  /**
+   * Scopes: `read:goals`.
+   */
   async get(id: number): Promise<Goal | null> {
     const { goals_by_pk } = await this.client.request(operations.GetGoal, { id });
     return goals_by_pk ?? null;
   }
 
   /**
-   * Requires `write:goals`. Progress is calculated on creation.
+   * Progress is calculated on creation.
    * The API currently ignores privacy on create and uses the account default
    * (spec/06); when you ask for a different privacy, the SDK applies it with
    * one follow-up update.
+   * Scopes: `write:goals`.
    */
   async create(fields: GoalFields): Promise<Goal> {
     const { insert_goal } = await this.client.request(operations.CreateGoal, { object: toWire(fields) });
-    const created = insert_goal?.goal;
-    if (!created) throw new HardcoverError("insert_goal returned no goal");
+    const created = required(insert_goal?.goal, "insert_goal", "goal");
     if (fields.privacy === undefined || created.privacySettingId === fields.privacy) return created;
     return this.#put(created.id, { ...fromGoal(created), privacy: fields.privacy });
   }
 
   /**
    * Changes only what you pass. Two requests: the API's update takes the whole
-   * goal, so the current goal is read and merged first. Requires `write:goals`.
+   * goal, so the current goal is read and merged first.
+   * Scopes: `read:goals`, `write:goals`.
    */
   async update(id: number, patch: Partial<GoalFields>): Promise<Goal> {
     const current = await this.get(id);
-    if (!current) throw new HardcoverError(`Goal ${id} not found`);
+    if (!current) throw new NotFoundError("goal", id);
     return this.#put(id, { ...fromGoal(current), ...patch });
   }
 
   // update_goal replaces the whole goal.
   async #put(id: number, fields: GoalFields): Promise<Goal> {
     const { update_goal } = await this.client.request(operations.UpdateGoal, { id, object: toWire(fields) });
-    if (!update_goal?.goal) throw new HardcoverError("update_goal returned no goal");
-    return update_goal.goal;
+    return required(update_goal?.goal, "update_goal", "goal");
   }
 
+  /** Scopes: `read:goals`, `write:goals`. */
   archive(id: number): Promise<Goal> {
     return this.update(id, { archived: true });
   }
 
+  /** Scopes: `read:goals`, `write:goals`. */
   unarchive(id: number): Promise<Goal> {
     return this.update(id, { archived: false });
   }
 
-  /** Asks the server to recalculate progress now. Requires `write:goals`. */
+  /** Asks the server to recalculate progress now. Scopes: `write:goals`. */
   async refreshProgress(id: number): Promise<Goal> {
     const { update_goal_progress } = await this.client.request(operations.RefreshGoalProgress, { id });
-    if (!update_goal_progress?.goal) throw new HardcoverError("update_goal_progress returned no goal");
-    return update_goal_progress.goal;
+    return required(update_goal_progress?.goal, "update_goal_progress", "goal");
   }
 
-  /** Requires `write:goals`. */
+  /**
+   * Scopes: `write:goals`.
+   */
   async delete(id: number): Promise<void> {
     await this.client.request(operations.DeleteGoal, { id });
   }

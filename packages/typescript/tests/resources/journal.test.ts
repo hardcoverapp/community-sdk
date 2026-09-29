@@ -2,24 +2,17 @@
 // the server journals status, progress, ratings and reviews itself, which the
 // JournalEvent doc comments point out. No SDK-side restrictions.
 import { describe, expect, it } from "vitest";
-import { ActionError, HardcoverClient, JournalEvent, PrivacySetting } from "../../src/index.ts";
-import { MockTransport, type MockResponse } from "../../src/testing/index.ts";
+import { ActionError, JournalEvent, PrivacySetting } from "../../src/index.ts";
+import { me, ok, setup } from "../helpers.ts";
 
-const ME = { status: 200, body: { data: { me: [{ id: 42, username: "reader", timezone: "UTC", accountPrivacySettingId: 2 }] } } };
-const ok = (data: unknown): MockResponse => ({ status: 200, body: { data } });
+const ME = me();
 const created = (entry: Record<string, unknown>) => ok({ insert_reading_journal: { id: entry.id, errors: null, readingJournal: entry } });
 
-function setup(...responses: MockResponse[]) {
-  const transport = new MockTransport(responses);
-  const client = new HardcoverClient({ token: "hc_pat_test", transport });
-  const sent = () => transport.requests.map((r) => JSON.parse(r.body) as { operationName: string; variables: Record<string, unknown> });
-  return { client, sent };
-}
 
 describe("journal.add", () => {
   it("defaults to a note, no tags, and the user's own account privacy", async () => {
     const { client, sent } = setup(ME, created({ id: 5, event: "note", entry: "Rocky!" }));
-    const entry = await client.journal.add({ bookId: 100, entry: "Rocky!" });
+    const entry = await client.journal.add(100, { entry: "Rocky!" });
 
     expect(entry).toMatchObject({ id: 5, event: "note" });
     expect(sent().map((r) => r.operationName)).toEqual(["Me", "AddJournalEntry"]);
@@ -30,8 +23,7 @@ describe("journal.add", () => {
 
   it("maps every option, and skips the user lookup when privacy is given", async () => {
     const { client, sent } = setup(created({ id: 6 }));
-    await client.journal.add({
-      bookId: 100,
+    await client.journal.add(100, {
       event: JournalEvent.Quote,
       entry: "Fist my bump.",
       privacy: PrivacySetting.Private,
@@ -52,13 +44,13 @@ describe("journal.add", () => {
 
   it("allows any event the API accepts", async () => {
     const { client, sent } = setup(created({ id: 7 }));
-    await client.journal.add({ bookId: 100, event: JournalEvent.ProgressUpdated, privacy: PrivacySetting.Public });
+    await client.journal.add(100, { event: JournalEvent.ProgressUpdated, privacy: PrivacySetting.Public });
     expect((sent()[0]!.variables.object as { event: string }).event).toBe("progress_updated");
   });
 
   it("surfaces validation errors from the envelope", async () => {
     const { client } = setup(ok({ insert_reading_journal: { id: null, errors: ["Book must exist"], readingJournal: null } }));
-    await expect(client.journal.add({ bookId: -1, privacy: PrivacySetting.Public })).rejects.toThrow(ActionError);
+    await expect(client.journal.add(-1, { privacy: PrivacySetting.Public })).rejects.toThrow(ActionError);
   });
 });
 
@@ -77,9 +69,9 @@ describe("journal reads and changes", () => {
     expect(sent()[0]!.variables).toEqual({ id: 5, object: { entry: "Edited" } });
   });
 
-  it("remove deletes one entry", async () => {
+  it("delete removes one entry", async () => {
     const { client, sent } = setup(ok({ delete_reading_journal: { id: 5 } }));
-    await expect(client.journal.remove(5)).resolves.toBeUndefined();
+    await expect(client.journal.delete(5)).resolves.toBeUndefined();
     expect(sent()[0]).toMatchObject({ operationName: "DeleteJournalEntry", variables: { id: 5 } });
   });
 

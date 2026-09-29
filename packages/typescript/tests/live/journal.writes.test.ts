@@ -13,11 +13,10 @@ describeLiveWrites(`journal (${target})`, () => {
     const journal = await trackJournal(client, bookId);
     try {
       const me = await client.me.get();
-      const note = await client.journal.add({ bookId, entry: "The Rocky chapters are the best part." });
+      const note = await client.journal.add(bookId, { entry: "The Rocky chapters are the best part." });
       expect(note).toMatchObject({ event: JournalEvent.Note, bookId, privacySettingId: me.accountPrivacySettingId });
 
-      const quote = await client.journal.add({
-        bookId,
+      const quote = await client.journal.add(bookId, {
         event: JournalEvent.Quote,
         entry: "Fist my bump.",
         privacy: PrivacySetting.Private,
@@ -30,7 +29,7 @@ describeLiveWrites(`journal (${target})`, () => {
       const edited = await client.journal.update(note.id, { entry: "Rocky is the best part." });
       expect(edited.entry).toBe("Rocky is the best part.");
 
-      await client.journal.remove(note.id);
+      await client.journal.delete(note.id);
       const { items } = await client.journal.forBook(bookId, { limit: 50 });
       expect(items.map((j) => j.id)).not.toContain(note.id);
       expect(items.map((j) => j.id)).toContain(quote.id);

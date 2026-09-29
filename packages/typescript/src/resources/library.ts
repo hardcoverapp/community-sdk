@@ -1,6 +1,6 @@
 import type { HardcoverClient } from "../core/client.ts";
 import { localDate, toActionAt, type OccurredAt } from "../core/dates.ts";
-import { HardcoverError } from "../core/errors.ts";
+import { NotFoundError } from "../core/errors.ts";
 import { UserBookStatus, type PrivacySetting } from "../generated/enums.ts";
 import type {
   AddUserBookMutation,
@@ -9,7 +9,8 @@ import type {
   GetUserBookQuery,
 } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { toPage, type Page, type PageOptions } from "./page.ts";
+import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { pickDefined, required } from "./shared.ts";
 
 export type LibraryEntry = NonNullable<NonNullable<AddUserBookMutation["insert_user_book"]>["userBook"]>;
 export type LibraryListItem = GetLibraryQuery["user_books"][number];
@@ -62,87 +63,83 @@ export function assertRating(rating: number | null | undefined): void {
   }
 }
 
-function toWire(patch: LibraryEntryPatch): Record<string, unknown> {
-  const wire: Record<string, unknown> = {};
-  for (const [key, field] of Object.entries(WIRE)) {
-    const value = patch[key as keyof typeof WIRE];
-    if (value !== undefined) wire[field] = value;
-  }
-  for (const [key, field] of Object.entries(REVIEW_WIRE)) {
-    const value = patch.review?.[key as keyof typeof REVIEW_WIRE];
-    if (value !== undefined) wire[field] = value;
-  }
-  if (patch.occurredAt !== undefined) wire.action_at = toActionAt(patch.occurredAt);
-  return wire;
+function toWire({ review, occurredAt, ...fields }: LibraryEntryPatch): Record<string, unknown> {
+  return {
+    ...pickDefined(fields, WIRE),
+    ...(review && pickDefined(review, REVIEW_WIRE)),
+    ...(occurredAt !== undefined && { action_at: toActionAt(occurredAt) }),
+  };
 }
 
-function unwrap<T>(entry: T | null | undefined, action: string): T {
-  if (!entry) throw new HardcoverError(`${action} returned no library entry`);
-  return entry;
-}
+/** One status or several, as the operations' `statusIds` list; undefined keeps the operation's default. */
+const statusIds = (status: UserBookStatus | UserBookStatus[] | undefined): { statusIds?: UserBookStatus[] } =>
+  status === undefined ? {} : { statusIds: Array.isArray(status) ? status : [status] };
 
 /** The signed-in user's library ("user books"). */
 export class LibraryResource {
   constructor(private readonly client: HardcoverClient) {}
 
-  /** Requires `read:library`. One request plus a cached `me` lookup. */
-  async list({ status, limit = 25, offset = 0 }: PageOptions & { status?: UserBookStatus | UserBookStatus[] } = {}): Promise<Page<LibraryListItem>> {
+  /** One request plus a cached `me` lookup. Scopes: `read:me`, `read:library`. */
+  async list({ status, limit = DEFAULT_LIMIT, offset = 0 }: PageOptions & { status?: UserBookStatus | UserBookStatus[] } = {}): Promise<Page<LibraryListItem>> {
     const userId = await this.client.me.id();
-    const statusIds = status === undefined ? undefined : Array.isArray(status) ? status : [status];
-    const { user_books } = await this.client.request(operations.GetLibrary, {
-      userId,
-      limit,
-      offset,
-      ...(statusIds && { statusIds }),
-    });
+    const { user_books } = await this.client.request(operations.GetLibrary, { userId, limit, offset, ...statusIds(status) });
     return toPage(user_books, limit, offset);
   }
 
-  /** Requires `read:library`. */
+  /**
+   * Scopes: `read:me`, `read:library`.
+   */
   async count({ status }: { status?: UserBookStatus | UserBookStatus[] } = {}): Promise<number> {
     const userId = await this.client.me.id();
-    const statusIds = status === undefined ? undefined : Array.isArray(status) ? status : [status];
-    const { user_books_aggregate } = await this.client.request(operations.CountLibrary, {
-      userId,
-      ...(statusIds && { statusIds }),
-    });
+    const { user_books_aggregate } = await this.client.request(operations.CountLibrary, { userId, ...statusIds(status) });
     return user_books_aggregate.aggregate?.count ?? 0;
   }
 
-  /** The entry for a book, or null if it isn't in the library. Requires `read:library`. */
+  /**
+   * The entry for a book, or null if it isn't in the library.
+   * Scopes: `read:me`, `read:library`.
+   */
   async forBook(bookId: number): Promise<LibraryEntryForBook | null> {
     const userId = await this.client.me.id();
     const { user_books } = await this.client.request(operations.GetUserBookForBook, { userId, bookId });
     return user_books[0] ?? null;
   }
 
-  /** Requires `read:library`. */
+  /**
+   * Scopes: `read:library`.
+   */
   async get(id: number): Promise<LibraryEntryWithBook | null> {
     const { user_books_by_pk } = await this.client.request(operations.GetUserBook, { id });
     return user_books_by_pk ?? null;
   }
 
-  /** Adds a book (Want to Read unless `status` says otherwise). Requires `write:library`. */
+  /**
+   * Adds a book (Want to Read unless `status` says otherwise).
+   * Scopes: `write:library`, `read:me` (only when marking Read without a date).
+   */
   async add(bookId: number, options: LibraryEntryPatch = {}): Promise<LibraryEntry> {
     const patch = await this.#withDefaults({ status: UserBookStatus.WantToRead, ...options });
     const { insert_user_book } = await this.client.request(operations.AddUserBook, {
       object: { book_id: bookId, ...toWire(patch) },
     });
-    return unwrap(insert_user_book?.userBook, "insert_user_book");
+    return required(insert_user_book?.userBook, "insert_user_book", "library entry");
   }
 
-  /** Requires `write:library` (plus `write:reviews` for review fields). */
+  /**
+   * Scopes: `write:library`, `write:reviews` (review fields), `read:me` (only when marking Read without a date).
+   */
   async update(id: number, patch: LibraryEntryPatch): Promise<LibraryEntry> {
     const { update_user_book } = await this.client.request(operations.UpdateUserBook, {
       id,
       object: toWire(await this.#withDefaults(patch)),
     });
-    return unwrap(update_user_book?.userBook, "update_user_book");
+    return required(update_user_book?.userBook, "update_user_book", "library entry");
   }
 
   /**
    * The server manages reads from status: Currently Reading starts a read (a
    * new one on a re-read), Read finishes it. It also writes the journal entries.
+   * Scopes: `write:library`, `read:me` (only when marking Read without a date).
    */
   setStatus(
     id: number,
@@ -152,13 +149,17 @@ export class LibraryResource {
     return this.update(id, { status, ...(date !== undefined && { date }), ...(occurredAt !== undefined && { occurredAt }) });
   }
 
+  /** Scopes: `write:library`. */
   rate(id: number, rating: number | null): Promise<LibraryEntry> {
     return this.update(id, { rating });
   }
 
-  /** Requires `write:library`. */
+  /**
+   * Scopes: `write:library`.
+   */
   async remove(id: number): Promise<void> {
-    await this.client.request(operations.RemoveUserBook, { id });
+    const { delete_user_book } = await this.client.request(operations.RemoveUserBook, { id });
+    if (!delete_user_book?.id) throw new NotFoundError("library entry", id);
   }
 
   // Validates, and mirrors the app: marking Read without a date records today

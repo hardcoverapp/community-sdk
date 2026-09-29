@@ -2,23 +2,16 @@
 // the chores: update merges with the current goal (the API wants the whole
 // thing), and goalProgress() compares progress in the goal's own units.
 import { describe, expect, it } from "vitest";
-import { ActionError, GoalMetric, goalProgress, HardcoverClient, PrivacySetting } from "../../src/index.ts";
-import { MockTransport, type MockResponse } from "../../src/testing/index.ts";
+import { ActionError, GoalMetric, goalProgress, NotFoundError, PrivacySetting } from "../../src/index.ts";
+import { me, ok, setup } from "../helpers.ts";
 
-const ME = { status: 200, body: { data: { me: [{ id: 42, username: "reader", timezone: "UTC" }] } } };
-const ok = (data: unknown): MockResponse => ({ status: 200, body: { data } });
+const ME = me();
 const goal = (over: Record<string, unknown> = {}) => ({
   id: 9, metric: "book", goal: 50, progress: 10, description: "50 books in 2026", conditions: { readingFormatId: 1 },
   archived: false, state: "active", startDate: "2026-01-01", endDate: "2026-12-31", completedAt: null, privacySettingId: 1, ...over,
 });
 const envelope = (field: string, g: unknown) => ok({ [field]: { id: 9, errors: [], goal: g } });
 
-function setup(...responses: MockResponse[]) {
-  const transport = new MockTransport(responses);
-  const client = new HardcoverClient({ token: "hc_pat_test", transport });
-  const sent = () => transport.requests.map((r) => JSON.parse(r.body) as { operationName: string; variables: Record<string, unknown> });
-  return { client, sent };
-}
 
 describe("goals", () => {
   it("create maps idiomatic input and defaults conditions", async () => {
@@ -80,7 +73,9 @@ describe("goals", () => {
 
   it("update of a missing goal fails clearly without writing", async () => {
     const { client, sent } = setup(ok({ goals_by_pk: null }));
-    await expect(client.goals.update(9, { goal: 60 })).rejects.toThrow(/goal 9 not found/i);
+    const error = await client.goals.update(9, { goal: 60 }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(NotFoundError);
+    expect(error).toMatchObject({ resource: "goal", id: 9 });
     expect(sent()).toHaveLength(1);
   });
 

@@ -1,9 +1,9 @@
 import type { HardcoverClient } from "../core/client.ts";
-import { HardcoverError } from "../core/errors.ts";
 import { JournalEvent, type PrivacySetting } from "../generated/enums.ts";
 import type { JournalEntryFragment, ReadingJournalCreateType } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { toPage, type Page, type PageOptions } from "./page.ts";
+import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { nonNull, pickDefined, required } from "./shared.ts";
 
 export type JournalEntry = JournalEntryFragment;
 
@@ -37,14 +37,6 @@ const WIRE: Record<keyof JournalEntryInput, string> = {
   metadata: "metadata",
 };
 
-function toWire(input: JournalEntryInput): Record<string, unknown> {
-  const wire: Record<string, unknown> = {};
-  for (const [key, field] of Object.entries(WIRE)) {
-    const value = input[key as keyof JournalEntryInput];
-    if (value !== undefined) wire[field] = value;
-  }
-  return wire;
-}
 
 /**
  * The reading journal: everything the API allows. The server already journals
@@ -55,44 +47,48 @@ function toWire(input: JournalEntryInput): Record<string, unknown> {
 export class JournalResource {
   constructor(private readonly client: HardcoverClient) {}
 
-  /** The signed-in user's entries for a book, newest first. Requires `read:journal`. */
-  async forBook(bookId: number, { limit = 25, offset = 0 }: PageOptions = {}): Promise<Page<JournalEntry>> {
+  /** The signed-in user's entries for a book, newest first. Scopes: `read:me`, `read:journal`. */
+  async forBook(bookId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<JournalEntry>> {
     const userId = await this.client.me.id();
     const { reading_journals } = await this.client.request(operations.GetJournalForBook, { userId, bookId, limit, offset });
     return toPage(reading_journals, limit, offset);
   }
 
-  /** Adds an entry (a note unless `event` says otherwise). Requires `write:library`. */
-  async add({ bookId, ...input }: JournalEntryInput & { bookId: number }): Promise<JournalEntry> {
+  /**
+   * Adds an entry (a note unless `event` says otherwise).
+   * Scopes: `write:library`, `read:me` (only when privacy isn't given).
+   */
+  async add(bookId: number, input: JournalEntryInput = {}): Promise<JournalEntry> {
     // The API requires a privacy setting; default to the user's own account setting.
     const privacy = input.privacy ?? ((await this.client.me.get()).accountPrivacySettingId as PrivacySetting);
     const object = {
       book_id: bookId,
-      ...toWire({ event: JournalEvent.Note, ...input, privacy, tags: input.tags ?? [] }),
+      ...pickDefined({ event: JournalEvent.Note, ...input, privacy, tags: input.tags ?? [] }, WIRE),
     } as ReadingJournalCreateType;
     const { insert_reading_journal } = await this.client.request(operations.AddJournalEntry, { object });
-    if (!insert_reading_journal?.readingJournal) throw new HardcoverError("insert_reading_journal returned no entry");
-    return insert_reading_journal.readingJournal;
+    return required(insert_reading_journal?.readingJournal, "insert_reading_journal", "journal entry");
   }
 
-  /** Sends only the fields you set. Requires `write:library`. */
+  /** Sends only the fields you set. Scopes: `write:library`. */
   async update(id: number, patch: JournalEntryInput): Promise<JournalEntry> {
-    const { update_reading_journal } = await this.client.request(operations.UpdateJournalEntry, { id, object: toWire(patch) });
-    if (!update_reading_journal?.readingJournal) throw new HardcoverError("update_reading_journal returned no entry");
-    return update_reading_journal.readingJournal;
+    const { update_reading_journal } = await this.client.request(operations.UpdateJournalEntry, { id, object: pickDefined(patch, WIRE) });
+    return required(update_reading_journal?.readingJournal, "update_reading_journal", "journal entry");
   }
 
-  /** Requires `write:library`. */
-  async remove(id: number): Promise<void> {
+  /**
+   * Scopes: `write:library`.
+   */
+  async delete(id: number): Promise<void> {
     await this.client.request(operations.DeleteJournalEntry, { id });
   }
 
   /**
    * Removes every entry the user has for a book, including the ones the
-   * server wrote. Returns the removed ids. Requires `write:library`.
+   * server wrote. Returns the removed ids.
+   * Scopes: `write:library`.
    */
   async clearForBook(bookId: number): Promise<number[]> {
     const { delete_reading_journals_for_book } = await this.client.request(operations.ClearJournalForBook, { bookId });
-    return (delete_reading_journals_for_book?.ids ?? []).filter((id): id is number => id !== null);
+    return nonNull(delete_reading_journals_for_book?.ids);
   }
 }

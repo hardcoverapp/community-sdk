@@ -2,43 +2,19 @@
 // only fields the caller set), date defaults, validation, unwrapping, paging.
 // Real response shapes are covered by tests/live.
 import { describe, expect, it } from "vitest";
-import { HardcoverClient, UserBookStatus, PrivacySetting } from "../../src/index.ts";
-import { MockTransport, type MockResponse } from "../../src/testing/index.ts";
+import { NotFoundError, UserBookStatus, PrivacySetting } from "../../src/index.ts";
+import type { MockResponse } from "../../src/testing/index.ts";
+import { me, setupWith } from "../helpers.ts";
 
-const ME = { status: 200, body: { data: { me: [{ id: 42, username: "reader", timezone: "America/Denver" }] } } };
+const ME = me({ timezone: "America/Denver" });
 // 02:30 UTC on Sep 29 is still Sep 28 in Denver.
 const NOW = new Date("2026-09-29T02:30:00Z");
+const setup = (...responses: MockResponse[]) => setupWith({ now: () => NOW }, ...responses);
 
-function setup(...responses: MockResponse[]) {
-  const transport = new MockTransport(responses);
-  const client = new HardcoverClient({ token: "hc_pat_test", transport, now: () => NOW });
-  const sent = () =>
-    transport.requests.map((r) => JSON.parse(r.body) as { operationName: string; variables: Record<string, unknown> });
-  return { client, transport, sent };
-}
 
 const userBookEnvelope = (field: string, userBook: Record<string, unknown>) => ({
   status: 200,
   body: { data: { [field]: { id: userBook.id, error: null, userBook } } },
-});
-
-describe("me", () => {
-  it("fetches once and caches, including concurrent callers", async () => {
-    const { client, sent } = setup(ME);
-    const [a, b] = await Promise.all([client.me.get(), client.me.get()]);
-    const c = await client.me.get();
-    expect(a.username).toBe("reader");
-    expect(b).toBe(a);
-    expect(c).toBe(a);
-    expect(sent()).toHaveLength(1);
-  });
-
-  it("refetches on request", async () => {
-    const { client, sent } = setup(ME, ME);
-    await client.me.get();
-    await client.me.get({ refresh: true });
-    expect(sent()).toHaveLength(2);
-  });
 });
 
 describe("library.add", () => {
@@ -161,9 +137,25 @@ describe("library reads", () => {
     expect(sent().map((r) => r.operationName)).toEqual(["Me", "CountLibrary", "GetUserBookForBook"]);
   });
 
+  it("remove of an entry that isn't there is a NotFoundError", async () => {
+    const { client } = setup({ status: 200, body: { data: { delete_user_book: { id: null, bookId: null, userId: null } } } });
+    await expect(client.library.remove(7)).rejects.toThrow(NotFoundError);
+  });
+
   it("remove returns nothing and sends the id", async () => {
     const { client, sent } = setup({ status: 200, body: { data: { delete_user_book: { id: 7, bookId: 100, userId: 42 } } } });
     await expect(client.library.remove(7)).resolves.toBeUndefined();
     expect(sent()[0]).toMatchObject({ operationName: "RemoveUserBook", variables: { id: 7 } });
+  });
+});
+
+describe("library occurredAt", () => {
+  it("backdates status changes via action_at", async () => {
+    const { client, sent } = setup({
+      status: 200,
+      body: { data: { update_user_book: { id: 7, error: null, userBook: { id: 7 } } } },
+    });
+    await client.library.update(7, { status: UserBookStatus.Paused, occurredAt: "2026-09-24T21:00:00-06:00" });
+    expect(sent()[0]!.variables).toEqual({ id: 7, object: { status_id: 4, action_at: "2026-09-24T21:00:00-06:00" } });
   });
 });

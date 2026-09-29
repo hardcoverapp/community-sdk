@@ -96,6 +96,20 @@ export class OAuthError extends HardcoverError {
   }
 }
 
+/**
+ * Something the method needed doesn't exist, e.g. updating a goal that isn't
+ * there. Lookups that can find nothing (get, forBook, current) return null.
+ */
+export class NotFoundError extends HardcoverError {
+  constructor(
+    readonly resource: string,
+    readonly id: number,
+    options?: HardcoverErrorOptions,
+  ) {
+    super(`${resource[0]!.toUpperCase()}${resource.slice(1)} ${id} not found`, options);
+  }
+}
+
 export class ServerError extends HardcoverError {}
 
 /** Thrown for a server 408 or a client-side deadline. */

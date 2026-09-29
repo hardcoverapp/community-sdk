@@ -11,7 +11,7 @@ export class MeResource {
 
   constructor(private readonly client: HardcoverClient) {}
 
-  /** Requires `read:me`. Concurrent callers share one request. */
+  /** Concurrent callers share one request. Scopes: `read:me`. */
   get({ refresh = false }: { refresh?: boolean } = {}): Promise<Me> {
     if (!this.#cached || refresh) {
       this.#cached = this.client.request(operations.Me).then(({ me }) => {
@@ -26,6 +26,7 @@ export class MeResource {
     return this.#cached;
   }
 
+  /** Scopes: `read:me`. */
   async id(): Promise<number> {
     return (await this.get()).id;
   }

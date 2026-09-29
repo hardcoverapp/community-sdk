@@ -2,8 +2,8 @@
 // finishes reads on status changes and writes journal entries itself; the SDK
 // only has to target the right read and send the right units.
 import { describe, expect, it } from "vitest";
-import { HardcoverClient, HardcoverError, UserBookStatus } from "../../src/index.ts";
-import { MockTransport, type MockResponse } from "../../src/testing/index.ts";
+import { HardcoverError, NotFoundError } from "../../src/index.ts";
+import { setup } from "../helpers.ts";
 
 const PRINT = { id: 5, pages: 476, audioSeconds: null, readingFormatId: 1 };
 const AUDIO = { id: 6, pages: null, audioSeconds: 36_000, readingFormatId: 2 };
@@ -25,13 +25,6 @@ const updated = (over: Record<string, unknown> = {}) => ({
   body: { data: { update_user_book_read: { id: 2, error: null, userBookRead: read(2, over) } } },
 });
 
-function setup(...responses: MockResponse[]) {
-  const transport = new MockTransport(responses);
-  const client = new HardcoverClient({ token: "hc_pat_test", transport });
-  const sent = () =>
-    transport.requests.map((r) => JSON.parse(r.body) as { operationName: string; variables: Record<string, unknown> });
-  return { client, sent };
-}
 
 describe("reads.list / current", () => {
   it("current is the open read: started, not finished, newest", async () => {
@@ -42,6 +35,11 @@ describe("reads.list / current", () => {
   it("current is null when every read is finished", async () => {
     const { client } = setup(entry([read(1, { finishedAt: "2026-09-10" })]));
     expect(await client.reads.current(7)).toBeNull();
+  });
+
+  it("list of a missing library entry is a NotFoundError", async () => {
+    const { client } = setup({ status: 200, body: { data: { user_books_by_pk: null } } });
+    await expect(client.reads.list(7)).rejects.toThrow(NotFoundError);
   });
 
   it("list returns all reads for the entry", async () => {
@@ -105,16 +103,5 @@ describe("reads.setProgress", () => {
     await expect(client.reads.setProgress(7, {} as never)).rejects.toThrow(TypeError);
     await expect(client.reads.setProgress(7, { pages: 1, percent: 1 } as never)).rejects.toThrow(TypeError);
     expect(sent().map((r) => r.operationName).filter((n) => n !== "GetUserBook")).toEqual([]);
-  });
-});
-
-describe("library occurredAt", () => {
-  it("backdates status changes via action_at", async () => {
-    const { client, sent } = setup({
-      status: 200,
-      body: { data: { update_user_book: { id: 7, error: null, userBook: { id: 7 } } } },
-    });
-    await client.library.update(7, { status: UserBookStatus.Paused, occurredAt: "2026-09-24T21:00:00-06:00" });
-    expect(sent()[0]!.variables).toEqual({ id: 7, object: { status_id: 4, action_at: "2026-09-24T21:00:00-06:00" } });
   });
 });
