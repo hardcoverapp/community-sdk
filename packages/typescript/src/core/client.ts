@@ -1,5 +1,5 @@
 import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
-import environments from "../../../../shared/environments.json" with { type: "json" };
+import { environments, type Environment } from "../generated/environments.ts";
 import { operationInfo, type OperationInfo } from "../operations.ts";
 import { requestCost } from "./cost.ts";
 import {
@@ -27,7 +27,7 @@ import { SearchResource } from "../resources/search.ts";
 import { parseRateLimit, type RateLimitState } from "./rate-limit.ts";
 import { fetchTransport, TransportFailure, type HttpResponse, type Transport } from "./transport.ts";
 
-export type Environment = "prod" | "staging" | "local";
+export type { Environment };
 
 export interface HardcoverClientOptions {
   /** A personal access token (`hc_pat_...`) or OAuth access token. */

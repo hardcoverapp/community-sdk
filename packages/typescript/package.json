@@ -9,7 +9,7 @@
     "./testing": "./src/testing/index.ts"
   },
   "scripts": {
-    "codegen": "node ../../scripts/case-operations.mjs --case camel --out .operations && graphql-codegen --config codegen.ts && node scripts/gen-enums.mjs",
+    "codegen": "node ../../scripts/case-operations.mjs --case camel --out .operations && graphql-codegen --config codegen.ts && node scripts/gen-shared.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
