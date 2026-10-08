@@ -12,6 +12,8 @@ export { MeResource, type Me } from "./resources/me.ts";
 export {
   LibraryResource,
   type LibraryEntry,
+  type LibraryChange,
+  type LibraryChanges,
   type LibraryEntryForBook,
   type LibraryEntryPatch,
   type LibraryEntryWithBook,

@@ -78,6 +78,15 @@ a decision before the SDK depends on it. Record decisions in
     viewed. An API action to resolve a vibe's books would close this; the SDK
     reports `resultsPending` meanwhile.
 
+27. **No deletion feed for incremental sync.** `library.changes` reads
+    entries by `updated_at`, but removed entries are deleted outright (only
+    paper_trail's `CachedVersion` records them, and it isn't exposed), so the
+    SDK finds removals by diffing the app's ids against an ids-only read of the
+    whole library. A deletions feed (or soft deletes) would make removals as
+    cheap as changes. Related: `update_all`-style bulk updates (e.g. book
+    merges re-pointing `book_id`) skip `updated_at` and won't show up as
+    changes; `list_books` don't touch their list.
+
 ## Environment and access
 
 7. **Staging web host.** `api-staging.hardcover.app` is confirmed. What's the

@@ -225,12 +225,31 @@ Built 2026-10-07 (TypeScript), opt-in with the client option `batch: true`.
   issued within one macrotask, or while an earlier request is waiting on the
   allowance, join the same run.
 
+### Incremental reads
+
+Built 2026-10-07 for the library: `library.changes({ since, knownIds, limit })`
+returns entries changed after a cursor, oldest first, with the next cursor and
+`hasMore`.
+
+- **The cursor is the server's, never the client's clock.** It's the
+  `(updated_at, id)` of the last row returned, so paging through a run of
+  equal timestamps neither skips nor repeats, and device clock skew can't lose
+  changes. `updated_at` stays the server's string, which keeps microseconds a
+  JS `Date` would round. Apps store the cursor as an opaque string.
+- **Reads count as changes**: a read's change touches its entry.
+- **Removals need ids.** Entries are deleted outright and the API has no
+  deletion feed ([06](06-open-questions.md) #27). With `knownIds`, the SDK
+  also reads every entry id (one field) and returns `removedIds`. Apps pass it
+  once per sync, not on every page.
+- Apps upsert by id. Next candidates: lists (`list_books` don't touch their
+  list, so a list's changes need their own cursor), vibes, journal.
+
 ### Not in the core (modules later)
 
 - **Caching**: off. A hidden cache serves stale data and hides server-side
-  writes (journal entries the server records). Incremental reads (`since`
-  filters on `updated_at`) cover the "only what changed" need; a pluggable cache
-  can come later as an optional module.
+  writes (journal entries the server records). Incremental reads (below)
+  cover the "only what changed" need; a pluggable cache can come later as an
+  optional module.
 - **API versions**: when the API adds a version header, the client sends the
   version it was generated against and passes deprecation notices to
   `onWarning`. The format and support window are the API side's call.

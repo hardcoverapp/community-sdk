@@ -159,3 +159,46 @@ describe("library occurredAt", () => {
     expect(sent()[0]!.variables).toEqual({ id: 7, object: { status_id: 4, action_at: "2026-09-24T21:00:00-06:00" } });
   });
 });
+
+describe("library.changes", () => {
+  const entry = (id: number, updatedAt: string) => ({ id, updatedAt, bookId: id * 10 });
+  const changes = (...rows: unknown[]): MockResponse => ({ status: 200, body: { data: { user_books: rows } } });
+  const ids = (...rows: number[]): MockResponse => ({ status: 200, body: { data: { user_books: rows.map((id) => ({ id })) } } });
+  const T1 = "2026-10-07T01:00:00.123456+00:00";
+  const T2 = "2026-10-07T02:00:00.654321+00:00";
+
+  it("starts from the beginning and returns a cursor at the last row, keeping the server's microseconds", async () => {
+    const { client, sent } = setupWith({}, me(), changes(entry(1, T1), entry(2, T2)));
+    const result = await client.library.changes({ limit: 2 });
+
+    expect(sent()[1]).toMatchObject({ operationName: "GetLibraryChanges", variables: { userId: 42, limit: 2 } });
+    expect(sent()[1]!.variables).not.toHaveProperty("after");
+    expect(result).toMatchObject({ cursor: `${T2}|2`, hasMore: true });
+    expect(result.items.map((e) => e.id)).toEqual([1, 2]);
+    expect(result).not.toHaveProperty("removedIds");
+  });
+
+  it("resumes after the cursor's timestamp and id, so equal timestamps across a page aren't skipped", async () => {
+    const { client, sent } = setupWith({}, me(), changes());
+    const result = await client.library.changes({ since: `${T1}|7` });
+    expect(sent()[1]!.variables).toMatchObject({ after: T1, afterId: 7 });
+    expect(result).toMatchObject({ items: [], cursor: `${T1}|7`, hasMore: false });
+  });
+
+  it("returns a null cursor when nothing has synced yet", async () => {
+    const { client } = setupWith({}, me(), changes());
+    expect((await client.library.changes()).cursor).toBeNull();
+  });
+
+  it("finds removals from knownIds with one ids-only read", async () => {
+    const { client, sent } = setupWith({}, me(), changes(entry(1, T1)), ids(1, 2));
+    const result = await client.library.changes({ knownIds: [1, 2, 3, 3] });
+    expect(sent()[2]).toMatchObject({ operationName: "GetLibraryIds", variables: { userId: 42 } });
+    expect(result.removedIds).toEqual([3]);
+  });
+
+  it("rejects a cursor it didn't make", async () => {
+    const { client } = setupWith({}, me());
+    await expect(client.library.changes({ since: "2026-10-07" })).rejects.toThrow(RangeError);
+  });
+});

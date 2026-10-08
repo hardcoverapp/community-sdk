@@ -160,6 +160,15 @@ export const catalog: Resource[] = [
         fields: [{ kind: "select", name: "status", label: "Status", options: optional(statuses) }],
         run: (c, v) => c.library.count({ status: n(v.status) as UserBookStatus | undefined }),
       },
+      {
+        name: "changes",
+        summary: "What changed since a cursor, oldest first. Paste the result's cursor to continue.",
+        fields: [
+          { kind: "text", name: "since", label: "Since (cursor)", hint: "empty for everything" },
+          { kind: "number", name: "limit", label: "Limit", value: 25 },
+        ],
+        run: (c, v) => c.library.changes({ since: v.since ? String(v.since) : undefined, limit: n(v.limit) }),
+      },
       { name: "forBook", summary: "Your entry for a book, or null.", fields: [bookId()], run: (c, v) => c.library.forBook(Number(v.bookId)) },
       { name: "get", summary: "An entry by its id, with book and edition.", fields: [id("id", "Entry id")], run: (c, v) => c.library.get(Number(v.id)) },
       {

@@ -56,3 +56,41 @@ query GetUserBook($id: Int!) {
     }
   }
 }
+
+# Incremental sync: entries changed after a cursor, oldest change first. The
+# cursor is the (updated_at, id) of the last row seen, so a page boundary inside
+# a run of equal timestamps neither skips nor repeats rows. A first sync uses
+# the defaults. updated_at is nullable in the schema but set on every row
+# (checked against the staging dump, 2026-10-07). Changes to a read touch its
+# entry (UserBookRead belongs_to :user_book, touch: true).
+query GetLibraryChanges(
+  $userId: Int!
+  $after: timestamptz = "1970-01-01T00:00:00Z"
+  $afterId: Int = 0
+  $limit: Int = 25
+) {
+  user_books(
+    where: {
+      user_id: { _eq: $userId }
+      _or: [{ updated_at: { _gt: $after } }, { updated_at: { _eq: $after }, id: { _gt: $afterId } }]
+    }
+    order_by: [{ updated_at: asc }, { id: asc }]
+    limit: $limit
+  ) {
+    ...UserBook
+    book {
+      ...BookSummary
+    }
+    edition {
+      ...EditionSummary
+    }
+  }
+}
+
+# Every entry id, to find removals: entries are deleted outright, and the API
+# has no deletion feed (spec/06).
+query GetLibraryIds($userId: Int!) {
+  user_books(where: { user_id: { _eq: $userId } }) {
+    id
+  }
+}

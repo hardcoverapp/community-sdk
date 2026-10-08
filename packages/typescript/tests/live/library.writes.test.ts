@@ -40,4 +40,31 @@ describeLiveWrites(`library writes (${target})`, () => {
 
     expect(await client.library.forBook(bookId)).toBeNull();
   });
+
+  it("changes reports an edit, and knownIds reports the removal", async () => {
+    const { bookId } = await writeTargetBook(client);
+    const journal = await trackJournal(client, bookId);
+    // Start from the newest change, so only this test's edits come back.
+    let since: string | null = null;
+    for (let page = await client.library.changes({ limit: 100 }); ; page = await client.library.changes({ since, limit: 100 })) {
+      since = page.cursor;
+      if (!page.hasMore) break;
+    }
+
+    let entryId: number | undefined;
+    try {
+      entryId = (await client.library.add(bookId)).id;
+      const added = await client.library.changes({ since });
+      expect(added.items.map((e) => e.id)).toEqual([entryId]);
+
+      await client.library.remove(entryId);
+      const removed = await client.library.changes({ since: added.cursor, knownIds: [entryId] });
+      expect(removed.items).toEqual([]);
+      expect(removed.removedIds).toEqual([entryId]);
+      entryId = undefined;
+    } finally {
+      if (entryId !== undefined) await client.library.remove(entryId);
+      await journal.cleanup();
+    }
+  });
 });

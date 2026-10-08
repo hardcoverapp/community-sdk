@@ -4,6 +4,7 @@ import { NotFoundError } from "../core/errors.ts";
 import { UserBookStatus, type PrivacySetting } from "../generated/enums.ts";
 import type {
   AddUserBookMutation,
+  GetLibraryChangesQuery,
   GetLibraryQuery,
   GetUserBookForBookQuery,
   GetUserBookQuery,
@@ -16,6 +17,30 @@ export type LibraryEntry = NonNullable<NonNullable<AddUserBookMutation["insert_u
 export type LibraryListItem = GetLibraryQuery["user_books"][number];
 export type LibraryEntryWithBook = NonNullable<GetUserBookQuery["user_books_by_pk"]>;
 export type LibraryEntryForBook = GetUserBookForBookQuery["user_books"][number];
+export type LibraryChange = GetLibraryChangesQuery["user_books"][number];
+
+/** One page of library changes, oldest change first. */
+export interface LibraryChanges {
+  /** Entries added or changed since the cursor (including their reads). Upsert them by `id`. */
+  items: LibraryChange[];
+  /** Pass as `since` next time. Opaque: store it as-is. Null until something has synced. */
+  cursor: string | null;
+  /** More changes are waiting: call again with `cursor` right away. */
+  hasMore: boolean;
+  /** With `knownIds`: the ids you have that are no longer in the library. */
+  removedIds?: number[];
+}
+
+// The cursor is the (updated_at, id) of the last row seen. updated_at stays the
+// server's string (microseconds), which a JS Date would round.
+const encodeCursor = (row: { updatedAt?: string | null; id: number }) => `${row.updatedAt}|${row.id}`;
+
+function decodeCursor(cursor: string): { after: string; afterId: number } {
+  const split = cursor.lastIndexOf("|");
+  const afterId = Number(cursor.slice(split + 1));
+  if (split <= 0 || !Number.isInteger(afterId)) throw new RangeError(`Not a library changes cursor: ${JSON.stringify(cursor)}`);
+  return { after: cursor.slice(0, split), afterId };
+}
 
 /**
  * Changes to a library entry. Only fields you set are sent, which matters:
@@ -93,6 +118,38 @@ export class LibraryResource {
     const userId = await this.client.me.id();
     const { user_books_aggregate } = await this.client.request(operations.CountLibrary, { userId, ...statusIds(status) });
     return user_books_aggregate.aggregate?.count ?? 0;
+  }
+
+  /**
+   * What changed in the library since a cursor, for keeping a local copy in
+   * sync. Start with no `since` for everything, then pass each result's
+   * `cursor`; while `hasMore`, call again right away.
+   *
+   * Removed entries don't show up as changes (the API deletes them outright
+   * and has no deletion feed). Pass `knownIds`, the entry ids you hold, to get
+   * `removedIds`: that adds one ids-only read of the whole library, so pass it
+   * once per sync, e.g. with the last page.
+   *
+   * Scopes: `read:me`, `read:library`.
+   */
+  async changes({
+    since,
+    knownIds,
+    limit = DEFAULT_LIMIT,
+  }: { since?: string | null; knownIds?: Iterable<number>; limit?: number } = {}): Promise<LibraryChanges> {
+    const cursor = since ? decodeCursor(since) : {};
+    const userId = await this.client.me.id();
+    const [{ user_books }, current] = await Promise.all([
+      this.client.request(operations.GetLibraryChanges, { userId, limit, ...cursor }),
+      knownIds && this.client.request(operations.GetLibraryIds, { userId }),
+    ]);
+    const last = user_books[user_books.length - 1];
+    const result: LibraryChanges = { items: user_books, cursor: last ? encodeCursor(last) : (since ?? null), hasMore: user_books.length === limit };
+    if (knownIds && current) {
+      const present = new Set(current.user_books.map((entry) => entry.id));
+      result.removedIds = [...new Set(knownIds)].filter((id) => !present.has(id));
+    }
+    return result;
   }
 
   /**
