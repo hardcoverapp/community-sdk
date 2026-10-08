@@ -569,6 +569,7 @@ input PublisherInputType {
 input ReadingJournalCreateType {
   action_at: date
   book_id: Int!
+  custom: jsonb
   edition_id: Int
   entry: String
   event: String!
@@ -585,6 +586,7 @@ type ReadingJournalOutput {
 
 input ReadingJournalUpdateType {
   action_at: date
+  custom: jsonb
   edition_id: Int
   entry: String
   event: String
@@ -798,6 +800,7 @@ type UserBookReadIdType {
 
 input UserBookUpdateInput {
   action_at: timestamptz
+  buddy_read_privacy_setting_id: Int
   date_added: date
   edition_id: Int
   finished_at_precision: Int
@@ -10460,14 +10463,6 @@ input jsonb_comparison_exp {
   _has_keys_any: [String!]
   _in: [jsonb!]
   _is_null: Boolean
-
-  """does the jsonpath return any item for the specified JSON value"""
-  _jsonb_path_exists: String
-
-  """
-  does the jsonpath predicate check return true for the specified JSON value
-  """
-  _jsonb_path_match: String
   _lt: jsonb
   _lte: jsonb
   _neq: jsonb
@@ -12337,6 +12332,9 @@ type mutation_root {
   """add_to_default_filter_list"""
   add_to_default_filter_list(entity_id: Int!, entity_type: String!, visibility: Int!): FilterDefaultEntryType
 
+  """apply_buddy_read_default_to_want_to_read"""
+  apply_buddy_read_default_to_want_to_read: UserIdType
+
   """book_mapping_normalize"""
   book_mapping_normalize(deep: Boolean!, id: Int!): BookMappingIdType
   book_normalize(deep: Boolean, id: Int!): BookIdType
@@ -12467,7 +12465,7 @@ type mutation_root {
   insert_author(object: AuthorInputType!): AuthorIdType
 
   """insert_block"""
-  insert_block(blocked_user_id: Int!): InsertBlockOutput
+  insert_block(blocked_user_id: Int!, type: String): InsertBlockOutput
 
   """insert_book"""
   insert_book(edition: EditionInput!): OptionalEditionIdType
@@ -13707,6 +13705,9 @@ type notifications {
 
   """An object relationship"""
   notifierUser: users
+
+  """An object relationship"""
+  notifier_user: users
   notifier_user_id: Int!
   priority: Int
   title: String!
@@ -13729,6 +13730,7 @@ input notifications_bool_exp {
   notification_deliveries_aggregate: notification_deliveries_aggregate_bool_exp
   notification_type_id: Int_comparison_exp
   notifierUser: users_bool_exp
+  notifier_user: users_bool_exp
   notifier_user_id: Int_comparison_exp
   priority: Int_comparison_exp
   title: String_comparison_exp
@@ -13745,6 +13747,7 @@ input notifications_order_by {
   notification_deliveries_aggregate: notification_deliveries_aggregate_order_by
   notification_type_id: order_by
   notifierUser: users_order_by
+  notifier_user: users_order_by
   notifier_user_id: order_by
   priority: order_by
   title: order_by
@@ -17145,6 +17148,10 @@ type reading_journals {
   book: books
   book_id: Int
   created_at: timestamp!
+  custom(
+    """JSON select path"""
+    path: String
+  ): jsonb
 
   """An object relationship"""
   edition: editions
@@ -17279,6 +17286,7 @@ input reading_journals_bool_exp {
   book: books_bool_exp
   book_id: Int_comparison_exp
   created_at: timestamp_comparison_exp
+  custom: jsonb_comparison_exp
   edition: editions_bool_exp
   edition_id: Int_comparison_exp
   entry: String_comparison_exp
@@ -17342,6 +17350,7 @@ input reading_journals_order_by {
   book: books_order_by
   book_id: order_by
   created_at: order_by
+  custom: order_by
   edition: editions_order_by
   edition_id: order_by
   entry: order_by
@@ -17372,6 +17381,9 @@ enum reading_journals_select_column {
 
   """column name"""
   created_at
+
+  """column name"""
+  custom
 
   """column name"""
   edition_id
@@ -17459,6 +17471,7 @@ input reading_journals_stream_cursor_value_input {
   action_at: timestamptz
   book_id: Int
   created_at: timestamp
+  custom: jsonb
   edition_id: Int
   entry: String
   event: String
@@ -21733,10 +21746,17 @@ input timestamptz_comparison_exp {
 }
 
 input update_user_input {
+  account_book_club_invites: Boolean
+  account_book_club_invites_privacy_setting_id: Int
+  account_buddy_read_invites: Boolean
+  account_buddy_read_invites_privacy_setting_id: Int
+  account_list_invites: Boolean
+  account_list_invites_privacy_setting_id: Int
   account_privacy_setting_id: Int
   activity_privacy_settings_id: Int
   bio: String
   birthdate: date
+  buddy_read_default_privacy_setting_id: Int
   cover: String
   current_password: String
   default_reading_format_id: Int
@@ -21764,6 +21784,7 @@ type user_blocks {
   blocked_user_id: Int
   created_at: timestamp!
   id: bigint!
+  type: String!
 
   """An object relationship"""
   user: users
@@ -21807,6 +21828,7 @@ input user_blocks_bool_exp {
   blocked_user_id: Int_comparison_exp
   created_at: timestamp_comparison_exp
   id: bigint_comparison_exp
+  type: String_comparison_exp
   user: users_bool_exp
   user_id: Int_comparison_exp
 }
@@ -21816,9 +21838,9 @@ unique or primary key constraints on table "user_blocks"
 """
 enum user_blocks_constraint {
   """
-  unique or primary key constraint on columns "user_id", "blocked_user_id"
+  unique or primary key constraint on columns "user_id", "type", "blocked_user_id"
   """
-  index_user_blocks_on_user_id_and_blocked_user_id
+  index_user_blocks_on_user_id_and_blocked_user_id_and_type
 
   """
   unique or primary key constraint on columns "id"
@@ -21841,6 +21863,7 @@ input user_blocks_max_order_by {
   blocked_user_id: order_by
   created_at: order_by
   id: order_by
+  type: order_by
   user_id: order_by
 }
 
@@ -21851,6 +21874,7 @@ input user_blocks_min_order_by {
   blocked_user_id: order_by
   created_at: order_by
   id: order_by
+  type: order_by
   user_id: order_by
 }
 
@@ -21880,6 +21904,7 @@ input user_blocks_order_by {
   blocked_user_id: order_by
   created_at: order_by
   id: order_by
+  type: order_by
   user: users_order_by
   user_id: order_by
 }
@@ -21896,6 +21921,9 @@ enum user_blocks_select_column {
 
   """column name"""
   id
+
+  """column name"""
+  type
 
   """column name"""
   user_id
@@ -21944,6 +21972,7 @@ input user_blocks_stream_cursor_value_input {
   blocked_user_id: Int
   created_at: timestamp
   id: bigint
+  type: String
   user_id: Int
 }
 
@@ -22932,6 +22961,9 @@ type user_books {
     where: user_books_bool_exp
   ): user_books_aggregate!
   user_id: Int!
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """
@@ -23020,6 +23052,9 @@ type user_books_avg_fields {
   review_length: Float
   status_id: Float
   user_id: Float
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """
@@ -23104,6 +23139,7 @@ input user_books_bool_exp {
   user_books: user_books_bool_exp
   user_books_aggregate: user_books_aggregate_bool_exp
   user_id: Int_comparison_exp
+  viewer_buddy_read_privacy_setting_id: Int_comparison_exp
 }
 
 """aggregate max on columns"""
@@ -23140,6 +23176,9 @@ type user_books_max_fields {
   updated_at: timestamptz
   url: String
   user_id: Int
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """
@@ -23214,6 +23253,9 @@ type user_books_min_fields {
   updated_at: timestamptz
   url: String
   user_id: Int
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """
@@ -23308,6 +23350,7 @@ input user_books_order_by {
   user_book_status: user_book_statuses_order_by
   user_books_aggregate: user_books_aggregate_order_by
   user_id: order_by
+  viewer_buddy_read_privacy_setting_id: order_by
 }
 
 """
@@ -23504,6 +23547,9 @@ type user_books_stddev_fields {
   review_length: Float
   status_id: Float
   user_id: Float
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """
@@ -23544,6 +23590,9 @@ type user_books_stddev_pop_fields {
   review_length: Float
   status_id: Float
   user_id: Float
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """
@@ -23584,6 +23633,9 @@ type user_books_stddev_samp_fields {
   review_length: Float
   status_id: Float
   user_id: Float
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """
@@ -23679,6 +23731,9 @@ type user_books_sum_fields {
   review_length: Int
   status_id: Int
   user_id: Int
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """
@@ -23719,6 +23774,9 @@ type user_books_var_pop_fields {
   review_length: Float
   status_id: Float
   user_id: Float
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """
@@ -23759,6 +23817,9 @@ type user_books_var_samp_fields {
   review_length: Float
   status_id: Float
   user_id: Float
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """
@@ -23799,6 +23860,9 @@ type user_books_variance_fields {
   review_length: Float
   status_id: Float
   user_id: Float
+
+  """Per-book buddy-read setting, only on the viewer's own row"""
+  viewer_buddy_read_privacy_setting_id: Int
 }
 
 """

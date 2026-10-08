@@ -60,6 +60,7 @@ export type ListInput = {
 export type ReadingJournalCreateType = {
   action_at?: string | null | undefined;
   book_id: number;
+  custom?: unknown;
   edition_id?: number | null | undefined;
   entry?: string | null | undefined;
   event: string;
@@ -70,6 +71,7 @@ export type ReadingJournalCreateType = {
 
 export type ReadingJournalUpdateType = {
   action_at?: string | null | undefined;
+  custom?: unknown;
   edition_id?: number | null | undefined;
   entry?: string | null | undefined;
   event?: string | null | undefined;
@@ -114,6 +116,7 @@ export type UserBookCreateInput = {
 
 export type UserBookUpdateInput = {
   action_at?: string | null | undefined;
+  buddy_read_privacy_setting_id?: number | null | undefined;
   date_added?: string | null | undefined;
   edition_id?: number | null | undefined;
   finished_at_precision?: number | null | undefined;
@@ -3843,6 +3846,7 @@ export type User_Blocks_Max_Order_By = {
   blocked_user_id?: Order_By | null | undefined;
   created_at?: Order_By | null | undefined;
   id?: Order_By | null | undefined;
+  type?: Order_By | null | undefined;
   user_id?: Order_By | null | undefined;
 };
 
@@ -3851,6 +3855,7 @@ export type User_Blocks_Min_Order_By = {
   blocked_user_id?: Order_By | null | undefined;
   created_at?: Order_By | null | undefined;
   id?: Order_By | null | undefined;
+  type?: Order_By | null | undefined;
   user_id?: Order_By | null | undefined;
 };
 
@@ -4203,6 +4208,7 @@ export type User_Books_Order_By = {
   user_book_status?: User_Book_Statuses_Order_By | null | undefined;
   user_books_aggregate?: User_Books_Aggregate_Order_By | null | undefined;
   user_id?: Order_By | null | undefined;
+  viewer_buddy_read_privacy_setting_id?: Order_By | null | undefined;
 };
 
 /** order by stddev() on columns of table "user_books" */

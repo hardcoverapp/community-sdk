@@ -48,7 +48,7 @@ changing it.
 | **Testing** |  |  |  |  |  |
 | Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
 | Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
-| Contract tests vs `api-snapshot` | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
+| Contract tests vs `api-snapshot` | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Live integration tests: reads (opt-in) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Live integration tests: writes (opt-in, real-user flows) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Runtimes** |  |  |  |  |  |

@@ -1,0 +1,5 @@
+{
+  "graphql": "http://localhost:8081/v1/graphql",
+  "capabilities": "http://localhost:8081/capabilities",
+  "fetchedAt": "2026-10-08T00:08:01.445Z"
+}

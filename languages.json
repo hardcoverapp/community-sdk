@@ -178,7 +178,7 @@
         "auth-pat": "done",
         "test-mock": "partial",
         "test-conformance": "done",
-        "test-contract": "partial",
+        "test-contract": "done",
         "rt-web": "partial",
         "test-live-read": "done",
         "res-me": "done",
