@@ -19,7 +19,7 @@
     {
       "id": "rate-limit",
       "group": "Core",
-      "label": "Rate-limit headers, 429 retry, request chunking"
+      "label": "Rate-limit pacing, 429 backoff, request batching"
     },
     {
       "id": "codegen",

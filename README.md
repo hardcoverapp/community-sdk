@@ -1,14 +1,28 @@
 # Hardcover SDK
 
-Client libraries for the [Hardcover](https://hardcover.app) GraphQL API. There
-is one shared, language-neutral contract, and each language is a thin layer on
-top of it.
+Hardcover's official SDKs, built for the community. Client libraries for the
+[Hardcover](https://hardcover.app) GraphQL API, maintained by the Hardcover
+team and open to contributions.
 
-**Status: TypeScript core in progress.** The first two official consumers
-are the Hardcover docs site (live examples) and a React Native app, so
-TypeScript comes first and must run in both the browser and React Native.
-Swift, Kotlin (Java-friendly), Python and Ruby follow once the shared layer has
-proven itself.
+There is one shared, language-neutral contract (operations, enums, errors and
+behavior tests), and each language is a thin layer on top of it. The API
+decides; the SDK passes its answers through, and takes care of what every app
+would otherwise repeat:
+
+- typed resources (`library`, `reads`, `lists`, `journal`, `goals`, `vibes`,
+  `books`, `search`) with one consistent shape across them
+- rate limits: pacing from the API's headers, backoff when other apps share the
+  same budget, and opt-in batching of concurrent reads
+- one error taxonomy, with missing scopes and failed actions spelled out
+- local details apps get wrong: dates in the reader's timezone, ISBN cleanup,
+  token cleanup
+- incremental library sync with a server-side cursor
+
+**Status: TypeScript in progress.** The first consumers are the Hardcover docs
+site (live examples) and a React Native app, so TypeScript comes first and must
+run in browsers, Node and React Native (Hermes). Swift, Kotlin (Java-friendly),
+Python and Ruby follow once the shared layer has proven itself. Nothing is
+published to a package registry yet.
 
 ## Language matrix
 
@@ -22,7 +36,7 @@ changing it.
 | GraphQL transport + raw query escape hatch | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Normalized error taxonomy | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Action envelope unwrapping (`error` / `errors`) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
-| Rate-limit headers, 429 retry, request chunking | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
+| Rate-limit pacing, 429 backoff, request batching | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
 | Types generated from `shared/operations` | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Auth** |  |  |  |  |  |
 | Personal access token | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -131,3 +145,12 @@ HARDCOVER_API_KEY=hc_pat_... HARDCOVER_ENV=local pnpm test:live:writes      # pl
 
 See [spec/04](spec/04-testing.md#layer-3-live-integration) for every variable,
 including local and Conductor targets.
+
+## Contributing
+
+Issues and pull requests are welcome. Start with the [spec](#spec): changes to
+behavior go through the shared layer (`shared/`) and its conformance cases, so
+every language stays in step. [spec/05](spec/05-adding-a-language.md) covers
+adding a language. Live tests are opt-in and only act the way a real reader
+would; they never probe limits or access rules.
+

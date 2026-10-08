@@ -104,18 +104,19 @@ a decision before the SDK depends on it. Record decisions in
 
 ## Project and ownership
 
-11. **Official or community?** The old `sdk/` scaffold called itself
-    "community-powered" and pointed at a nonexistent `hardcover/hardcover-sdk`
-    repo. The package namespace (`@hardcover/…` on npm, PyPI name, Maven group),
-    the GitHub org, and the license all depend on this.
+11. **Official or community?** Decided 2026-10-07: official, built for the
+    community to use and contribute to. The repo is
+    `github.com/hardcoverapp/community-sdk` (private for now). Still open: the
+    package names (`@hardcover/…` on npm, PyPI, Maven group, gem) and the
+    license.
 12. **JVM language.** Decided 2026-09-28: Kotlin with a Java-friendly API
     (see [03](03-sdk-design.md#language-notes)). Java apps load Kotlin
     libraries natively; the interop cost is API design, enforced by a Java
     test source set ([05](05-adding-a-language.md)).
-13. **Existing community SDKs.** `hardcoverpy` (Python, pydantic) and
-    `hardcover-rs` (Rust) are in the docs showcase. Collaborate, bless, or
-    ignore? At minimum, compare their method surfaces with ours before building
-    Python.
+13. **Existing community SDKs.** Decided 2026-10-07: `hardcoverpy` (Python)
+    and `hardcover-rs` (Rust) in the docs showcase are unofficial third-party
+    projects; no collaboration or endorsement. Worth a glance at HardCoverPy's
+    method names before building Python, nothing more.
 14. **Docs integration.** Should the docs site's `GraphQLExplorer` gain an
     "SDK" tab? Should the Showcase gain a "Library/SDK" category? Should this
     spec move under the docs site once it stabilizes?
