@@ -16,6 +16,8 @@ in `../fixtures`.
   "id": "rate-limit/retry-after",         // unique, path-like
   "covers": ["rate-limit"],               // feature ids from languages.json
   "call": { "op": "Me", "variables": {} },// operation name from shared/operations, or "raw"
+  "calls": [ … ],                         // or several calls in order on one client; the last one is checked
+  "random": 0.5,                          // optional: fixed value for the client's random source (jitter)
   "client": { "maxRetries": 2 },          // optional client options
   "responses": [                          // served in order, one per HTTP request
     { "status": 429, "headers": { "retry-after": "1" }, "body": { "error": "Too Many Requests" } },

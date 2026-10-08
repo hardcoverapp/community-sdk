@@ -179,6 +179,50 @@ has seen. Apps should use one client per user.
 Measured on the local stack: the live writes suite went from hundreds of 429s
 per run to zero, with the same total duration.
 
+### Contention backoff
+
+The rate-limit budget is per user, not per token, so two apps (or two
+clients) for one person compete for it, and each only sees the headers of its
+own responses. Pacing alone makes competing clients wake at the same moment
+and collide again. Decided 2026-10-07:
+
+- A 429 when the client had no rate-limit state, or when its last headers
+  showed the allowance spent, is ordinary: wait exactly `Retry-After`.
+- A 429 when the last headers said there *was* room for this request is
+  **contention** (someone else spent it). So is any second 429 in a row. The
+  wait becomes `Retry-After` plus a random extra of up to
+  `min(30s, 1s × 2^k)`, where `k` counts the contended 429s in a row (full
+  jitter), so competing clients spread out instead of waking together.
+- `k` resets after a successful response. The random source is injectable
+  (`random`) so tests and conformance runners are deterministic.
+
+### Request planner
+
+Grouping calls into fewer HTTP requests, without changing what they mean.
+Decided 2026-10-07, built next:
+
+- The gateway accepts a **JSON array** of `{query, variables}` in one request
+  and charges the sum of their fields (minimum 1 each), so the planner groups
+  queued operations into array batches sized to the current allowance and
+  the 5-field cap per request.
+- **Mutations are barriers.** Operations run in the order they were issued.
+  Reads may be grouped and identical reads de-duplicated only within a run of
+  reads; nothing is grouped, reordered or de-duplicated across a mutation, and
+  a mutation is never grouped with anything that came after it.
+- One failed item in an array fails only that item; the others resolve.
+- Opt-in to start (`client.batch(async () => { … })` groups what's issued
+  inside it), so apps choose when calls may share a request.
+
+### Not in the core (modules later)
+
+- **Caching**: off. A hidden cache serves stale data and hides server-side
+  writes (journal entries the server records). Incremental reads (`since`
+  filters on `updated_at`) cover the "only what changed" need; a pluggable cache
+  can come later as an optional module.
+- **API versions**: when the API adds a version header, the client sends the
+  version it was generated against and passes deprecation notices to
+  `onWarning`. The format and support window are the API side's call.
+
 ### Chunking
 
 Today `lists.addBooks` batches its own adds (5 per request). Planned: a

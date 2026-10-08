@@ -7,9 +7,12 @@ import errorSpec from "../../../shared/errors.json" with { type: "json" };
 import * as sdk from "../src/index.ts";
 import { MockTransport, type MockResponse } from "../src/testing/index.ts";
 
+type Call = { op: string; variables?: Record<string, unknown>; query?: string };
 type Case = {
   id: string;
-  call: { op: string; variables?: Record<string, unknown>; query?: string };
+  call?: Call;
+  calls?: Call[];
+  random?: number;
   client?: { maxRetries?: number };
   responses: MockResponse[];
   pending?: string[];
@@ -42,16 +45,17 @@ describe("conformance", () => {
         sleep: async (ms) => {
           slept.push(ms / 1000);
         },
+        ...(c.random !== undefined && { random: () => c.random! }),
         ...c.client,
       });
 
-      const run =
-        c.call.op === "raw"
-          ? client.graphql(c.call.query!, c.call.variables)
-          : client.request(
-              sdk.operations[c.call.op as keyof typeof sdk.operations] as DocumentTypeDecoration<unknown, unknown>,
-              c.call.variables,
-            );
+      const send = (call: Call) =>
+        call.op === "raw"
+          ? client.graphql(call.query!, call.variables)
+          : client.request(sdk.operations[call.op as keyof typeof sdk.operations] as DocumentTypeDecoration<unknown, unknown>, call.variables);
+      const calls = c.calls ?? [c.call!];
+      for (const earlier of calls.slice(0, -1)) await send(earlier);
+      const run = send(calls[calls.length - 1]!);
 
       const outcome = await run.then(
         (data) => ({ ok: true as const, data }),

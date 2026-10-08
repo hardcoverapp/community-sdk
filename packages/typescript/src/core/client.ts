@@ -58,6 +58,8 @@ export interface HardcoverClientOptions {
    * Default true. The daily cap is never waited out.
    */
   pace?: boolean;
+  /** Injectable random source (0 ≤ x < 1) for backoff jitter; defaults to Math.random. */
+  random?: () => number;
 }
 
 const NETWORK_BACKOFF_MS = [250, 1_000, 4_000];
@@ -101,6 +103,10 @@ export class HardcoverClient {
   readonly #maxRetries: number;
   readonly #userAgent: string;
   readonly #sleep: (ms: number) => Promise<void>;
+  readonly #random: () => number;
+  /** 429s in a row, and how many of those were contention (spec/03 Contention backoff). */
+  #consecutive429 = 0;
+  #contended429 = 0;
   readonly #onRateLimit: ((state: RateLimitState) => void) | undefined;
   readonly #pace: boolean;
   #rateLimit: RateLimitState | undefined;
@@ -117,6 +123,7 @@ export class HardcoverClient {
     this.#maxRetries = options.maxRetries ?? 3;
     this.#userAgent = options.userAgent ? `${options.userAgent} ${SDK_USER_AGENT}` : SDK_USER_AGENT;
     this.#sleep = options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+    this.#random = options.random ?? Math.random;
     this.#onRateLimit = options.onRateLimit;
     this.#now = options.now ?? (() => new Date());
     clocks.set(this, this.#now);
@@ -184,6 +191,8 @@ export class HardcoverClient {
         throw new NetworkError(`Network failure: ${message}`, isMutation, { cause, operationName: info.name });
       }
 
+      // What this client believed before this response, to tell contention from an ordinary 429.
+      const hadRoom = this.#hadRoomFor(cost);
       const rateLimit = parseRateLimit(response.headers);
       if (rateLimit) {
         this.#rateLimit = rateLimit;
@@ -197,7 +206,7 @@ export class HardcoverClient {
 
       if (failure) {
         if (failure instanceof RateLimitError && failure.window === "burst" && canRetry) {
-          await this.#sleep(failure.retryAfterSeconds * 1_000);
+          await this.#sleep(failure.retryAfterSeconds * 1_000 + this.#contentionJitterMs(hadRoom));
           this.#allowanceWaited = true;
           continue;
         }
@@ -209,6 +218,8 @@ export class HardcoverClient {
         throw failure;
       }
 
+      this.#consecutive429 = 0;
+      this.#contended429 = 0;
       if (!payload) {
         throw new HardcoverError("Response was not valid JSON", { status: response.status, operationName: info.name });
       }
@@ -224,6 +235,24 @@ export class HardcoverClient {
       return data;
     }
   }
+  // Did the last headers say there was room for a request of this cost?
+  #hadRoomFor(cost: number): boolean {
+    const remaining = this.#rateLimit?.burst?.remaining;
+    return remaining !== undefined && !this.#allowanceWaited && remaining >= cost;
+  }
+
+  // Contention backoff (spec/03): a 429 despite headers showing room, or a
+  // repeat 429, means another client for this user is spending the shared
+  // budget. Add full jitter that grows with each contended 429, so competing
+  // clients spread out instead of waking together. Ordinary 429s add nothing.
+  #contentionJitterMs(hadRoom: boolean): number {
+    const contended = hadRoom || this.#consecutive429 > 0;
+    this.#consecutive429++;
+    if (!contended) return 0;
+    this.#contended429++;
+    return this.#random() * Math.min(30_000, 1_000 * 2 ** this.#contended429);
+  }
+
   // Pacing: if the last response left less burst allowance than this request
   // costs, sleep until enough has refilled, minus time already passed. Uses
   // only headers the gateway sends; a 429 is still handled (and retried) if

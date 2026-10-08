@@ -381,6 +381,128 @@
     }
   },
   {
+    "id": "rate-limit/contention-jitter",
+    "covers": [
+      "rate-limit"
+    ],
+    "calls": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "client": {
+      "maxRetries": 2
+    },
+    "random": 0.5,
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"Free\";r=5;t=1, \"daily\";r=4000;t=50000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 429,
+        "headers": {
+          "retry-after": "2",
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"Free\";r=0;t=2, \"daily\";r=3999;t=50000"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "notes": "The last headers said there was room (5 left) yet the request got a 429: another client for the same user spent it. Wait Retry-After plus jitter: 2s + 0.5 × min(30s, 1s × 2^1) = 3s.",
+    "expect": {
+      "requests": 3,
+      "sleptSeconds": [
+        3
+      ],
+      "result": "ok"
+    }
+  },
+  {
+    "id": "rate-limit/repeated-429-backs-off",
+    "covers": [
+      "rate-limit"
+    ],
+    "call": {
+      "op": "Me",
+      "variables": {}
+    },
+    "client": {
+      "maxRetries": 3
+    },
+    "random": 0.5,
+    "responses": [
+      {
+        "status": 429,
+        "headers": {
+          "retry-after": "1"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      },
+      {
+        "status": 429,
+        "headers": {
+          "retry-after": "1"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      },
+      {
+        "status": 429,
+        "headers": {
+          "retry-after": "1"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "notes": "The first 429 (no prior state) waits exactly Retry-After. Each further 429 in a row is contention, with growing jitter: 1 + 0.5 × 2 = 2s, then 1 + 0.5 × 4 = 3s.",
+    "expect": {
+      "requests": 4,
+      "sleptSeconds": [
+        1,
+        2,
+        3
+      ],
+      "result": "ok"
+    }
+  },
+  {
     "id": "rate-limit/headers-exposed",
     "covers": [
       "rate-limit"
