@@ -1,0 +1,29 @@
+# Creating vibes is a Supporter perk, enforced server-side. On update the
+# server narrows what changes: exclusions for everyone; signals and dynamic
+# signals for Supporters; title/description/privacy on custom vibes only.
+
+mutation CreateVibe($object: VibeInput!) {
+  insert_vibe(object: $object) {
+    id
+    errors
+    vibe {
+      ...VibeSummary
+    }
+  }
+}
+
+mutation UpdateVibe($id: Int!, $object: VibeInput!) {
+  update_vibe(id: $id, object: $object) {
+    id
+    errors
+    vibe {
+      ...VibeSummary
+    }
+  }
+}
+
+mutation DeleteVibe($id: Int!) {
+  delete_vibe(id: $id) {
+    success
+  }
+}

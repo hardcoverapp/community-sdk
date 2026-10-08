@@ -43,8 +43,8 @@ changing it.
 | `lists`: write | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `goals`: read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `goals`: write | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
-| `vibes`: read | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| `vibes`: write (Supporter perk) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `vibes`: read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `vibes`: write (Supporter perk) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Testing** |  |  |  |  |  |
 | Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
 | Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |

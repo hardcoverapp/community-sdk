@@ -195,7 +195,9 @@
         "res-journal-write": "done",
         "res-goals-read": "done",
         "res-goals-write": "done",
-        "rt-react-native": "partial"
+        "rt-react-native": "partial",
+        "res-vibes-read": "done",
+        "res-vibes-write": "done"
       },
       "examples": {
         "res-me": "examples/quick-start.ts",
@@ -210,7 +212,9 @@
         "res-journal-read": "examples/journal.ts",
         "res-journal-write": "examples/journal.ts",
         "res-goals-read": "examples/goals.ts",
-        "res-goals-write": "examples/goals.ts"
+        "res-goals-write": "examples/goals.ts",
+        "res-vibes-read": "examples/vibes.ts",
+        "res-vibes-write": "examples/vibes.ts"
       }
     },
     {

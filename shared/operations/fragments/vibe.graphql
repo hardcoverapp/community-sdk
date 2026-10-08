@@ -1,0 +1,17 @@
+# A vibe's own fields. Its book results (cached_book_ids) are fetched only by
+# GetVibeBookIds, since that array can be long.
+fragment VibeSummary on vibes {
+  id
+  slug
+  title
+  description
+  vibe_type
+  result_type
+  privacy_setting_id
+  featured
+  likes_count
+  user_id
+  created_at
+  updated_at
+  books_generated_at
+}

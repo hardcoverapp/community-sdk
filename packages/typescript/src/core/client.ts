@@ -24,6 +24,7 @@ import { ListsResource } from "../resources/lists.ts";
 import { MeResource } from "../resources/me.ts";
 import { ReadsResource } from "../resources/reads.ts";
 import { SearchResource } from "../resources/search.ts";
+import { VibesResource } from "../resources/vibes.ts";
 import { parseRateLimit, type RateLimitState } from "./rate-limit.ts";
 import { normalizeToken } from "./token.ts";
 import { fetchTransport, TransportFailure, type HttpResponse, type Transport } from "./transport.ts";
@@ -94,6 +95,7 @@ export class HardcoverClient {
   readonly books: BooksResource;
   readonly journal: JournalResource;
   readonly goals: GoalsResource;
+  readonly vibes: VibesResource;
   readonly #token: string;
   readonly #transport: Transport;
   readonly #maxRetries: number;
@@ -127,6 +129,7 @@ export class HardcoverClient {
     this.books = new BooksResource(this);
     this.journal = new JournalResource(this);
     this.goals = new GoalsResource(this);
+    this.vibes = new VibesResource(this);
   }
 
   /** Runs a generated operation, e.g. `client.request(operations.Me)`. */

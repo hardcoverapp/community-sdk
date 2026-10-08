@@ -21,6 +21,14 @@ export type DatesReadInput = {
   started_at?: string | null | undefined;
 };
 
+export type DynamicSignalInput = {
+  category: string;
+  count?: number | null | undefined;
+  max_rating?: number | null | undefined;
+  min_rating?: number | null | undefined;
+  weight?: number | null | undefined;
+};
+
 export type GoalConditionInput = {
   authorBipoc?: number | null | undefined;
   authorGenderIds?: Array<number | null | undefined> | null | undefined;
@@ -139,6 +147,31 @@ export type UserBookUpdateInput = {
   url?: string | null | undefined;
   user_date?: string | null | undefined;
   user_start_date?: string | null | undefined;
+};
+
+export type VibeExclusionInput = {
+  _destroy?: boolean | null | undefined;
+  excluded_id: number;
+  excluded_type: string;
+  id?: number | null | undefined;
+};
+
+export type VibeInput = {
+  description?: string | null | undefined;
+  dynamic_signals?: Array<DynamicSignalInput> | null | undefined;
+  privacy_setting_id?: number | null | undefined;
+  title?: string | null | undefined;
+  vibe_exclusions_attributes?: Array<VibeExclusionInput> | null | undefined;
+  vibe_signals_attributes?: Array<VibeSignalInput> | null | undefined;
+};
+
+export type VibeSignalInput = {
+  _destroy?: boolean | null | undefined;
+  id?: number | null | undefined;
+  position?: number | null | undefined;
+  signal_type: string;
+  value?: string | null | undefined;
+  weight: number;
 };
 
 /** order by aggregate values of table "activities" */
@@ -4795,6 +4828,8 @@ export type UserProfileFragment = { id: number, username: string | null, name: s
 
 export type MeFragment = { timezone: string | null, id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, defaultReadingFormatId: number | null, accountPrivacySettingId: number, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string };
 
+export type VibeSummaryFragment = { id: number, slug: string, title: string, description: string | null, featured: boolean, vibeType: number, resultType: number, privacySettingId: number, likesCount: number, userId: number, createdAt: string, updatedAt: string, booksGeneratedAt: string | null };
+
 export type CreateGoalMutationVariables = Exact<{
   object: GoalInput;
 }>;
@@ -4933,6 +4968,28 @@ export type RemoveListBookMutationVariables = Exact<{
 
 
 export type RemoveListBookMutation = { delete_list_book: { id: number | null, listId: number | null } | null };
+
+export type CreateVibeMutationVariables = Exact<{
+  object: VibeInput;
+}>;
+
+
+export type CreateVibeMutation = { insert_vibe: { id: number | null, errors: Array<string | null> | null, vibe: { id: number, slug: string, title: string, description: string | null, featured: boolean, vibeType: number, resultType: number, privacySettingId: number, likesCount: number, userId: number, createdAt: string, updatedAt: string, booksGeneratedAt: string | null } | null } | null };
+
+export type UpdateVibeMutationVariables = Exact<{
+  id: number;
+  object: VibeInput;
+}>;
+
+
+export type UpdateVibeMutation = { update_vibe: { id: number | null, errors: Array<string | null> | null, vibe: { id: number, slug: string, title: string, description: string | null, featured: boolean, vibeType: number, resultType: number, privacySettingId: number, likesCount: number, userId: number, createdAt: string, updatedAt: string, booksGeneratedAt: string | null } | null } | null };
+
+export type DeleteVibeMutationVariables = Exact<{
+  id: number;
+}>;
+
+
+export type DeleteVibeMutation = { delete_vibe: { success: boolean } | null };
 
 export type GetBookQueryVariables = Exact<{
   id: number;
@@ -5084,6 +5141,29 @@ export type SearchQueryVariables = Exact<{
 
 
 export type SearchQuery = { search: { ids: Array<number | null> | null, results: unknown, query: string | null, page: number | null, error: string | null, queryType: string | null, perPage: number | null } | null };
+
+export type GetVibesForUserQueryVariables = Exact<{
+  userId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetVibesForUserQuery = { vibes: Array<{ id: number, slug: string, title: string, description: string | null, featured: boolean, vibeType: number, resultType: number, privacySettingId: number, likesCount: number, userId: number, createdAt: string, updatedAt: string, booksGeneratedAt: string | null }> };
+
+export type GetVibeQueryVariables = Exact<{
+  id: number;
+}>;
+
+
+export type GetVibeQuery = { vibes_by_pk: { id: number, slug: string, title: string, description: string | null, featured: boolean, vibeType: number, resultType: number, privacySettingId: number, likesCount: number, userId: number, createdAt: string, updatedAt: string, booksGeneratedAt: string | null } | null };
+
+export type GetVibeBookIdsQueryVariables = Exact<{
+  id: number;
+}>;
+
+
+export type GetVibeBookIdsQuery = { vibes_by_pk: { id: number, updatedAt: string, booksGeneratedAt: string | null, cachedBookIds: unknown } | null };
 
 export class TypedDocumentString<TResult, TVariables>
   extends String
@@ -5411,6 +5491,23 @@ export const MeFragmentDoc = new TypedDocumentString(`
   pro
   createdAt: created_at
 }`, {"fragmentName":"Me"}) as unknown as TypedDocumentString<MeFragment, unknown>;
+export const VibeSummaryFragmentDoc = new TypedDocumentString(`
+    fragment VibeSummary on vibes {
+  id
+  slug
+  title
+  description
+  vibeType: vibe_type
+  resultType: result_type
+  privacySettingId: privacy_setting_id
+  featured
+  likesCount: likes_count
+  userId: user_id
+  createdAt: created_at
+  updatedAt: updated_at
+  booksGeneratedAt: books_generated_at
+}
+    `, {"fragmentName":"VibeSummary"}) as unknown as TypedDocumentString<VibeSummaryFragment, unknown>;
 export const CreateGoalDocument = new TypedDocumentString(`
     mutation CreateGoal($object: GoalInput!) {
   insert_goal(object: $object) {
@@ -5813,6 +5910,63 @@ export const RemoveListBookDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<RemoveListBookMutation, RemoveListBookMutationVariables>;
+export const CreateVibeDocument = new TypedDocumentString(`
+    mutation CreateVibe($object: VibeInput!) {
+  insert_vibe(object: $object) {
+    id
+    errors
+    vibe {
+      ...VibeSummary
+    }
+  }
+}
+    fragment VibeSummary on vibes {
+  id
+  slug
+  title
+  description
+  vibeType: vibe_type
+  resultType: result_type
+  privacySettingId: privacy_setting_id
+  featured
+  likesCount: likes_count
+  userId: user_id
+  createdAt: created_at
+  updatedAt: updated_at
+  booksGeneratedAt: books_generated_at
+}`) as unknown as TypedDocumentString<CreateVibeMutation, CreateVibeMutationVariables>;
+export const UpdateVibeDocument = new TypedDocumentString(`
+    mutation UpdateVibe($id: Int!, $object: VibeInput!) {
+  update_vibe(id: $id, object: $object) {
+    id
+    errors
+    vibe {
+      ...VibeSummary
+    }
+  }
+}
+    fragment VibeSummary on vibes {
+  id
+  slug
+  title
+  description
+  vibeType: vibe_type
+  resultType: result_type
+  privacySettingId: privacy_setting_id
+  featured
+  likesCount: likes_count
+  userId: user_id
+  createdAt: created_at
+  updatedAt: updated_at
+  booksGeneratedAt: books_generated_at
+}`) as unknown as TypedDocumentString<UpdateVibeMutation, UpdateVibeMutationVariables>;
+export const DeleteVibeDocument = new TypedDocumentString(`
+    mutation DeleteVibe($id: Int!) {
+  delete_vibe(id: $id) {
+    success
+  }
+}
+    `) as unknown as TypedDocumentString<DeleteVibeMutation, DeleteVibeMutationVariables>;
 export const GetBookDocument = new TypedDocumentString(`
     query GetBook($id: Int!) {
   books_by_pk(id: $id) {
@@ -6534,3 +6688,60 @@ export const SearchDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<SearchQuery, SearchQueryVariables>;
+export const GetVibesForUserDocument = new TypedDocumentString(`
+    query GetVibesForUser($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  vibes(
+    where: { user_id: { _eq: $userId } }
+    order_by: { updated_at: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    ...VibeSummary
+  }
+}
+    fragment VibeSummary on vibes {
+  id
+  slug
+  title
+  description
+  vibeType: vibe_type
+  resultType: result_type
+  privacySettingId: privacy_setting_id
+  featured
+  likesCount: likes_count
+  userId: user_id
+  createdAt: created_at
+  updatedAt: updated_at
+  booksGeneratedAt: books_generated_at
+}`) as unknown as TypedDocumentString<GetVibesForUserQuery, GetVibesForUserQueryVariables>;
+export const GetVibeDocument = new TypedDocumentString(`
+    query GetVibe($id: Int!) {
+  vibes_by_pk(id: $id) {
+    ...VibeSummary
+  }
+}
+    fragment VibeSummary on vibes {
+  id
+  slug
+  title
+  description
+  vibeType: vibe_type
+  resultType: result_type
+  privacySettingId: privacy_setting_id
+  featured
+  likesCount: likes_count
+  userId: user_id
+  createdAt: created_at
+  updatedAt: updated_at
+  booksGeneratedAt: books_generated_at
+}`) as unknown as TypedDocumentString<GetVibeQuery, GetVibeQueryVariables>;
+export const GetVibeBookIdsDocument = new TypedDocumentString(`
+    query GetVibeBookIds($id: Int!) {
+  vibes_by_pk(id: $id) {
+    id
+    updatedAt: updated_at
+    booksGeneratedAt: books_generated_at
+    cachedBookIds: cached_book_ids
+  }
+}
+    `) as unknown as TypedDocumentString<GetVibeBookIdsQuery, GetVibeBookIdsQueryVariables>;

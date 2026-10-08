@@ -24,3 +24,14 @@ export type * from "./resources/search-types.ts";
 export { BooksResource, type Book, type BookSummary, type Edition, type EditionWithBook } from "./resources/books.ts";
 export { JournalResource, type JournalEntry, type JournalEntryInput, type JournalTag } from "./resources/journal.ts";
 export { GoalsResource, goalProgress, type Goal, type GoalFields } from "./resources/goals.ts";
+export {
+  VibesResource,
+  type DynamicSignal,
+  type Vibe,
+  type VibeBooks,
+  type VibeCreate,
+  type VibeExclusion,
+  type VibeFields,
+  type VibeSignal,
+  type VibeUpdate,
+} from "./resources/vibes.ts";

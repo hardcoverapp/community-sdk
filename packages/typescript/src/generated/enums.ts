@@ -108,3 +108,189 @@ export const GoalMetric = {
   Hour: "hour",
 } as const;
 export type GoalMetric = (typeof GoalMetric)[keyof typeof GoalMetric];
+
+/** Only custom vibes can be deleted or have their title, description and privacy edited; the others are system vibes the site creates per user. Source: app/rails/app/models/vibe.rb (enum :vibe_type) */
+export const VibeType = {
+  /** Custom */
+  Custom: 0,
+  /** Recommendation. System vibe, created by the site. */
+  Recommendation: 1,
+  /** Dynamic. System vibe built from recent reading. */
+  Dynamic: 2,
+  /** Top picks. System vibe, created by the site. */
+  TopPicks: 3,
+  /** Book club */
+  BookClub: 4,
+} as const;
+export type VibeType = (typeof VibeType)[keyof typeof VibeType];
+
+/** Source: app/rails/app/models/vibe_signal.rb (SIGNAL_TYPES) */
+export const VibeSignalType = {
+  /** Genre. value: a VibeGenre key. */
+  Genre: "genre",
+  /** Kind of world. value: a VibeAxiom key. */
+  Axiom: "axiom",
+  /** Audience. value: a VibeAudience key. */
+  Audience: "audience",
+  /** Format. value: a VibeFormat key. */
+  Format: "format",
+  /** Series preference. value: a VibeSeries key. */
+  Series: "series",
+  /** Like this book. A book id. */
+  Book: "book",
+  /** Like this author. An author id. */
+  Author: "author",
+  /** Like this reader. A user id: you, or someone who follows you. */
+  User: "user",
+  /** Described in words. Free text. */
+  Semantic: "semantic",
+  /** Popularity. No value. Negative weight digs up hidden gems; positive boosts bestsellers. */
+  Popularity: "popularity",
+} as const;
+export type VibeSignalType = (typeof VibeSignalType)[keyof typeof VibeSignalType];
+
+/** Suggested values; the server validates and the taxonomy can grow, so SDKs accept any string. Source: app/rails/app/models/vibe_signal.rb (DIMENSION_VALUES, mirrored from the recommendations service) */
+export const VibeGenre = {
+  /** Mystery & Crime */
+  Mystery: "mystery",
+  /** Thriller & Suspense */
+  Thriller: "thriller",
+  /** Romance */
+  Romance: "romance",
+  /** Horror */
+  Horror: "horror",
+  /** Adventure */
+  Adventure: "adventure",
+  /** War & Military */
+  War: "war",
+  /** Historical */
+  Historical: "historical",
+  /** Literary Fiction */
+  Literary: "literary",
+  /** Humor & Comedy */
+  Humor: "humor",
+  /** Western */
+  Western: "western",
+  /** Sports */
+  Sports: "sports",
+  /** Family & Relationships */
+  Family: "family",
+  /** Classics */
+  Classics: "classics",
+  /** Mythology & Folklore */
+  Mythology: "mythology",
+  /** LitRPG & Progression */
+  Litrpg: "litrpg",
+  /** Media & Pop Culture */
+  Media: "media",
+  /** Biography & Memoir */
+  Biography: "biography",
+  /** History */
+  History: "history",
+  /** Science */
+  Science: "science",
+  /** Self-Help */
+  SelfHelp: "self_help",
+  /** Business & Economics */
+  Business: "business",
+  /** Philosophy */
+  Philosophy: "philosophy",
+  /** Psychology & Mental Health */
+  Psychology: "psychology",
+  /** Religion & Spirituality */
+  Religion: "religion",
+  /** True Crime */
+  TrueCrime: "true_crime",
+  /** Politics */
+  Politics: "politics",
+  /** Cooking & Food */
+  Cooking: "cooking",
+  /** Travel */
+  Travel: "travel",
+  /** Art & Visual Arts */
+  Art: "art",
+  /** Music */
+  Music: "music",
+  /** Technology */
+  Technology: "technology",
+  /** Health & Wellness */
+  Health: "health",
+  /** Nature & Environment */
+  Nature: "nature",
+  /** Essays & Journalism */
+  Essays: "essays",
+  /** Education & Learning */
+  Education: "education",
+  /** Social Sciences */
+  Social: "social",
+  /** Reference */
+  Reference: "reference",
+  /** Crafts & Hobbies */
+  Crafts: "crafts",
+  /** LGBTQ+ */
+  Lgbtq: "lgbtq",
+} as const;
+export type VibeGenre = (typeof VibeGenre)[keyof typeof VibeGenre];
+
+/** Source: app/rails/app/models/vibe_signal.rb (DIMENSION_VALUES, mirrored from the recommendations service) */
+export const VibeAxiom = {
+  /** Fantasy / Magic */
+  Magic: "magic",
+  /** Science Fiction */
+  Science: "science",
+  /** Realistic / Literary */
+  Realistic: "realistic",
+} as const;
+export type VibeAxiom = (typeof VibeAxiom)[keyof typeof VibeAxiom];
+
+/** Source: app/rails/app/models/vibe_signal.rb (DIMENSION_VALUES, mirrored from the recommendations service) */
+export const VibeAudience = {
+  /** Young Adult (YA) */
+  YoungAdult: "young_adult",
+  /** Middle Grade */
+  MiddleGrade: "middle_grade",
+  /** Children's */
+  Children: "children",
+  /** Erotica */
+  Erotica: "erotica",
+  /** Spicy / Steamy */
+  Smut: "smut",
+} as const;
+export type VibeAudience = (typeof VibeAudience)[keyof typeof VibeAudience];
+
+/** Source: app/rails/app/models/vibe_signal.rb (DIMENSION_VALUES, mirrored from the recommendations service) */
+export const VibeFormat = {
+  /** Graphic Novel & Comics */
+  GraphicNovel: "graphic_novel",
+  /** Audiobook */
+  Audio: "audio",
+  /** Drama & Theatre */
+  Drama: "drama",
+  /** Short Stories & Novellas */
+  ShortForm: "short_form",
+  /** Poetry */
+  Poetry: "poetry",
+} as const;
+export type VibeFormat = (typeof VibeFormat)[keyof typeof VibeFormat];
+
+/** Source: app/rails/app/models/vibe_signal.rb (DIMENSION_VALUES, mirrored from the recommendations service) */
+export const VibeSeries = {
+  /** First in series */
+  First: "first",
+  /** Not part of a series */
+  Standalone: "standalone",
+  /** First in series or standalone */
+  FirstOrStandalone: "first_or_standalone",
+} as const;
+export type VibeSeries = (typeof VibeSeries)[keyof typeof VibeSeries];
+
+/** Source: app/rails/app/services/recommendations/dynamic_signal_resolver.rb (CATEGORIES) */
+export const DynamicSignalCategory = {
+  /** Recently read books */
+  RecentlyReadBooks: "recently_read_books",
+  /** Recently read authors */
+  RecentlyReadAuthors: "recently_read_authors",
+  /** Recently rated books */
+  RecentRatedBooks: "recent_rated_books",
+} as const;
+export type DynamicSignalCategory = (typeof DynamicSignalCategory)[keyof typeof DynamicSignalCategory];

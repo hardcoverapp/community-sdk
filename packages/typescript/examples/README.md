@@ -14,5 +14,6 @@ Hardcover docs site pages as each resource lands there.
 | [search.ts](search.ts) | Searching every type, tuning with the API's options |
 | [books.ts](books.ts) | Book details, editions, exact ISBN lookup, trending, ordered batches |
 | [journal.ts](journal.ts) | Notes and quotes; why most journal entries are the server's job |
+| [vibes.ts](vibes.ts) | Building a recommendation vibe from signals, and reading results honestly |
 | [goals.ts](goals.ts) | Reading challenges, merge-on-update, `goalProgress()` units |
 | [errors-and-testing.ts](errors-and-testing.ts) | Error types apps handle, and testing with `MockTransport` |

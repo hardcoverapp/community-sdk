@@ -6,6 +6,7 @@ import {
   PrivacySetting,
   ReadingFormat,
   UserBookStatus,
+  VibeGenre,
   type HardcoverClient,
   type ProgressInput,
 } from "@hardcover/sdk";
@@ -351,6 +352,56 @@ export const catalog: Resource[] = [
         fields: [id("listId", "List id"), bookId()],
         run: (c, v) => c.lists.removeBook(Number(v.listId), Number(v.bookId)),
       },
+    ],
+  },
+  {
+    name: "vibes",
+    methods: [
+      { name: "mine", summary: "Your vibes, most recently changed first.", fields: page(), run: (c, v) => c.vibes.mine(pageOf(v)) },
+      { name: "get", summary: "A vibe, or null.", fields: [id("id", "Vibe id")], run: (c, v) => c.vibes.get(Number(v.id)) },
+      {
+        name: "books",
+        summary: "A vibe's books in ranked order. resultsPending means the site hasn't generated them yet.",
+        fields: [id("id", "Vibe id"), ...page(10)],
+        run: (c, v) => c.vibes.books(Number(v.id), pageOf(v)),
+      },
+      {
+        name: "create",
+        summary: "Make a vibe from a genre and a description. Supporter perk.",
+        writes: true,
+        fields: [
+          { kind: "text", name: "title", label: "Title", required: true, value: "Cozy mysteries" },
+          { kind: "select", name: "genre", label: "Genre", options: options(VibeGenre), value: VibeGenre.Mystery },
+          { kind: "number", name: "weight", label: "Genre weight", value: 4, hint: "-5 to 5; negative steers away" },
+          { kind: "text", name: "text", label: "Described in words", value: "small towns, tea, no gore" },
+          { kind: "select", name: "privacy", label: "Privacy", options: privacies, value: PrivacySetting.Private },
+        ],
+        run: (c, v) =>
+          c.vibes.create({
+            title: String(v.title),
+            privacy: n(v.privacy) as PrivacySetting,
+            signals: [
+              { type: "genre", value: String(v.genre), weight: Number(v.weight) },
+              ...(s(v.text) ? [{ type: "semantic" as const, text: String(v.text), weight: 3 }] : []),
+            ],
+          }),
+      },
+      {
+        name: "update",
+        summary: "Change the description, or exclude a book. Signals can only be added (API limit).",
+        writes: true,
+        fields: [
+          id("id", "Vibe id"),
+          { kind: "text", name: "description", label: "Description" },
+          { kind: "number", name: "excludeBookId", label: "Exclude book id" },
+        ],
+        run: (c, v) =>
+          c.vibes.update(Number(v.id), {
+            description: s(v.description),
+            addExclusions: n(v.excludeBookId) ? [{ type: "book", id: Number(v.excludeBookId) }] : undefined,
+          }),
+      },
+      { name: "delete", summary: "Delete a custom vibe.", writes: true, destructive: true, fields: [id("id", "Vibe id")], run: (c, v) => c.vibes.delete(Number(v.id)) },
     ],
   },
   {
