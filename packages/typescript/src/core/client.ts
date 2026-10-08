@@ -1,7 +1,7 @@
 import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
 import { environments, type Environment } from "../generated/environments.ts";
 import { operationInfo, type OperationInfo } from "../operations.ts";
-import { requestCost } from "./cost.ts";
+import { fieldCount, requestCost } from "./cost.ts";
 import {
   ActionError,
   AuthenticationError,
@@ -60,9 +60,19 @@ export interface HardcoverClientOptions {
   pace?: boolean;
   /** Injectable random source (0 ≤ x < 1) for backoff jitter; defaults to Math.random. */
   random?: () => number;
+  /**
+   * Request planner (spec/03): send concurrent reads from `request()` (and
+   * every resource method) as one HTTP request, sized to the burst allowance,
+   * with identical reads sent once. Mutations are barriers: they run alone, in
+   * the order issued, after everything before them. `graphql()` is never
+   * grouped. Default false.
+   */
+  batch?: boolean;
 }
 
 const NETWORK_BACKOFF_MS = [250, 1_000, 4_000];
+/** Burst capacity of the smallest tier (free, halved for legacy JWTs); used until headers say otherwise. */
+const DEFAULT_BATCH_CAPACITY = 5;
 const SDK_USER_AGENT = "hardcover-sdk-typescript/0.0.0";
 
 type Payload = {
@@ -73,6 +83,18 @@ type Payload = {
   message?: unknown;
   scope?: unknown;
 };
+
+/** A read waiting in the planner's queue. Identical reads share one entry. */
+interface Queued {
+  query: string;
+  variables: unknown;
+  info: OperationInfo;
+  cost: number;
+  key: string;
+  callers: { resolve: (data: unknown) => void; reject: (error: unknown) => void }[];
+}
+
+const noop = () => {};
 
 // The injected clock stays off the public surface; resources read it here.
 const clocks = new WeakMap<HardcoverClient, () => Date>();
@@ -115,6 +137,13 @@ export class HardcoverClient {
   #rateLimitAt = 0;
   /** Set after waiting out a 429; the wait already covered the refill. Cleared by the next headers. */
   #allowanceWaited = false;
+  readonly #batch: boolean;
+  /** Reads waiting to be sent together; a mutation closes it. */
+  #run: Map<string, Queued> | undefined;
+  /** Settles once the last mutation has. */
+  #barrier: Promise<void> = Promise.resolve();
+  /** Sends since the last mutation; the next mutation waits for all of them. */
+  readonly #inFlight = new Set<Promise<void>>();
 
   constructor(options: HardcoverClientOptions) {
     this.endpoint = options.endpoint ?? environments[options.environment ?? "prod"].graphql;
@@ -128,6 +157,7 @@ export class HardcoverClient {
     this.#now = options.now ?? (() => new Date());
     clocks.set(this, this.#now);
     this.#pace = options.pace ?? true;
+    this.#batch = options.batch ?? false;
     this.me = new MeResource(this);
     this.library = new LibraryResource(this);
     this.reads = new ReadsResource(this);
@@ -144,17 +174,141 @@ export class HardcoverClient {
     document: DocumentTypeDecoration<TResult, TVariables>,
     ...[variables]: TVariables extends Record<string, never> ? [variables?: TVariables] : [variables: TVariables]
   ): Promise<TResult> {
-    return this.#execute(String(document), variables, operationInfo(document)) as Promise<TResult>;
+    const query = String(document);
+    const info = operationInfo(document);
+    if (!this.#batch) return this.#execute(query, variables, info) as Promise<TResult>;
+    if (info.kind === "mutation") return this.#afterEverything(() => this.#execute(query, variables, info)) as Promise<TResult>;
+    return this.#enqueueRead(query, variables, info) as Promise<TResult>;
   }
 
   /** Escape hatch: any query the token's scopes allow, with the same auth, retries and errors. */
   graphql<TResult = unknown>(query: string, variables?: Record<string, unknown>): Promise<TResult> {
-    return this.#execute(query, variables, operationInfo(query)) as Promise<TResult>;
+    const info = operationInfo(query);
+    if (!this.#batch) return this.#execute(query, variables, info) as Promise<TResult>;
+    if (info.kind === "mutation") return this.#afterEverything(() => this.#execute(query, variables, info)) as Promise<TResult>;
+    return this.#afterBarrier(() => this.#execute(query, variables, info)) as Promise<TResult>;
+  }
+
+  // ---- Request planner (spec/03) ----
+
+  // A mutation waits for everything issued before it and holds back everything
+  // issued after it, so nothing is grouped, reordered or de-duplicated across it.
+  #afterEverything(send: () => Promise<unknown>): Promise<unknown> {
+    this.#run = undefined;
+    const before = Promise.all([this.#barrier, ...this.#inFlight]);
+    this.#inFlight.clear();
+    const result = before.then(send);
+    this.#barrier = result.then(noop, noop);
+    return result;
+  }
+
+  #afterBarrier(send: () => Promise<unknown>): Promise<unknown> {
+    const result = this.#barrier.then(send);
+    this.#track(result);
+    return result;
+  }
+
+  #track(sent: Promise<unknown>): void {
+    const settled = sent.then(noop, noop);
+    this.#inFlight.add(settled);
+    void settled.then(() => this.#inFlight.delete(settled));
+  }
+
+  #enqueueRead(query: string, variables: unknown, info: OperationInfo): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      if (!this.#run) {
+        const run = new Map<string, Queued>();
+        this.#run = run;
+        // One macrotask after the barrier, so reads issued after a few awaits still join.
+        this.#track(
+          this.#barrier
+            .then(() => new Promise((tick) => setTimeout(tick, 0)))
+            .then(() => {
+              if (this.#run === run) this.#run = undefined;
+              return this.#sendRun([...run.values()]);
+            }),
+        );
+      }
+      const key = `${query}\u0000${JSON.stringify(variables ?? null)}`;
+      const queued = this.#run.get(key);
+      if (queued) queued.callers.push({ resolve, reject });
+      else this.#run.set(key, { query, variables, info, cost: fieldCount(query), key, callers: [{ resolve, reject }] });
+    });
+  }
+
+  // Sends a run of reads in requests sized to the allowance, one after another
+  // so each is paced by the headers of the last. Settles every caller; never throws.
+  async #sendRun(pending: Queued[]): Promise<void> {
+    while (pending.length > 0) {
+      const room = this.#batchRoom();
+      let cost = pending[0]!.cost;
+      let size = 1;
+      while (size < pending.length && cost + pending[size]!.cost <= room) cost += pending[size++]!.cost;
+      await this.#sendChunk(pending.splice(0, size));
+    }
+  }
+
+  #batchRoom(): number {
+    const burst = this.#rateLimit?.burst;
+    const capacity = burst?.limit ?? DEFAULT_BATCH_CAPACITY;
+    return Math.max(1, Math.min(capacity, burst?.remaining ?? capacity));
+  }
+
+  async #sendChunk(chunk: Queued[]): Promise<void> {
+    const resolve = (item: Queued, data: unknown) => item.callers.forEach((caller) => caller.resolve(data));
+    const reject = (item: Queued, error: unknown) => item.callers.forEach((caller) => caller.reject(error));
+    const sendAlone = (item: Queued) =>
+      this.#execute(item.query, item.variables, item.info).then(
+        (data) => resolve(item, data),
+        (error: unknown) => reject(item, error),
+      );
+    if (chunk.length === 1) return sendAlone(chunk[0]!);
+
+    const operationName = chunk.map((item) => item.info.name ?? "anonymous").join(", ");
+    const body = JSON.stringify(chunk.map(({ query, variables, info }) => ({ query, variables, operationName: info.name })));
+    const cost = Math.max(chunk.reduce((sum, item) => sum + item.cost, 0), 1);
+    let response: SendResult;
+    try {
+      response = await this.#send(body, cost, false, operationName);
+    } catch (error) {
+      // The gateway checks scopes, operation names and size for the whole
+      // array. Alone, each item gets its own answer.
+      const wholeArray =
+        error instanceof ScopeError ||
+        error instanceof UnsupportedOperationError ||
+        error instanceof InvalidRequestError ||
+        error instanceof RequestTooLargeError;
+      if (wholeArray) for (const item of chunk) await sendAlone(item);
+      else for (const item of chunk) reject(item, error);
+      return;
+    }
+
+    const items: unknown = response.payload;
+    if (!Array.isArray(items) || items.length !== chunk.length) {
+      const error = new HardcoverError("Batch response didn't match the request", { status: response.status, operationName });
+      for (const item of chunk) reject(item, error);
+      return;
+    }
+    chunk.forEach((item, i) => {
+      const payload: unknown = items[i];
+      try {
+        resolve(item, toData(payload && typeof payload === "object" ? (payload as Payload) : undefined, response.status, item.info.name));
+      } catch (error) {
+        reject(item, error);
+      }
+    });
   }
 
   async #execute(query: string, variables: unknown, info: OperationInfo): Promise<unknown> {
-    const isMutation = info.kind === "mutation";
-    const cost = requestCost(query);
+    const body = JSON.stringify({ query, variables, operationName: info.name });
+    const { status, payload } = await this.#send(body, requestCost(query), info.kind === "mutation", info.name);
+    return toData(payload, status, info.name);
+  }
+
+  // Sends with pacing and retries; returns the parsed body of a 2xx response or
+  // throws the classified failure.
+  async #send(body: string, cost: number, isMutation: boolean, operationName: string | undefined): Promise<SendResult> {
+    const info = { name: operationName };
     const request = {
       url: this.endpoint,
       headers: {
@@ -163,7 +317,7 @@ export class HardcoverClient {
         accept: "application/json",
         "user-agent": this.#userAgent,
       },
-      body: JSON.stringify({ query, variables, operationName: info.name }),
+      body,
     };
 
     for (let attempt = 0; ; attempt++) {
@@ -220,19 +374,7 @@ export class HardcoverClient {
 
       this.#consecutive429 = 0;
       this.#contended429 = 0;
-      if (!payload) {
-        throw new HardcoverError("Response was not valid JSON", { status: response.status, operationName: info.name });
-      }
-      if (Array.isArray(payload.errors) && payload.errors.length > 0) {
-        throw new GraphQLError(payload.errors.map(toErrorDetail), payload.data ?? null, {
-          status: response.status,
-          operationName: info.name,
-        });
-      }
-
-      const data = payload.data ?? {};
-      assertNoActionErrors(data, info.name);
-      return data;
+      return { status: response.status, payload };
     }
   }
   // Did the last headers say there was room for a request of this cost?
@@ -271,6 +413,22 @@ export class HardcoverClient {
     const waitMs = waitSeconds * 1_000 - (this.#now().getTime() - this.#rateLimitAt);
     if (waitMs > 0) await this.#sleep(waitMs);
   }
+}
+
+interface SendResult {
+  status: number;
+  payload: Payload | undefined;
+}
+
+// One operation's result: its data, or the GraphQL or action error it reported.
+function toData(payload: Payload | undefined, status: number, operationName: string | undefined): Record<string, unknown> {
+  if (!payload) throw new HardcoverError("Response was not valid JSON", { status, operationName });
+  if (Array.isArray(payload.errors) && payload.errors.length > 0) {
+    throw new GraphQLError(payload.errors.map(toErrorDetail), payload.data ?? null, { status, operationName });
+  }
+  const data = payload.data ?? {};
+  assertNoActionErrors(data, operationName);
+  return data;
 }
 
 function parseBody(body: string): Payload | undefined {

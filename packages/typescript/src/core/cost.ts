@@ -15,6 +15,11 @@ function stripNoise(query: string): string {
 }
 
 export function requestCost(query: string): number {
+  return Math.max(fieldCount(query), 1);
+}
+
+/** Counted top-level fields, without the per-request minimum. A batch costs max(sum, 1). */
+export function fieldCount(query: string): number {
   const src = stripNoise(query);
   let i = 0;
 
@@ -30,7 +35,7 @@ export function requestCost(query: string): number {
   for (;;) {
     const rest = src.slice(i);
     const m = /\S/.exec(rest);
-    if (!m) return 1; // nothing parseable still costs 1 at the gateway
+    if (!m) return 0;
     i += m.index;
     if (src.startsWith("fragment", i)) skipBlock();
     else break;
@@ -68,5 +73,5 @@ export function requestCost(query: string): number {
     }
     if (!/\s/.test(ch)) prevSignificant = ch;
   }
-  return Math.max(cost, 1);
+  return cost;
 }

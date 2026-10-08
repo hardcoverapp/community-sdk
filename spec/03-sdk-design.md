@@ -199,19 +199,31 @@ and collide again. Decided 2026-10-07:
 ### Request planner
 
 Grouping calls into fewer HTTP requests, without changing what they mean.
-Decided 2026-10-07, built next:
+Built 2026-10-07 (TypeScript), opt-in with the client option `batch: true`.
 
-- The gateway accepts a **JSON array** of `{query, variables}` in one request
-  and charges the sum of their fields (minimum 1 each), so the planner groups
-  queued operations into array batches sized to the current allowance and
-  the 5-field cap per request.
-- **Mutations are barriers.** Operations run in the order they were issued.
-  Reads may be grouped and identical reads de-duplicated only within a run of
-  reads; nothing is grouped, reordered or de-duplicated across a mutation, and
-  a mutation is never grouped with anything that came after it.
-- One failed item in an array fails only that item; the others resolve.
-- Opt-in to start (`client.batch(async () => { … })` groups what's issued
-  inside it), so apps choose when calls may share a request.
+- The gateway accepts a **JSON array** of `{query, variables, operationName}`
+  and answers with an array in the same order. It charges the sum of the
+  items' fields (minimum 1 for the whole request) and rejects any request
+  over the tier's burst capacity (403). So the planner groups concurrent reads
+  into arrays sized to the remaining allowance and the burst capacity from
+  `RateLimit-Policy`, using 5 (the smallest tier, free over a legacy JWT)
+  until a response says otherwise. A lone read goes out as a plain request.
+- **Mutations are barriers.** A mutation waits for everything issued before
+  it, runs alone, and holds back everything issued after it. Reads are
+  grouped, and identical reads (same document and variables) sent once, only
+  within a run of reads; nothing is grouped, reordered or de-duplicated
+  across a mutation.
+- One failed item (GraphQL or action error) rejects only its caller. The
+  gateway checks scopes, operation names and size for the whole array, so
+  when it rejects the array for one of those, each item is sent alone to get
+  its own answer. A 429 or network failure retries the whole array (reads
+  only); a daily-cap 429 rejects every item.
+- `graphql()` is never grouped: it's the escape hatch, sent as written.
+- **Why an option, not a scope** (the earlier `client.batch(async () => …)`
+  idea): there's no async context tracking on Hermes or in browsers, so a
+  scope can't tell its calls from unrelated ones made concurrently. Reads
+  issued within one macrotask, or while an earlier request is waiting on the
+  allowance, join the same run.
 
 ### Not in the core (modules later)
 
@@ -225,11 +237,9 @@ Decided 2026-10-07, built next:
 
 ### Chunking
 
-Today `lists.addBooks` batches its own adds (5 per request). Planned: a
-general `client.batch([...ops])` that packs operations into requests of at most **5**
-top-level fields each, and at most **1** `search` per request. It merges the
-results in order and reports per-item failures without failing the whole
-batch. Resource methods never exceed 5 on their own.
+`lists.addBooks` sends its adds 5 per request. The 5 is the smallest tier's
+burst capacity, so a request never exceeds what any token can pay for; reads
+use the request planner instead.
 
 ## Casing
 
