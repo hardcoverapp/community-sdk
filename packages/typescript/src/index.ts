@@ -31,10 +31,20 @@ export {
   type LibraryListItem,
   type LibraryListOptions,
   type LibraryStatusFilter,
+  type OwnedBook,
+  type OwnedMark,
   type ReviewPatch,
   type SetStatusOptions,
 } from "./resources/library.ts";
-export { ReadsResource, type ProgressInput, type Read, type UpdatedRead } from "./resources/reads.ts";
+export {
+  ReadsResource,
+  type FinishedRead,
+  type FinishedReadsOptions,
+  type ProgressInput,
+  type Read,
+  type ReadDates,
+  type UpdatedRead,
+} from "./resources/reads.ts";
 export {
   ListsResource,
   type AddBookOptions,

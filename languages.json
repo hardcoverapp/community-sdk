@@ -206,7 +206,7 @@
         "res-library-write": "done",
         "test-live-write": "done",
         "res-reads-read": "done",
-        "res-reads-write": "partial",
+        "res-reads-write": "done",
         "res-lists-read": "done",
         "res-lists-write": "done",
         "res-search": "done",

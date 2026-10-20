@@ -2,13 +2,46 @@ import type { HardcoverClient } from "../core/client.ts";
 import { toActionAt, type OccurredAt } from "../core/dates.ts";
 import { HardcoverError, NotFoundError } from "../core/errors.ts";
 import type { WithJsonColumns } from "../core/json-columns.ts";
-import { ReadingFormat } from "../generated/enums.ts";
-import type { UpdateUserBookReadMutation, UserBookReadFragment } from "../generated/graphql.ts";
+import { ReadingFormat, type DatePrecision } from "../generated/enums.ts";
+import type { GetFinishedReadsQuery, UpdateUserBookReadMutation, UserBookReadFragment } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { required, type ActionRecord } from "./shared.ts";
+import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { pickDefined, required, type ActionRecord } from "./shared.ts";
 
 export type Read = WithJsonColumns<UserBookReadFragment>;
 export type UpdatedRead = WithJsonColumns<ActionRecord<UpdateUserBookReadMutation, "update_user_book_read", "userBookRead">>;
+
+/** A finished read with its library entry and book. */
+export type FinishedRead = WithJsonColumns<GetFinishedReadsQuery["user_book_reads"][number]>;
+
+/** A read's dates, as you'd fill them in on the site. Dates are YYYY-MM-DD, the reader's local day. */
+export interface ReadDates {
+  startedAt?: string | null;
+
+  /** Null clears it, so the read is in progress again. */
+  finishedAt?: string | null;
+
+  /** How exact `finishedAt` is, e.g. `DatePrecision.Month` for "sometime in March". */
+  precision?: DatePrecision;
+
+  /** The edition read, if not the library entry's own. It must be an edition of the same book. */
+  editionId?: number;
+}
+
+export interface FinishedReadsOptions extends PageOptions {
+  /** First day, inclusive (YYYY-MM-DD). */
+  from: string;
+
+  /** Last day, inclusive (YYYY-MM-DD). */
+  to: string;
+}
+
+const DATES_WIRE: Record<keyof ReadDates, string> = {
+  startedAt: "started_at",
+  finishedAt: "finished_at",
+  precision: "finished_at_precision",
+  editionId: "edition_id",
+};
 
 /**
  * Exactly one unit. Percent is converted with the read's edition: pages for
@@ -125,5 +158,50 @@ export class ReadsResource {
     });
 
     return required(update_user_book_read?.userBookRead, "update_user_book_read", "read");
+  }
+
+  // ---- Editing reads by hand ----
+
+  /**
+   * Logs a read, e.g. one from before you used Hardcover. With `finishedAt`,
+   * the server records it as finished and writes the journal entries.
+   * Scopes: `write:library`.
+   */
+  async add(userBookId: number, dates: ReadDates): Promise<UpdatedRead> {
+    const read = pickDefined(dates, DATES_WIRE);
+    const { insert_user_book_read } = await this.client.request(operations.AddUserBookRead, { userBookId, read });
+
+    return required(insert_user_book_read?.userBookRead, "insert_user_book_read", "read");
+  }
+
+  /**
+   * Changes a read's dates or edition. Only the fields you set change; a null
+   * `finishedAt` clears it. Scopes: `write:library`.
+   */
+  async update(readId: number, patch: ReadDates): Promise<UpdatedRead> {
+    const read = pickDefined(patch, DATES_WIRE);
+    const { update_user_book_read } = await this.client.request(operations.UpdateUserBookRead, { id: readId, read });
+
+    return required(update_user_book_read?.userBookRead, "update_user_book_read", "read");
+  }
+
+  /** Deletes a read and the journal entries it wrote. Scopes: `write:library`. */
+  async delete(readId: number): Promise<void> {
+    await this.client.request(operations.RemoveUserBookRead, { id: readId });
+  }
+
+  // ---- Across the library ----
+
+  /**
+   * The signed-in user's reads finished between `from` and `to` (inclusive),
+   * newest first, each with its book: what a stats or year-in-review screen
+   * needs, without walking the whole library.
+   * Scopes: `read:me`, `read:library`.
+   */
+  async finished({ from, to, limit = DEFAULT_LIMIT, offset = 0 }: FinishedReadsOptions): Promise<Page<FinishedRead>> {
+    const userId = await this.client.me.id();
+    const { user_book_reads } = await this.client.request(operations.GetFinishedReads, { userId, from, to, limit, offset });
+
+    return toPage(user_book_reads, limit, offset);
   }
 }

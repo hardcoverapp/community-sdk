@@ -7,8 +7,10 @@ import type {
   AddUserBookMutation,
   GetLibraryChangesQuery,
   GetLibraryQuery,
+  GetOwnedBooksQuery,
   GetUserBookForBookQuery,
   GetUserBookQuery,
+  MarkOwnedMutation,
 } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
@@ -19,6 +21,12 @@ export type LibraryListItem = WithJsonColumns<GetLibraryQuery["user_books"][numb
 export type LibraryEntryWithBook = WithJsonColumns<NonNullable<GetUserBookQuery["user_books_by_pk"]>>;
 export type LibraryEntryForBook = WithJsonColumns<GetUserBookForBookQuery["user_books"][number]>;
 export type LibraryChange = WithJsonColumns<GetLibraryChangesQuery["user_books"][number]>;
+
+/** A book on the reader's Owned list, with the edition they own. */
+export type OwnedBook = WithJsonColumns<NonNullable<GetOwnedBooksQuery["lists"][number]>["listBooks"][number]>;
+
+/** The Owned list row `markOwned` created (or found). */
+export type OwnedMark = WithJsonColumns<ActionRecord<MarkOwnedMutation, "edition_owned", "listBook">>;
 
 /** One status, or several to match any of them. */
 export type LibraryStatusFilter = UserBookStatus | UserBookStatus[];
@@ -300,6 +308,48 @@ export class LibraryResource {
   /** Scopes: `write:library`. */
   rate(id: number, rating: number | null): Promise<LibraryEntry> {
     return this.update(id, { rating });
+  }
+
+  // ---- Owned editions ----
+
+  /**
+   * Marks an edition as owned: it goes on the reader's Owned list, which the
+   * server creates the first time. Safe to repeat.
+   * Scopes: `write:library`.
+   */
+  async markOwned(editionId: number): Promise<OwnedMark> {
+    const { edition_owned } = await this.client.request(operations.MarkOwned, { editionId });
+
+    return required(edition_owned?.listBook, "edition_owned", "owned list row");
+  }
+
+  /**
+   * Takes a book off the Owned list. Returns false if it wasn't on it. The API
+   * has no un-own action, so this finds the Owned list and removes the book
+   * from it: up to three requests.
+   * Scopes: `read:me`, `read:lists`, `write:lists`.
+   */
+  async unmarkOwned(bookId: number): Promise<boolean> {
+    const listId = await this.#ownedListId();
+    if (listId === undefined) return false;
+
+    return this.client.lists.removeBook(listId, bookId);
+  }
+
+  /** Books on the Owned list, most recently marked first. Scopes: `read:me`, `read:lists`. */
+  async owned({ limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<OwnedBook>> {
+    const userId = await this.client.me.id();
+    const { lists } = await this.client.request(operations.GetOwnedBooks, { userId, limit, offset });
+
+    // No Owned list yet means nothing is owned.
+    return toPage(lists[0]?.listBooks ?? [], limit, offset);
+  }
+
+  async #ownedListId(): Promise<number | undefined> {
+    const userId = await this.client.me.id();
+    const { lists } = await this.client.request(operations.GetOwnedBooks, { userId, limit: 0 });
+
+    return lists[0]?.id;
   }
 
   /**

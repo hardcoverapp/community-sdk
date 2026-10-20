@@ -55,3 +55,14 @@ mutation RemoveUserBookRead($id: Int!) {
     error
   }
 }
+
+# Adds the edition to the reader's "Owned" list, creating the list if needed.
+# There's no un-own action: remove the book from that list instead.
+mutation MarkOwned($editionId: Int!) {
+  edition_owned(id: $editionId) {
+    id
+    list_book {
+      ...ListBook
+    }
+  }
+}

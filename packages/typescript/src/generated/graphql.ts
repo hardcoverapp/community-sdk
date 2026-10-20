@@ -7399,6 +7399,13 @@ export type RemoveUserBookReadMutationVariables = Exact<{
 
 export type RemoveUserBookReadMutation = { delete_user_book_read: { id: number | null, error: string | null } | null };
 
+export type MarkOwnedMutationVariables = Exact<{
+  editionId: number;
+}>;
+
+
+export type MarkOwnedMutation = { edition_owned: { id: number | null, listBook: { id: number, position: number | null, reason: string | null, listId: number, bookId: number, editionId: number | null, dateAdded: string | null } | null } | null };
+
 export type CreateListMutationVariables = Exact<{
   object: ListInput;
 }>;
@@ -7713,6 +7720,26 @@ export type GetLibraryIdsQueryVariables = Exact<{
 
 
 export type GetLibraryIdsQuery = { user_books: Array<{ id: number }> };
+
+export type GetFinishedReadsQueryVariables = Exact<{
+  userId: number;
+  from: string;
+  to: string;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetFinishedReadsQuery = { user_book_reads: Array<{ id: number, progress: number | null, userBookId: number, editionId: number | null, startedAt: string | null, finishedAt: string | null, finishedAtPrecision: number | null, pausedAt: string | null, progressPages: number | null, progressSeconds: number | null, userBook: { id: number, rating: number | null, bookId: number, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown } } | null, edition: { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number } | null }> };
+
+export type GetOwnedBooksQueryVariables = Exact<{
+  userId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetOwnedBooksQuery = { lists: Array<{ id: number, listBooks: Array<{ id: number, position: number | null, reason: string | null, listId: number, bookId: number, editionId: number | null, dateAdded: string | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown }, edition: { id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null } | null }> }> };
 
 export type GetListsForUserQueryVariables = Exact<{
   userId: number;
@@ -8581,6 +8608,24 @@ export const RemoveUserBookReadDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<RemoveUserBookReadMutation, RemoveUserBookReadMutationVariables>;
+export const MarkOwnedDocument = new TypedDocumentString(`
+    mutation MarkOwned($editionId: Int!) {
+  edition_owned(id: $editionId) {
+    id
+    listBook: list_book {
+      ...ListBook
+    }
+  }
+}
+    fragment ListBook on list_books {
+  id
+  listId: list_id
+  bookId: book_id
+  editionId: edition_id
+  position
+  reason
+  dateAdded: date_added
+}`) as unknown as TypedDocumentString<MarkOwnedMutation, MarkOwnedMutationVariables>;
 export const CreateListDocument = new TypedDocumentString(`
     mutation CreateList($object: ListInput!) {
   insert_list(object: $object) {
@@ -9809,6 +9854,129 @@ export const GetLibraryIdsDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<GetLibraryIdsQuery, GetLibraryIdsQueryVariables>;
+export const GetFinishedReadsDocument = new TypedDocumentString(`
+    query GetFinishedReads($userId: Int!, $from: date!, $to: date!, $limit: Int = 25, $offset: Int = 0) {
+  user_book_reads(
+    where: {
+      user_book: { user_id: { _eq: $userId } }
+      finished_at: { _gte: $from, _lte: $to }
+    }
+    order_by: [{ finished_at: desc }, { id: desc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    ...UserBookRead
+    userBook: user_book {
+      id
+      bookId: book_id
+      rating
+      book {
+        ...BookSummary
+      }
+    }
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
+}
+fragment UserBookRead on user_book_reads {
+  id
+  userBookId: user_book_id
+  editionId: edition_id
+  startedAt: started_at
+  finishedAt: finished_at
+  finishedAtPrecision: finished_at_precision
+  pausedAt: paused_at
+  progress
+  progressPages: progress_pages
+  progressSeconds: progress_seconds
+  edition {
+    id
+    pages
+    audioSeconds: audio_seconds
+    readingFormatId: reading_format_id
+  }
+}`) as unknown as TypedDocumentString<GetFinishedReadsQuery, GetFinishedReadsQueryVariables>;
+export const GetOwnedBooksDocument = new TypedDocumentString(`
+    query GetOwnedBooks($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  lists(where: { user_id: { _eq: $userId }, slug: { _eq: "owned" } }, limit: 1) {
+    id
+    listBooks: list_books(
+      order_by: [{ date_added: desc }, { id: desc }]
+      limit: $limit
+      offset: $offset
+    ) {
+      ...ListBook
+      book {
+        ...BookSummary
+      }
+      edition {
+        ...EditionSummary
+      }
+    }
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
+}
+fragment EditionSummary on editions {
+  id
+  bookId: book_id
+  title
+  subtitle
+  isbn10: isbn_10
+  isbn13: isbn_13
+  asin
+  pages
+  audioSeconds: audio_seconds
+  releaseDate: release_date
+  releaseYear: release_year
+  readingFormatId: reading_format_id
+  editionFormat: edition_format
+  cachedImage: cached_image
+  language {
+    code2
+    language
+  }
+  publisher {
+    id
+    name
+    slug
+  }
+}
+fragment ListBook on list_books {
+  id
+  listId: list_id
+  bookId: book_id
+  editionId: edition_id
+  position
+  reason
+  dateAdded: date_added
+}`) as unknown as TypedDocumentString<GetOwnedBooksQuery, GetOwnedBooksQueryVariables>;
 export const GetListsForUserDocument = new TypedDocumentString(`
     query GetListsForUser($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
   lists(

@@ -94,3 +94,41 @@ query GetLibraryIds($userId: Int!) {
     id
   }
 }
+
+# Reads finished in a date range (inclusive), newest first, with their book:
+# what stats and year-in-review screens need, without walking the library.
+query GetFinishedReads($userId: Int!, $from: date!, $to: date!, $limit: Int = 25, $offset: Int = 0) {
+  user_book_reads(
+    where: { user_book: { user_id: { _eq: $userId } }, finished_at: { _gte: $from, _lte: $to } }
+    order_by: [{ finished_at: desc }, { id: desc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    ...UserBookRead
+    user_book {
+      id
+      book_id
+      rating
+      book {
+        ...BookSummary
+      }
+    }
+  }
+}
+
+# The reader's "Owned" list (slug "owned"), which edition_owned adds to.
+# Empty when they haven't marked anything owned yet.
+query GetOwnedBooks($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  lists(where: { user_id: { _eq: $userId }, slug: { _eq: "owned" } }, limit: 1) {
+    id
+    list_books(order_by: [{ date_added: desc }, { id: desc }], limit: $limit, offset: $offset) {
+      ...ListBook
+      book {
+        ...BookSummary
+      }
+      edition {
+        ...EditionSummary
+      }
+    }
+  }
+}
