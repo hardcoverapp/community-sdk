@@ -1,5 +1,6 @@
 import type { HardcoverClient } from "../core/client.ts";
 import { NotFoundError } from "../core/errors.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 import type {
   DynamicSignalCategory,
   PrivacySetting,
@@ -13,7 +14,6 @@ import type { BookSummaryFragment, VibeInput, VibeSummaryFragment } from "../gen
 import { operations } from "../operations.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { nonNull, pickDefined, required } from "./shared.ts";
-import type { WithJsonColumns } from "../core/json-columns.ts";
 
 export type Vibe = WithJsonColumns<VibeSummaryFragment>;
 
@@ -80,33 +80,57 @@ export interface VibeBooks extends Page<BookSummaryFragment> {
    * the vibe is opened on hardcover.app.
    */
   resultsPending: boolean;
+
   generatedAt: string | null;
 }
 
-const FIELDS_WIRE = { title: "title", description: "description", privacy: "privacy_setting_id" } as const;
+const FIELDS_WIRE: Record<keyof VibeFields, string> = {
+  title: "title",
+  description: "description",
+  privacy: "privacy_setting_id",
+};
 
+const DYNAMIC_WIRE: Record<keyof DynamicSignal, string> = {
+  category: "category",
+  count: "count",
+  minRating: "min_rating",
+  maxRating: "max_rating",
+  weight: "weight",
+};
+
+// Every signal sends its type and weight; the value depends on the kind.
 function signalToWire(signal: VibeSignal): Record<string, unknown> {
   const base = { signal_type: signal.type, weight: signal.weight };
+
   if ("value" in signal) return { ...base, value: signal.value };
   if ("id" in signal) return { ...base, value: String(signal.id) };
   if ("text" in signal) return { ...base, value: signal.text };
-  return base; // popularity: weight only
+
+  // Popularity: weight only.
+  return base;
 }
 
-const exclusionToWire = (exclusion: VibeExclusion) => ({
-  excluded_type: exclusion.type === "book" ? "Book" : "Author",
-  excluded_id: exclusion.id,
-});
-
-const dynamicToWire = (signal: DynamicSignal) =>
-  pickDefined(signal, { category: "category", count: "count", minRating: "min_rating", maxRating: "max_rating", weight: "weight" });
-
-function toWire(fields: VibeFields, signals?: VibeSignal[], exclusions?: VibeExclusion[], dynamic?: DynamicSignal[]): VibeInput {
+function exclusionToWire(exclusion: VibeExclusion): Record<string, unknown> {
   return {
-    ...pickDefined({ title: fields.title, description: fields.description, privacy: fields.privacy }, FIELDS_WIRE),
+    excluded_type: exclusion.type === "book" ? "Book" : "Author",
+    excluded_id: exclusion.id,
+  };
+}
+
+function toWire(
+  fields: VibeFields,
+  signals?: VibeSignal[],
+  exclusions?: VibeExclusion[],
+  dynamic?: DynamicSignal[],
+): VibeInput {
+  // Pick only the shared fields, so stray keys from the caller never go out.
+  const { title, description, privacy } = fields;
+
+  return {
+    ...pickDefined({ title, description, privacy }, FIELDS_WIRE),
     ...(signals?.length && { vibe_signals_attributes: signals.map(signalToWire) }),
     ...(exclusions?.length && { vibe_exclusions_attributes: exclusions.map(exclusionToWire) }),
-    ...(dynamic && { dynamic_signals: dynamic.map(dynamicToWire) }),
+    ...(dynamic && { dynamic_signals: dynamic.map((signal) => pickDefined(signal, DYNAMIC_WIRE)) }),
   } as VibeInput;
 }
 
@@ -131,12 +155,14 @@ export class VibesResource {
   /** Someone's vibes that you can see. Scopes: `read:vibes`. */
   async forUser(userId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Vibe>> {
     const { vibes } = await this.client.request(operations.GetVibesForUser, { userId, limit, offset });
+
     return toPage(vibes, limit, offset);
   }
 
   /** Scopes: `read:vibes`. */
   async get(id: number): Promise<Vibe | null> {
     const { vibes_by_pk } = await this.client.request(operations.GetVibe, { id });
+
     return vibes_by_pk ?? null;
   }
 
@@ -147,21 +173,32 @@ export class VibesResource {
    * Scopes: `read:vibes`, `read:catalog`.
    */
   async books(id: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<VibeBooks> {
-    const { vibes_by_pk } = await this.client.request(operations.GetVibeBookIds, { id });
-    if (!vibes_by_pk) throw new NotFoundError("vibe", id);
-    const ids = nonNull(vibes_by_pk.cachedBookIds as (number | null)[] | null);
-    const generatedAt = vibes_by_pk.booksGeneratedAt ?? null;
+    // The vibe holds its ranked book ids; the books themselves are a second read.
+    const { vibes_by_pk: vibe } = await this.client.request(operations.GetVibeBookIds, { id });
+    if (!vibe) throw new NotFoundError("vibe", id);
+
+    const ids = nonNull(vibe.cachedBookIds as (number | null)[] | null);
+    const generatedAt = vibe.booksGeneratedAt ?? null;
+
     // Mirrors Vibe#books_stale? (minus its TTL): never generated, empty, or edited since.
-    const resultsPending = !generatedAt || ids.length === 0 || Date.parse(generatedAt) < Date.parse(vibes_by_pk.updatedAt);
+    const neverGenerated = !generatedAt || ids.length === 0;
+    const editedSince = generatedAt !== null && Date.parse(generatedAt) < Date.parse(vibe.updatedAt);
+
     const books = await this.client.books.getMany(ids.slice(offset, offset + limit));
-    return { ...toPage(books, limit, offset), hasMore: offset + limit < ids.length, resultsPending, generatedAt };
+
+    return {
+      ...toPage(books, limit, offset),
+      hasMore: offset + limit < ids.length,
+      resultsPending: neverGenerated || editedSince,
+      generatedAt,
+    };
   }
 
   /** Supporter perk (the server enforces it). Scopes: `write:vibes`. */
   async create({ signals, exclusions, dynamicSignals, ...fields }: VibeCreate): Promise<Vibe> {
-    const { insert_vibe } = await this.client.request(operations.CreateVibe, {
-      object: toWire(fields, signals, exclusions, dynamicSignals),
-    });
+    const object = toWire(fields, signals, exclusions, dynamicSignals);
+    const { insert_vibe } = await this.client.request(operations.CreateVibe, { object });
+
     return required(insert_vibe?.vibe, "insert_vibe", "vibe");
   }
 
@@ -171,16 +208,16 @@ export class VibesResource {
    * custom vibes. Scopes: `write:vibes`.
    */
   async update(id: number, { addSignals, addExclusions, dynamicSignals, ...fields }: VibeUpdate): Promise<Vibe> {
-    const { update_vibe } = await this.client.request(operations.UpdateVibe, {
-      id,
-      object: toWire(fields, addSignals, addExclusions, dynamicSignals),
-    });
+    const object = toWire(fields, addSignals, addExclusions, dynamicSignals);
+    const { update_vibe } = await this.client.request(operations.UpdateVibe, { id, object });
+
     return required(update_vibe?.vibe, "update_vibe", "vibe");
   }
 
   /** Custom vibes only; system vibes always exist. Scopes: `write:vibes`. */
   async delete(id: number): Promise<void> {
     const { delete_vibe } = await this.client.request(operations.DeleteVibe, { id });
+
     if (!delete_vibe?.success) throw new NotFoundError("vibe", id);
   }
 }

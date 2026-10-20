@@ -25,13 +25,34 @@ export {
   type LibraryChange,
   type LibraryChanges,
   type LibraryEntryForBook,
+  type LibraryChangesOptions,
   type LibraryEntryPatch,
   type LibraryEntryWithBook,
   type LibraryListItem,
+  type LibraryListOptions,
+  type LibraryStatusFilter,
+  type ReviewPatch,
+  type SetStatusOptions,
 } from "./resources/library.ts";
 export { ReadsResource, type ProgressInput, type Read, type UpdatedRead } from "./resources/reads.ts";
-export { ListsResource, type AddBooksResult, type List, type ListBookRow, type ListInput, type ListWithBooks } from "./resources/lists.ts";
-export { SearchResource, type RawSearch, type SearchOptions, type SearchResults } from "./resources/search.ts";
+export {
+  ListsResource,
+  type AddBookOptions,
+  type AddBooksResult,
+  type AddedBook,
+  type List,
+  type ListBookRow,
+  type ListInput,
+  type ListWithBooks,
+  type NotAddedBook,
+} from "./resources/lists.ts";
+export {
+  SearchResource,
+  type RawSearch,
+  type RawSearchOptions,
+  type SearchOptions,
+  type SearchResults,
+} from "./resources/search.ts";
 export type * from "./resources/search-types.ts";
 export {
   BooksResource,
@@ -39,9 +60,11 @@ export {
   type BookSummary,
   type Edition,
   type EditionWithBook,
+  type ReleasedOptions,
+  type TrendingOptions,
 } from "./resources/books.ts";
 export { JournalResource, type JournalEntry, type JournalEntryInput, type JournalTag } from "./resources/journal.ts";
-export { GoalsResource, goalProgress, type Goal, type GoalFields } from "./resources/goals.ts";
+export { GoalsResource, goalProgress, type Goal, type GoalFields, type GoalProgress } from "./resources/goals.ts";
 export {
   VibesResource,
   type DynamicSignal,

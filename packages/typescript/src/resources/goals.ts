@@ -1,26 +1,42 @@
 import type { HardcoverClient } from "../core/client.ts";
 import { NotFoundError } from "../core/errors.ts";
-import { required } from "./shared.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 import { GoalMetric, type PrivacySetting } from "../generated/enums.ts";
 import type { GoalConditionInput, GoalFragment, GoalInput } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import type { WithJsonColumns } from "../core/json-columns.ts";
+import { required } from "./shared.ts";
 
 export type Goal = WithJsonColumns<GoalFragment>;
 
 export interface GoalFields {
   metric: GoalMetric;
+
   /** The target, in the metric's unit (hours for hour goals). */
   goal: number;
+
   description: string;
+
   /** YYYY-MM-DD */
   startDate: string;
+
   /** YYYY-MM-DD */
   endDate: string;
+
   privacy?: PrivacySetting | null;
+
   /** Optional filters, e.g. { readingFormatId: ReadingFormat.Audiobook }. */
   conditions?: GoalConditionInput;
+
   archived?: boolean;
+}
+
+/** Where a goal stands, in the goal's own unit. */
+export interface GoalProgress {
+  current: number;
+  target: number;
+
+  /** 0 when the target is 0. Can pass 100 once the goal is beaten. */
+  percent: number;
 }
 
 function toWire(fields: GoalFields): GoalInput {
@@ -53,13 +69,11 @@ function fromGoal(goal: Goal): GoalFields {
  * Progress and target in the goal's own unit. Hour goals store their target
  * in hours but the API reports progress in seconds; this lines them up.
  */
-export function goalProgress(goal: Pick<Goal, "metric" | "goal" | "progress">): {
-  current: number;
-  target: number;
-  percent: number;
-} {
+export function goalProgress(goal: Pick<Goal, "metric" | "goal" | "progress">): GoalProgress {
   const current = goal.metric === GoalMetric.Hour ? goal.progress / 3600 : goal.progress;
-  return { current, target: goal.goal, percent: goal.goal > 0 ? (current / goal.goal) * 100 : 0 };
+  const percent = goal.goal > 0 ? (current / goal.goal) * 100 : 0;
+
+  return { current, target: goal.goal, percent };
 }
 
 /** Reading goals. The server calculates progress; apps never set it. */
@@ -74,6 +88,7 @@ export class GoalsResource {
   async list({ includeArchived = false }: { includeArchived?: boolean } = {}): Promise<Goal[]> {
     const userId = await this.client.me.id();
     const { goals } = await this.client.request(operations.GetGoals, { userId, includeArchived });
+
     return goals;
   }
 
@@ -82,6 +97,7 @@ export class GoalsResource {
    */
   async get(id: number): Promise<Goal | null> {
     const { goals_by_pk } = await this.client.request(operations.GetGoal, { id });
+
     return goals_by_pk ?? null;
   }
 
@@ -95,7 +111,10 @@ export class GoalsResource {
   async create(fields: GoalFields): Promise<Goal> {
     const { insert_goal } = await this.client.request(operations.CreateGoal, { object: toWire(fields) });
     const created = required(insert_goal?.goal, "insert_goal", "goal");
-    if (fields.privacy === undefined || created.privacySettingId === fields.privacy) return created;
+
+    const privacyApplied = fields.privacy === undefined || created.privacySettingId === fields.privacy;
+    if (privacyApplied) return created;
+
     return this.#put(created.id, { ...fromGoal(created), privacy: fields.privacy });
   }
 
@@ -107,12 +126,14 @@ export class GoalsResource {
   async update(id: number, patch: Partial<GoalFields>): Promise<Goal> {
     const current = await this.get(id);
     if (!current) throw new NotFoundError("goal", id);
+
     return this.#put(id, { ...fromGoal(current), ...patch });
   }
 
   // update_goal replaces the whole goal.
   async #put(id: number, fields: GoalFields): Promise<Goal> {
     const { update_goal } = await this.client.request(operations.UpdateGoal, { id, object: toWire(fields) });
+
     return required(update_goal?.goal, "update_goal", "goal");
   }
 
@@ -129,6 +150,7 @@ export class GoalsResource {
   /** Asks the server to recalculate progress now. Scopes: `write:goals`. */
   async refreshProgress(id: number): Promise<Goal> {
     const { update_goal_progress } = await this.client.request(operations.RefreshGoalProgress, { id });
+
     return required(update_goal_progress?.goal, "update_goal_progress", "goal");
   }
 

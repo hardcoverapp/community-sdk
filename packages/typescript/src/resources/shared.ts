@@ -8,18 +8,35 @@ import { HardcoverError } from "../core/errors.ts";
  */
 export function pickDefined<T extends object>(input: T, wire: Record<keyof T, string>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
+
   for (const [key, field] of Object.entries(wire) as [keyof T, string][]) {
     if (input[key] !== undefined) out[field] = input[key];
   }
+
   return out;
 }
 
+/**
+ * The record a write action returns. Actions wrap it in an envelope, so
+ * `ActionRecord<AddUserBookMutation, "insert_user_book", "userBook">` is the
+ * user book inside `insert_user_book { userBook }`.
+ */
+export type ActionRecord<
+  Mutation,
+  Root extends keyof Mutation,
+  Key extends keyof NonNullable<Mutation[Root]>,
+> = NonNullable<NonNullable<Mutation[Root]>[Key]>;
+
 /** An action returned without the object it should carry. One message style everywhere. */
 export function required<T>(value: T | null | undefined, root: string, noun: string): T {
-  if (value === null || value === undefined) throw new HardcoverError(`${root} returned no ${noun}`);
+  if (value === null || value === undefined) {
+    throw new HardcoverError(`${root} returned no ${noun}`);
+  }
+
   return value;
 }
 
 /** Drops the nulls GraphQL list types allow. */
-export const nonNull = <T>(values: readonly (T | null)[] | null | undefined): T[] =>
-  (values ?? []).filter((v): v is T => v !== null);
+export function nonNull<T>(values: readonly (T | null)[] | null | undefined): T[] {
+  return (values ?? []).filter((value): value is T => value !== null);
+}

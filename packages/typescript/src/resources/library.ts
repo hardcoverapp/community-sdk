@@ -1,6 +1,7 @@
 import type { HardcoverClient } from "../core/client.ts";
 import { toActionAt, type OccurredAt } from "../core/dates.ts";
 import { NotFoundError } from "../core/errors.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 import { UserBookStatus, type PrivacySetting } from "../generated/enums.ts";
 import type {
   AddUserBookMutation,
@@ -11,36 +12,69 @@ import type {
 } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
-import { pickDefined, required } from "./shared.ts";
-import type { WithJsonColumns } from "../core/json-columns.ts";
+import { pickDefined, required, type ActionRecord } from "./shared.ts";
 
-export type LibraryEntry = WithJsonColumns<NonNullable<NonNullable<AddUserBookMutation["insert_user_book"]>["userBook"]>>;
+export type LibraryEntry = WithJsonColumns<ActionRecord<AddUserBookMutation, "insert_user_book", "userBook">>;
 export type LibraryListItem = WithJsonColumns<GetLibraryQuery["user_books"][number]>;
 export type LibraryEntryWithBook = WithJsonColumns<NonNullable<GetUserBookQuery["user_books_by_pk"]>>;
 export type LibraryEntryForBook = WithJsonColumns<GetUserBookForBookQuery["user_books"][number]>;
 export type LibraryChange = WithJsonColumns<GetLibraryChangesQuery["user_books"][number]>;
 
+/** One status, or several to match any of them. */
+export type LibraryStatusFilter = UserBookStatus | UserBookStatus[];
+
+export interface LibraryListOptions extends PageOptions {
+  /** Only entries with this status (or any of these). All statuses when left out. */
+  status?: LibraryStatusFilter;
+}
+
+export interface LibraryChangesOptions {
+  /** The `cursor` from the previous result. Leave out for everything. */
+  since?: string | null;
+
+  /** The entry ids you already hold, to get `removedIds` back. */
+  knownIds?: Iterable<number>;
+
+  limit?: number;
+}
+
 /** One page of library changes, oldest change first. */
 export interface LibraryChanges {
   /** Entries added or changed since the cursor (including their reads). Upsert them by `id`. */
   items: LibraryChange[];
+
   /** Pass as `since` next time. Opaque: store it as-is. Null until something has synced. */
   cursor: string | null;
+
   /** More changes are waiting: call again with `cursor` right away. */
   hasMore: boolean;
+
   /** With `knownIds`: the ids you have that are no longer in the library. */
   removedIds?: number[];
 }
 
 // The cursor is the (updated_at, id) of the last row seen. updated_at stays the
 // server's string (microseconds), which a JS Date would round.
-const encodeCursor = (row: { updatedAt?: string | null; id: number }) => `${row.updatedAt}|${row.id}`;
+function encodeCursor(row: { updatedAt?: string | null; id: number }): string {
+  return `${row.updatedAt}|${row.id}`;
+}
 
 function decodeCursor(cursor: string): { after: string; afterId: number } {
   const split = cursor.lastIndexOf("|");
   const afterId = Number(cursor.slice(split + 1));
-  if (split <= 0 || !Number.isInteger(afterId)) throw new RangeError(`Not a library changes cursor: ${JSON.stringify(cursor)}`);
+
+  if (split <= 0 || !Number.isInteger(afterId)) {
+    throw new RangeError(`Not a library changes cursor: ${JSON.stringify(cursor)}`);
+  }
+
   return { after: cursor.slice(0, split), afterId };
+}
+
+/** A review on a library entry. Every field needs the `write:reviews` scope. */
+export interface ReviewPatch {
+  markdown?: string | null;
+  hasSpoilers?: boolean;
+  reviewedAt?: string | null;
 }
 
 /**
@@ -50,26 +84,40 @@ function decodeCursor(cursor: string): { after: string; afterId: number } {
  */
 export interface LibraryEntryPatch {
   status?: UserBookStatus;
+
   /**
    * Date for the status change (YYYY-MM-DD, the reader's local day). Leave it
    * out and the server records today in the reader's own timezone.
    */
   date?: string;
   startDate?: string;
+
   /** 0.5 to 5 in half steps; null clears it. */
   rating?: number | null;
+
   privacy?: PrivacySetting;
   editionId?: number | null;
   notes?: string | null;
   readCount?: number;
   recommendedBy?: string | null;
   recommendedFor?: string | null;
+
   /** Needs `write:reviews`. */
-  review?: { markdown?: string | null; hasSpoilers?: boolean; reviewedAt?: string | null };
+  review?: ReviewPatch;
+
   /** When this happened, if not now. Backdates the journal entry the server writes. */
   occurredAt?: OccurredAt;
 }
 
+export interface SetStatusOptions {
+  /** The day of the change (YYYY-MM-DD). The server uses today when left out. */
+  date?: string;
+
+  /** When this happened, if not now. Backdates the journal entry. */
+  occurredAt?: OccurredAt;
+}
+
+// Idiomatic patch fields to the wire fields the actions take.
 const WIRE: Record<Exclude<keyof LibraryEntryPatch, "review" | "occurredAt">, string> = {
   status: "status_id",
   date: "user_date",
@@ -83,11 +131,19 @@ const WIRE: Record<Exclude<keyof LibraryEntryPatch, "review" | "occurredAt">, st
   recommendedFor: "recommended_for",
 };
 
-const REVIEW_WIRE = { markdown: "review_markdown", hasSpoilers: "review_has_spoilers", reviewedAt: "reviewed_at" } as const;
+const REVIEW_WIRE: Record<keyof ReviewPatch, string> = {
+  markdown: "review_markdown",
+  hasSpoilers: "review_has_spoilers",
+  reviewedAt: "reviewed_at",
+};
 
 function assertRating(rating: number | null | undefined): void {
   if (rating === null || rating === undefined) return;
-  if (!Number.isFinite(rating) || rating < 0.5 || rating > 5 || !Number.isInteger(rating * 2)) {
+
+  const inRange = Number.isFinite(rating) && rating >= 0.5 && rating <= 5;
+  const halfStep = Number.isInteger(rating * 2);
+
+  if (!inRange || !halfStep) {
     throw new RangeError(`Rating must be 0.5 to 5 in steps of 0.5, or null to clear it (got ${rating})`);
   }
 }
@@ -100,9 +156,12 @@ function toWire({ review, occurredAt, ...fields }: LibraryEntryPatch): Record<st
   };
 }
 
-/** One status or several, as the operations' `statusIds` list; undefined keeps the operation's default. */
-const statusIds = (status: UserBookStatus | UserBookStatus[] | undefined): { statusIds?: UserBookStatus[] } =>
-  status === undefined ? {} : { statusIds: Array.isArray(status) ? status : [status] };
+/** The operations' `statusIds` list. Without a status, the operation's default applies. */
+function statusIds(status: LibraryStatusFilter | undefined): { statusIds?: UserBookStatus[] } {
+  if (status === undefined) return {};
+
+  return { statusIds: Array.isArray(status) ? status : [status] };
+}
 
 /** The signed-in user's library ("user books"). */
 export class LibraryResource {
@@ -113,18 +172,26 @@ export class LibraryResource {
   }
 
   /** One request plus a cached `me` lookup. Scopes: `read:me`, `read:library`. */
-  async list({ status, limit = DEFAULT_LIMIT, offset = 0 }: PageOptions & { status?: UserBookStatus | UserBookStatus[] } = {}): Promise<Page<LibraryListItem>> {
+  async list({ status, limit = DEFAULT_LIMIT, offset = 0 }: LibraryListOptions = {}): Promise<Page<LibraryListItem>> {
     const userId = await this.client.me.id();
-    const { user_books } = await this.client.request(operations.GetLibrary, { userId, limit, offset, ...statusIds(status) });
+
+    const { user_books } = await this.client.request(operations.GetLibrary, {
+      userId,
+      limit,
+      offset,
+      ...statusIds(status),
+    });
+
     return toPage(user_books, limit, offset);
   }
 
   /**
    * Scopes: `read:me`, `read:library`.
    */
-  async count({ status }: { status?: UserBookStatus | UserBookStatus[] } = {}): Promise<number> {
+  async count({ status }: { status?: LibraryStatusFilter } = {}): Promise<number> {
     const userId = await this.client.me.id();
     const { user_books_aggregate } = await this.client.request(operations.CountLibrary, { userId, ...statusIds(status) });
+
     return user_books_aggregate.aggregate?.count ?? 0;
   }
 
@@ -140,23 +207,29 @@ export class LibraryResource {
    *
    * Scopes: `read:me`, `read:library`.
    */
-  async changes({
-    since,
-    knownIds,
-    limit = DEFAULT_LIMIT,
-  }: { since?: string | null; knownIds?: Iterable<number>; limit?: number } = {}): Promise<LibraryChanges> {
+  async changes({ since, knownIds, limit = DEFAULT_LIMIT }: LibraryChangesOptions = {}): Promise<LibraryChanges> {
     const cursor = since ? decodeCursor(since) : {};
     const userId = await this.client.me.id();
+
+    // The ids-only read runs alongside the page, and only when asked for.
     const [{ user_books }, current] = await Promise.all([
       this.client.request(operations.GetLibraryChanges, { userId, limit, ...cursor }),
       knownIds && this.client.request(operations.GetLibraryIds, { userId }),
     ]);
+
+    // With nothing new, the cursor stays where it was.
     const last = user_books[user_books.length - 1];
-    const result: LibraryChanges = { items: user_books, cursor: last ? encodeCursor(last) : (since ?? null), hasMore: user_books.length === limit };
+    const result: LibraryChanges = {
+      items: user_books,
+      cursor: last ? encodeCursor(last) : (since ?? null),
+      hasMore: user_books.length === limit,
+    };
+
     if (knownIds && current) {
       const present = new Set(current.user_books.map((entry) => entry.id));
       result.removedIds = [...new Set(knownIds)].filter((id) => !present.has(id));
     }
+
     return result;
   }
 
@@ -167,6 +240,7 @@ export class LibraryResource {
   async forBook(bookId: number): Promise<LibraryEntryForBook | null> {
     const userId = await this.client.me.id();
     const { user_books } = await this.client.request(operations.GetUserBookForBook, { userId, bookId });
+
     return user_books[0] ?? null;
   }
 
@@ -175,6 +249,7 @@ export class LibraryResource {
    */
   async get(id: number): Promise<LibraryEntryWithBook | null> {
     const { user_books_by_pk } = await this.client.request(operations.GetUserBook, { id });
+
     return user_books_by_pk ?? null;
   }
 
@@ -185,9 +260,11 @@ export class LibraryResource {
   async add(bookId: number, options: LibraryEntryPatch = {}): Promise<LibraryEntry> {
     const patch = { status: UserBookStatus.WantToRead, ...options };
     assertRating(patch.rating);
+
     const { insert_user_book } = await this.client.request(operations.AddUserBook, {
       object: { book_id: bookId, ...toWire(patch) },
     });
+
     return required(insert_user_book?.userBook, "insert_user_book", "library entry");
   }
 
@@ -196,10 +273,12 @@ export class LibraryResource {
    */
   async update(id: number, patch: LibraryEntryPatch): Promise<LibraryEntry> {
     assertRating(patch.rating);
+
     const { update_user_book } = await this.client.request(operations.UpdateUserBook, {
       id,
       object: toWire(patch),
     });
+
     return required(update_user_book?.userBook, "update_user_book", "library entry");
   }
 
@@ -209,12 +288,13 @@ export class LibraryResource {
    * Without `date`, the server records today in the reader's own timezone.
    * Scopes: `write:library`.
    */
-  setStatus(
-    id: number,
-    status: UserBookStatus,
-    { date, occurredAt }: { date?: string; occurredAt?: OccurredAt } = {},
-  ): Promise<LibraryEntry> {
-    return this.update(id, { status, ...(date !== undefined && { date }), ...(occurredAt !== undefined && { occurredAt }) });
+  setStatus(id: number, status: UserBookStatus, { date, occurredAt }: SetStatusOptions = {}): Promise<LibraryEntry> {
+    // Only the options that were given, so the patch sends nothing extra.
+    const patch: LibraryEntryPatch = { status };
+    if (date !== undefined) patch.date = date;
+    if (occurredAt !== undefined) patch.occurredAt = occurredAt;
+
+    return this.update(id, patch);
   }
 
   /** Scopes: `write:library`. */
@@ -227,6 +307,7 @@ export class LibraryResource {
    */
   async remove(id: number): Promise<void> {
     const { delete_user_book } = await this.client.request(operations.RemoveUserBook, { id });
+
     if (!delete_user_book?.id) throw new NotFoundError("library entry", id);
   }
 }
