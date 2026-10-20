@@ -3,9 +3,11 @@ export { DEFAULT_LIMIT } from "./resources/page.ts";
 export * from "./core/errors.ts";
 export type { RateLimitState } from "./core/rate-limit.ts";
 export type {
+  CachedAuthor,
   CachedContributor,
   CachedFeaturedSeries,
   CachedImage,
+  CachedSeries,
   CachedTag,
   CachedTags,
   WithJsonColumns,

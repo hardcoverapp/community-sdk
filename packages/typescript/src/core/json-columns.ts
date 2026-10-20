@@ -1,37 +1,57 @@
 /**
  * Types for JSON columns the schema only knows as `jsonb` (spec/03, Types for
- * JSON columns). The shapes are observed from the API, not guaranteed: keys
- * stay exactly as stored, an empty column arrives as `{}`, and the server can
- * add or drop keys, so every field is optional.
+ * JSON columns).
+ *
+ * The shapes are observed from the API, not guaranteed:
+ * - keys stay exactly as stored (so some are snake_case, like `color_name`),
+ * - an empty column arrives as `{}`, not `null`,
+ * - the server can add or drop keys at any time.
+ *
+ * That's why every field is optional.
  */
 
 /** A cover, author photo or avatar. `{}` when there's no image. */
 export interface CachedImage {
   id?: number;
   url?: string;
-  /** Dominant color as a hex string, e.g. "#ddd8d7". */
-  color?: string;
   width?: number;
   height?: number;
+
+  /** Dominant color as a hex string, e.g. "#ddd8d7". */
+  color?: string;
   color_name?: string;
+}
+
+/** The person behind a credit. */
+export interface CachedAuthor {
+  id?: number;
+  slug?: string;
+  name?: string;
+  image?: CachedImage;
 }
 
 /** One credited person on a book or edition. */
 export interface CachedContributor {
-  author?: { id?: number; slug?: string; name?: string; image?: CachedImage };
+  author?: CachedAuthor;
+
   /** "Author", "Narrator", "Illustrator", … */
   contribution?: string | null;
+
   /** The credit the site shows first. */
   primary?: boolean;
+
+  // The role behind `contribution`, with its description.
   contributor_role_id?: number | null;
   contributor_role_name?: string | null;
   contributor_role_blurb?: string | null;
+
+  // An optional narrower role, e.g. a kind of translator.
   contributor_specialization_id?: number | null;
   contributor_specialization_name?: string | null;
   contributor_specialization_blurb?: string | null;
 }
 
-/** A tag with how many readers applied it. These keys are stored in camelCase. */
+/** A tag with how many readers applied it. Unlike the others, these keys are stored in camelCase. */
 export interface CachedTag {
   tag?: string;
   tagSlug?: string;
@@ -42,21 +62,39 @@ export interface CachedTag {
 }
 
 /** Tags grouped by category: "Genre", "Mood", "Tag", "Content Warning", … */
-export type CachedTags = { [category: string]: CachedTag[] | undefined };
+export type CachedTags = {
+  [category: string]: CachedTag[] | undefined;
+};
+
+/** A series, as the featured-series column describes it. */
+export interface CachedSeries {
+  id?: number;
+  name?: string;
+  slug?: string;
+  books_count?: number;
+  primary_books_count?: number | null;
+}
 
 /** The series the site features for a book, e.g. "Red Rising Saga" #1. `{}` when it has none. */
 export interface CachedFeaturedSeries {
   id?: number;
-  series?: { id?: number; name?: string; slug?: string; books_count?: number; primary_books_count?: number | null };
+  series?: CachedSeries;
+
+  /** The book's number in the series. */
   position?: number | null;
+
   /** The position as written, e.g. "1" or "1-3". */
   details?: string | null;
+
   featured?: boolean;
   collection?: boolean;
   unreleased?: boolean;
 }
 
-/** Field name to type, wherever the field appears in a response. */
+/**
+ * Which type each JSON column gets, by field name. The names are the same on
+ * every table that has them (books, editions, authors, users).
+ */
 interface JsonColumns {
   cachedImage: CachedImage;
   cachedContributors: CachedContributor[];
@@ -65,11 +103,22 @@ interface JsonColumns {
 }
 
 /**
- * A generated type with its JSON columns typed. Codegen can only map the
- * `jsonb` scalar as a whole, so the per-field types are applied here.
+ * A generated type with its JSON columns typed, at any depth.
+ *
+ * Codegen can only map the `jsonb` scalar as a whole (to `unknown`), so the
+ * per-field types are applied on top of its output here.
  */
-export type WithJsonColumns<T> = T extends readonly (infer U)[]
-  ? WithJsonColumns<U>[]
-  : T extends object
-    ? { [K in keyof T]: K extends keyof JsonColumns ? JsonColumns[K] : WithJsonColumns<T[K]> }
-    : T;
+export type WithJsonColumns<T> =
+  // A list: type each item.
+  T extends readonly (infer Item)[]
+    ? WithJsonColumns<Item>[]
+    : // An object: type each field.
+      T extends object
+      ? { [Field in keyof T]: TypedField<Field, T[Field]> }
+      : // Anything else (string, number, null) stays as it is.
+        T;
+
+/** A JSON column gets its type; any other field is searched for nested ones. */
+type TypedField<Field, Value> = Field extends keyof JsonColumns
+  ? JsonColumns[Field]
+  : WithJsonColumns<Value>;

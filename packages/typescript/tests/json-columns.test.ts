@@ -24,22 +24,51 @@ const redRising = {
   audioSeconds: null,
   ratingsCount: 8000,
   usersCount: 11581,
-  cachedImage: { id: 1889221, url: "https://assets.hardcover.app/editions/26096001/3897005112280259.jpg", color: "#ddd8d7", width: 311, height: 475, color_name: "Silver" },
+
+  cachedImage: {
+    id: 1889221,
+    url: "https://assets.hardcover.app/editions/26096001/3897005112280259.jpg",
+    color: "#ddd8d7",
+    color_name: "Silver",
+    width: 311,
+    height: 475,
+  },
+
   cachedContributors: [
-    { author: { id: 232665, slug: "pierce-brown", name: "Pierce Brown", image: {} }, contribution: "Author", contributor_role_id: 1, primary: true },
+    {
+      author: { id: 232665, slug: "pierce-brown", name: "Pierce Brown", image: {} },
+      contribution: "Author",
+      contributor_role_id: 1,
+      primary: true,
+    },
   ],
+
   cachedFeaturedSeries: {
     id: 3336,
-    series: { id: 1033, name: "Red Rising Saga", slug: "red-rising-saga", books_count: 16, primary_books_count: 6 },
+    series: {
+      id: 1033,
+      name: "Red Rising Saga",
+      slug: "red-rising-saga",
+      books_count: 16,
+      primary_books_count: 6,
+    },
     details: "1",
-    featured: true,
     position: 1,
+    featured: true,
     collection: false,
     unreleased: false,
   },
 };
-// A book with no cover and no series: the columns hold `{}`.
-const bare = { ...redRising, id: 3036994, title: "Bare", cachedImage: {}, cachedContributors: [], cachedFeaturedSeries: {} };
+
+// A book with no cover, no contributors and no series: the columns hold `{}` or `[]`.
+const bare = {
+  ...redRising,
+  id: 3036994,
+  title: "Bare",
+  cachedImage: {},
+  cachedContributors: [],
+  cachedFeaturedSeries: {},
+};
 
 describe("JSON columns", () => {
   it("are typed on the public types, wherever they appear", () => {
@@ -47,12 +76,17 @@ describe("JSON columns", () => {
     expectTypeOf<BookSummary["cachedContributors"]>().toEqualTypeOf<CachedContributor[]>();
     expectTypeOf<BookSummary["cachedFeaturedSeries"]>().toEqualTypeOf<CachedFeaturedSeries>();
     expectTypeOf<Book["cachedTags"]>().toEqualTypeOf<CachedTags>();
-    // Nested: a library row's book.
+
+    // Nested inside another type: a library row's book.
     expectTypeOf<LibraryListItem["book"]["cachedImage"]>().toEqualTypeOf<CachedImage>();
   });
 
   it("reach callers as stored, including empty columns", async () => {
-    const { client } = setup(ok({ books_trending: { ids: [427473, 3036994], error: null } }), ok({ books: [redRising, bare] }));
+    // Trending is two requests: the ids, then the books.
+    const trendingIds = ok({ books_trending: { ids: [427473, 3036994], error: null } });
+    const books = ok({ books: [redRising, bare] });
+    const { client } = setup(trendingIds, books);
+
     const { items } = await client.books.trending({ duration: "week", limit: 2 });
     const [first, second] = items;
 
@@ -60,8 +94,11 @@ describe("JSON columns", () => {
     expect(first?.cachedFeaturedSeries.series?.name).toBe("Red Rising Saga");
     expect(first?.cachedFeaturedSeries.position).toBe(1);
     expect(first?.cachedImage.color_name).toBe("Silver");
-    expect(first?.cachedContributors.find((c) => c.primary)?.author?.name).toBe("Pierce Brown");
 
+    const primary = first?.cachedContributors.find((contributor) => contributor.primary);
+    expect(primary?.author?.name).toBe("Pierce Brown");
+
+    // Empty columns are `{}`, so their fields read as undefined.
     expect(second?.cachedImage.url).toBeUndefined();
     expect(second?.cachedFeaturedSeries.series).toBeUndefined();
   });
