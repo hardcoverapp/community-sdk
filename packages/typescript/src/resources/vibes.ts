@@ -13,8 +13,9 @@ import type { BookSummaryFragment, VibeInput, VibeSummaryFragment } from "../gen
 import { operations } from "../operations.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { nonNull, pickDefined, required } from "./shared.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 
-export type Vibe = VibeSummaryFragment;
+export type Vibe = WithJsonColumns<VibeSummaryFragment>;
 
 // Taxonomy values autocomplete from the known list but any string is accepted:
 // the server validates, and the taxonomy can grow without an SDK release.

@@ -6,10 +6,11 @@ import type { AddBookToListMutation, GetListQuery, ListSummaryFragment } from ".
 import { operations } from "../operations.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { pickDefined, required } from "./shared.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 
-export type List = ListSummaryFragment;
-export type ListWithBooks = NonNullable<GetListQuery["lists_by_pk"]>;
-export type ListBookRow = NonNullable<NonNullable<AddBookToListMutation["insert_list_book"]>["listBook"]>;
+export type List = WithJsonColumns<ListSummaryFragment>;
+export type ListWithBooks = WithJsonColumns<NonNullable<GetListQuery["lists_by_pk"]>>;
+export type ListBookRow = WithJsonColumns<NonNullable<NonNullable<AddBookToListMutation["insert_list_book"]>["listBook"]>>;
 
 export interface ListInput {
   name?: string;

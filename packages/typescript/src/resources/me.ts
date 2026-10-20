@@ -2,8 +2,9 @@ import type { HardcoverClient } from "../core/client.ts";
 import { HardcoverError } from "../core/errors.ts";
 import type { MeQuery } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 
-export type Me = MeQuery["me"][number];
+export type Me = WithJsonColumns<MeQuery["me"][number]>;
 
 /** The token's user. Fetched once per client and shared by resources that need the user id. */
 export class MeResource {

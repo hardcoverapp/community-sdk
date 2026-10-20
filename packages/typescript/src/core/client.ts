@@ -25,6 +25,7 @@ import { MeResource } from "../resources/me.ts";
 import { ReadsResource } from "../resources/reads.ts";
 import { SearchResource } from "../resources/search.ts";
 import { VibesResource } from "../resources/vibes.ts";
+import type { WithJsonColumns } from "./json-columns.ts";
 import { parseRateLimit, type RateLimitState } from "./rate-limit.ts";
 import { normalizeToken } from "./token.ts";
 import { fetchTransport, TransportFailure, type HttpResponse, type Transport } from "./transport.ts";
@@ -170,16 +171,20 @@ export class HardcoverClient {
     this.vibes = new VibesResource(this);
   }
 
-  /** Runs a generated operation, e.g. `client.request(operations.Me)`. */
+  /**
+   * Runs a generated operation, e.g. `client.request(operations.Me)`. JSON
+   * columns such as `cachedImage` come back typed (core/json-columns.ts).
+   */
   request<TResult, TVariables>(
     document: DocumentTypeDecoration<TResult, TVariables>,
     ...[variables]: TVariables extends Record<string, never> ? [variables?: TVariables] : [variables: TVariables]
-  ): Promise<TResult> {
+  ): Promise<WithJsonColumns<TResult>> {
+    type Result = Promise<WithJsonColumns<TResult>>;
     const query = String(document);
     const info = operationInfo(document);
-    if (!this.#batch) return this.#execute(query, variables, info) as Promise<TResult>;
-    if (info.kind === "mutation") return this.#afterEverything(() => this.#execute(query, variables, info)) as Promise<TResult>;
-    return this.#enqueueRead(query, variables, info) as Promise<TResult>;
+    if (!this.#batch) return this.#execute(query, variables, info) as Result;
+    if (info.kind === "mutation") return this.#afterEverything(() => this.#execute(query, variables, info)) as Result;
+    return this.#enqueueRead(query, variables, info) as Result;
   }
 
   /** Escape hatch: any query the token's scopes allow, with the same auth, retries and errors. */

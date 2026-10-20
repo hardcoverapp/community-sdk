@@ -4,8 +4,9 @@ import { required } from "./shared.ts";
 import { GoalMetric, type PrivacySetting } from "../generated/enums.ts";
 import type { GoalConditionInput, GoalFragment, GoalInput } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 
-export type Goal = GoalFragment;
+export type Goal = WithJsonColumns<GoalFragment>;
 
 export interface GoalFields {
   metric: GoalMetric;

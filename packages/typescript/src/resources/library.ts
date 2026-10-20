@@ -12,12 +12,13 @@ import type {
 import { operations } from "../operations.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { pickDefined, required } from "./shared.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 
-export type LibraryEntry = NonNullable<NonNullable<AddUserBookMutation["insert_user_book"]>["userBook"]>;
-export type LibraryListItem = GetLibraryQuery["user_books"][number];
-export type LibraryEntryWithBook = NonNullable<GetUserBookQuery["user_books_by_pk"]>;
-export type LibraryEntryForBook = GetUserBookForBookQuery["user_books"][number];
-export type LibraryChange = GetLibraryChangesQuery["user_books"][number];
+export type LibraryEntry = WithJsonColumns<NonNullable<NonNullable<AddUserBookMutation["insert_user_book"]>["userBook"]>>;
+export type LibraryListItem = WithJsonColumns<GetLibraryQuery["user_books"][number]>;
+export type LibraryEntryWithBook = WithJsonColumns<NonNullable<GetUserBookQuery["user_books_by_pk"]>>;
+export type LibraryEntryForBook = WithJsonColumns<GetUserBookForBookQuery["user_books"][number]>;
+export type LibraryChange = WithJsonColumns<GetLibraryChangesQuery["user_books"][number]>;
 
 /** One page of library changes, oldest change first. */
 export interface LibraryChanges {

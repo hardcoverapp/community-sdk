@@ -4,8 +4,9 @@ import type { JournalEntryFragment, ReadingJournalCreateType } from "../generate
 import { operations } from "../operations.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { nonNull, pickDefined, required } from "./shared.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 
-export type JournalEntry = JournalEntryFragment;
+export type JournalEntry = WithJsonColumns<JournalEntryFragment>;
 
 export interface JournalTag {
   tag: string;

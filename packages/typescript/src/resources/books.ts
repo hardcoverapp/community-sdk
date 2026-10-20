@@ -10,11 +10,12 @@ import type {
 import { operations } from "../operations.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { nonNull, required } from "./shared.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 
-export type Book = BookDetailFragment;
-export type BookSummary = BookSummaryFragment;
-export type Edition = EditionSummaryFragment;
-export type EditionWithBook = FindEditionsByIsbnQuery["editions"][number];
+export type Book = WithJsonColumns<BookDetailFragment>;
+export type BookSummary = WithJsonColumns<BookSummaryFragment>;
+export type Edition = WithJsonColumns<EditionSummaryFragment>;
+export type EditionWithBook = WithJsonColumns<FindEditionsByIsbnQuery["editions"][number]>;
 
 /** The most ids `books_trending` returns per call (spec/01 row caps). */
 const TRENDING_MAX = 100;

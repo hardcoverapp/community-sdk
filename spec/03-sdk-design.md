@@ -330,9 +330,17 @@ Several fields are `jsonb` and have no schema type:
 - `goals.conditions`
 
 For v1, ship hand-written types for `cached_image`, `cached_contributors`,
-`cached_tags` and the per-`query_type` search hits. Keep each as a small
-override map next to codegen, and mark them as "shape observed, not
-guaranteed". Everything else stays as untyped JSON.
+`cached_tags`, `cached_featured_series` and the per-`query_type` search hits.
+Keep each as a small override map next to codegen, and mark them as "shape
+observed, not guaranteed". Everything else stays as untyped JSON.
+
+Built in TypeScript (2026-10-20): `core/json-columns.ts` holds the four
+`cached_*` types and maps them by field name onto every response that
+`request()` returns and every public type (`BookSummary`, `LibraryListItem`,
+…), at any depth. Contents keep their stored keys (`color_name`,
+`books_count`; `cached_tags` entries are stored camelCase). Every field is
+optional: an empty column arrives as `{}`, and the server may add or drop
+keys. The raw generated types (`BookSummaryFragment`) stay `unknown`.
 
 ## First consumers
 

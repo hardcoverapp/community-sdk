@@ -6,6 +6,7 @@ import { nonNull, required } from "./shared.ts";
 import type {
   AuthorHit, BookHit, CharacterHit, ListHit, PromptHit, PublisherHit, SeriesHit, UserHit,
 } from "./search-types.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 
 export interface SearchOptions {
   page?: number;
@@ -31,7 +32,7 @@ export interface SearchResults<T> {
   perPage: number;
 }
 
-export type RawSearch = NonNullable<SearchQuery["search"]>;
+export type RawSearch = WithJsonColumns<NonNullable<SearchQuery["search"]>>;
 
 const list = (value: (string | number)[] | string | undefined) =>
   Array.isArray(value) ? value.join(",") : value;

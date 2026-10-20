@@ -150,6 +150,9 @@ production token. The mobile apps come next and will likely hit the same things.
     (`[{ author: { name, slug, … }, contribution }]`). Typed shapes or small
     helpers (cover URL, primary author, a series label like "Red Rising Saga
     #1" from `cachedFeaturedSeries`) would save every app the same code.
+    **Types done (2026-10-20):** the four `cached_*` columns are typed on every
+    public type (spec/03, Types for JSON columns), so `b.cachedFeaturedSeries
+    .series?.name` needs no cast. Helpers are still open.
 
 ### Open: for the API project
 

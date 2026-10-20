@@ -5,9 +5,10 @@ import { required } from "./shared.ts";
 import { ReadingFormat } from "../generated/enums.ts";
 import type { UpdateUserBookReadMutation, UserBookReadFragment } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
+import type { WithJsonColumns } from "../core/json-columns.ts";
 
-export type Read = UserBookReadFragment;
-export type UpdatedRead = NonNullable<NonNullable<UpdateUserBookReadMutation["update_user_book_read"]>["userBookRead"]>;
+export type Read = WithJsonColumns<UserBookReadFragment>;
+export type UpdatedRead = WithJsonColumns<NonNullable<NonNullable<UpdateUserBookReadMutation["update_user_book_read"]>["userBookRead"]>>;
 
 /** Exactly one unit. Percent is converted with the read's edition: pages for print/ebook, seconds for audio. */
 export type ProgressInput = ({ pages: number } | { seconds: number } | { percent: number }) & {
