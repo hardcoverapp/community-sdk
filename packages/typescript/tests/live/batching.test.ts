@@ -2,7 +2,7 @@
 // array request and each caller gets the same answer an unbatched call gets.
 import { expect, it } from "vitest";
 import { fetchTransport, GraphQLError, HardcoverClient, type Environment } from "../../src/index.ts";
-import { describeLive, liveClient, target } from "./setup.ts";
+import { describeLive, liveClient, target, waitForAllowance } from "./setup.ts";
 
 describeLive(`batching (${target})`, () => {
   const plain = liveClient();
@@ -22,6 +22,10 @@ describeLive(`batching (${target})`, () => {
     const me = await plain.me.get();
     const book = await plain.books.get(427578);
 
+    // The batched client starts without rate-limit headers but shares the
+    // user's allowance, which the suite may have spent. A 429 retry would
+    // count as a second request.
+    await waitForAllowance(3);
     requests = 0;
     const [batchedSlug, batchedMe, batchedBook] = await Promise.all([
       batched.books.getBySlug("project-hail-mary"),
@@ -39,6 +43,7 @@ describeLive(`batching (${target})`, () => {
     // A bad variable fails only its own item (a read-only error contract check).
     const invalid = "query BadVariable($id: Int!) { books_by_pk(id: $id) { id } }";
     const request = batched.request.bind(batched) as (document: string, variables: unknown) => Promise<unknown>;
+    await waitForAllowance(3);
     requests = 0;
     const [a, b, bad] = await Promise.allSettled([
       batched.books.get(427578),
