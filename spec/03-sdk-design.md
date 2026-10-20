@@ -166,8 +166,15 @@ On by default (`pace: false` turns it off). The gateway charges one unit per
 top-level field, minimum 1 per request (introspection and
 `insert_reading_journal` fields add nothing), and every
 response reports the remaining burst allowance and refill rate. Before sending,
-the client counts its own request's cost the same way and, if the last known
-allowance is short, sleeps until enough has refilled. A 429 is still handled
+the client counts its own request's cost the same way and reserves it from the
+last known allowance, minus what its other unanswered requests have already
+reserved; if that's short, it sleeps until enough has refilled. The cost is
+given back when the response arrives (or the send fails). Requests sent at the
+same moment therefore queue behind each other instead of all spending the same
+remaining units. Before the first response, the client doesn't know its tier:
+it sends up to 5 units (the smallest burst, a free-tier legacy JWT) and holds
+the rest until an answer brings real numbers. A server that sends no
+rate-limit headers releases them all (spec/06 #29). A 429 is still handled
 (and retried) when pacing is off or another client shares the token; after
 waiting one out, pacing stands down until fresh headers arrive so it never
 double-waits. The daily cap is never waited out.

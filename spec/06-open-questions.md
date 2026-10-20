@@ -127,6 +127,13 @@ production token. The mobile apps come next and will likely hit the same things.
     `batch` the default, or have pacing assume the smallest burst capacity (10)
     until the first headers arrive. Mobile screens that fan out per-row lookups
     will hit this.
+    **Done (2026-10-20):** pacing took the second option. Until the first
+    headers arrive, the client sends up to 5 units (the free tier's 10, halved
+    for a legacy JWT, since the token type alone doesn't say which applies),
+    then holds the rest for that answer. Every request also reserves its cost
+    before it goes out, so concurrent requests queue behind each other instead
+    of all spending the same remaining units (spec/03, Pacing). `batch` stays
+    opt-in.
 30. **Series for a list of books costs one request each.** `BookSummary` has
     no series; only `BookDetail` (via `get`) does, so the video's
     "one book per series" filter does 25 `GetBook` calls. A `getMany` variant

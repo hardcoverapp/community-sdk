@@ -85,3 +85,102 @@ it("waits when the allowance is below the next request's cost", async () => {
   await client.graphql("query { a: me { id } b: me { id } c: me { id } }");
   expect(slept).toEqual([2_000]);
 });
+
+// Concurrency (spec/06 #29). Requests sent at the same moment share one
+// allowance, so each one reserves its cost before it goes out.
+
+/** A transport that holds every request until the test answers it. */
+function heldTransport() {
+  const held: { body: string; answer: (response: MockResponse) => void }[] = [];
+  const transport = {
+    send: (request: { body: string }) =>
+      new Promise<{ status: number; headers: Record<string, string>; body: string }>((resolve) => {
+        held.push({
+          body: request.body,
+          answer: (response) => {
+            const r = response as { status: number; headers?: Record<string, string>; body: unknown };
+            resolve({ status: r.status, headers: r.headers ?? {}, body: JSON.stringify(r.body) });
+          },
+        });
+      }),
+  };
+  return { transport, held };
+}
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+it("sends a cold burst only up to the smallest tier's capacity, then paces from the first headers", async () => {
+  const { transport, held } = heldTransport();
+  const client = new HardcoverClient({ token: "hc_pat_test", transport, sleep: async () => {} });
+
+  const calls = Array.from({ length: 12 }, () => client.request(operations.Me));
+  await tick();
+
+  // No headers yet: 5 out (free tier over a legacy JWT), the rest wait for an answer.
+  expect(held).toHaveLength(5);
+
+  // The first answer says there's plenty of room, so the rest go out together.
+  held[0]!.answer(me('"Admin";r=29;t=0, "daily";r=900;t=80000'));
+  await tick();
+  expect(held).toHaveLength(12);
+
+  for (const request of held.slice(1)) request.answer(me('"Admin";r=20;t=0, "daily";r=900;t=80000'));
+  await Promise.all(calls);
+});
+
+it("queues concurrent requests behind each other when the allowance is short", async () => {
+  const responses = [me('"Admin";r=2;t=1, "daily";r=900;t=80000'), ...Array.from({ length: 5 }, () => me())];
+  const transport = new MockTransport(responses);
+
+  // The clock stands still: all five decide how long to wait at the same moment.
+  const slept: number[] = [];
+  const client = new HardcoverClient({
+    token: "hc_pat_test",
+    transport,
+    now: () => new Date(1_000_000),
+    sleep: async (ms) => void slept.push(ms),
+  });
+  await client.request(operations.Me);
+
+  // 2 left, refilling at 1 per second: two go now, the next three wait 1, 2 and 3 seconds.
+  await Promise.all(Array.from({ length: 5 }, () => client.request(operations.Me)));
+  expect(slept).toEqual([1_000, 2_000, 3_000]);
+});
+
+it("doesn't hold anything back when the server sends no rate-limit headers", async () => {
+  const { transport, held } = heldTransport();
+  const client = new HardcoverClient({ token: "hc_pat_test", transport, sleep: async () => {} });
+
+  const calls = Array.from({ length: 8 }, () => client.request(operations.Me));
+  await tick();
+  held[0]!.answer(me());
+  await tick();
+  expect(held).toHaveLength(8);
+
+  for (const request of held.slice(1)) request.answer(me());
+  await Promise.all(calls);
+});
+
+it("gives the reservation back when the onRateLimit hook throws", async () => {
+  const spare = '"Admin";r=1;t=1, "daily";r=900;t=80000';
+  const transport = new MockTransport([me(spare), me(spare)]);
+  const slept: number[] = [];
+  let hookThrows = true;
+  const client = new HardcoverClient({
+    token: "hc_pat_test",
+    transport,
+    now: () => new Date(1_000_000),
+    sleep: async (ms) => void slept.push(ms),
+    onRateLimit: () => {
+      if (!hookThrows) return;
+      hookThrows = false;
+      throw new Error("hook failed");
+    },
+  });
+
+  await expect(client.request(operations.Me)).rejects.toThrow("hook failed");
+
+  // One unit left and nothing in flight: the next request goes straight out.
+  await client.request(operations.Me);
+  expect(slept).toEqual([]);
+});
