@@ -43,7 +43,9 @@ describeLive(`batching (${target})`, () => {
     // A bad variable fails only its own item (a read-only error contract check).
     const invalid = "query BadVariable($id: Int!) { books_by_pk(id: $id) { id } }";
     const request = batched.request.bind(batched) as (document: string, variables: unknown) => Promise<unknown>;
-    await waitForAllowance(3);
+
+    // The previous test's batched request was the last spend, so its headers are the freshest.
+    await waitForAllowance(3, batched);
     requests = 0;
     const [a, b, bad] = await Promise.allSettled([
       batched.books.get(427578),
