@@ -14,6 +14,9 @@ fragment BookSummary on books {
   users_count
   cached_image
   cached_contributors
+  # The site's main series for the book: { series: { id, name, ... }, position, ... },
+  # or {} when it has none. Saves a books.get() per book just to show "Series #3".
+  cached_featured_series
 }
 
 fragment BookDetail on books {

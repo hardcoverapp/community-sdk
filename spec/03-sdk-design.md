@@ -315,7 +315,7 @@ TypeScript, Swift and Kotlin use camelCase; Python uses snake_case.
 
 Several fields are `jsonb` and have no schema type:
 
-- `cached_image`, `cached_contributors`, `cached_tags`
+- `cached_image`, `cached_contributors`, `cached_tags`, `cached_featured_series`
 - `search.results`
 - `activities.data`
 - `reading_journals.metadata`

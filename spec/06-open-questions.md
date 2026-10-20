@@ -133,12 +133,16 @@ production token. The mobile apps come next and will likely hit the same things.
     returning `BookDetail` (one `books(where: { id: { _in } })` request), or
     `bookSeries` on the summary, would make it one. Mobile book lists showing
     "Series #3" need the same.
+    **Done (2026-10-20, branch `featured-series`):** `BookSummary` now carries
+    `cachedFeaturedSeries`, the site's own main series for the book (jsonb:
+    `{ series: { id, name, … }, position, … }`, `{}` when none). One request
+    per list again; the video's trending filter uses it. A book's full series
+    list still needs `get`.
 31. **jsonb fields arrive as `unknown`.** Every consumer casts `cachedImage`
     (`{ url, color, width, height }`) and `cachedContributors`
     (`[{ author: { name, slug, … }, contribution }]`). Typed shapes or small
     helpers (cover URL, primary author, a series label like "Red Rising Saga
-    #1", choosing the series with the most main-line books when there are
-    several) would save every app the same code.
+    #1" from `cachedFeaturedSeries`) would save every app the same code.
 
 ### Open: for the API project
 

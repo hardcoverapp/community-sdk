@@ -4800,9 +4800,9 @@ export type Users_Variance_Order_By = {
   status_id?: Order_By | null | undefined;
 };
 
-export type BookSummaryFragment = { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown };
+export type BookSummaryFragment = { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown };
 
-export type BookDetailFragment = { headline: string | null, description: string | null, id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseDate: string | null, editionsCount: number, cachedTags: unknown, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, contributions: Array<{ contribution: string | null, author: { id: number, slug: string | null, name: string, cachedImage: unknown, booksCount: number } | null }>, bookSeries: Array<{ position: number | null, series: { id: number, slug: string, name: string, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null } | null }> };
+export type BookDetailFragment = { headline: string | null, description: string | null, id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseDate: string | null, editionsCount: number, cachedTags: unknown, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown, contributions: Array<{ contribution: string | null, author: { id: number, slug: string | null, name: string, cachedImage: unknown, booksCount: number } | null }>, bookSeries: Array<{ position: number | null, series: { id: number, slug: string, name: string, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null } | null }> };
 
 export type AuthorSummaryFragment = { id: number, slug: string | null, name: string, cachedImage: unknown, booksCount: number };
 
@@ -4996,21 +4996,21 @@ export type GetBookQueryVariables = Exact<{
 }>;
 
 
-export type GetBookQuery = { books_by_pk: { headline: string | null, description: string | null, id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseDate: string | null, editionsCount: number, cachedTags: unknown, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, contributions: Array<{ contribution: string | null, author: { id: number, slug: string | null, name: string, cachedImage: unknown, booksCount: number } | null }>, bookSeries: Array<{ position: number | null, series: { id: number, slug: string, name: string, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null } | null }> } | null };
+export type GetBookQuery = { books_by_pk: { headline: string | null, description: string | null, id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseDate: string | null, editionsCount: number, cachedTags: unknown, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown, contributions: Array<{ contribution: string | null, author: { id: number, slug: string | null, name: string, cachedImage: unknown, booksCount: number } | null }>, bookSeries: Array<{ position: number | null, series: { id: number, slug: string, name: string, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null } | null }> } | null };
 
 export type GetBookBySlugQueryVariables = Exact<{
   slug: string;
 }>;
 
 
-export type GetBookBySlugQuery = { books: Array<{ headline: string | null, description: string | null, id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseDate: string | null, editionsCount: number, cachedTags: unknown, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, contributions: Array<{ contribution: string | null, author: { id: number, slug: string | null, name: string, cachedImage: unknown, booksCount: number } | null }>, bookSeries: Array<{ position: number | null, series: { id: number, slug: string, name: string, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null } | null }> }> };
+export type GetBookBySlugQuery = { books: Array<{ headline: string | null, description: string | null, id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseDate: string | null, editionsCount: number, cachedTags: unknown, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown, contributions: Array<{ contribution: string | null, author: { id: number, slug: string | null, name: string, cachedImage: unknown, booksCount: number } | null }>, bookSeries: Array<{ position: number | null, series: { id: number, slug: string, name: string, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null } | null }> }> };
 
 export type GetBooksQueryVariables = Exact<{
   ids: Array<number> | number;
 }>;
 
 
-export type GetBooksQuery = { books: Array<{ id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown }> };
+export type GetBooksQuery = { books: Array<{ id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown }> };
 
 export type GetEditionsForBookQueryVariables = Exact<{
   bookId: number;
@@ -5026,7 +5026,7 @@ export type FindEditionsByIsbnQueryVariables = Exact<{
 }>;
 
 
-export type FindEditionsByIsbnQuery = { editions: Array<{ id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown }, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null }> };
+export type FindEditionsByIsbnQuery = { editions: Array<{ id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown }, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null }> };
 
 export type TrendingBookIdsQueryVariables = Exact<{
   duration?: TrendingDuration | null | undefined;
@@ -5045,7 +5045,7 @@ export type ReleasedBooksQueryVariables = Exact<{
 }>;
 
 
-export type ReleasedBooksQuery = { books: Array<{ id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown }> };
+export type ReleasedBooksQuery = { books: Array<{ id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown }> };
 
 export type GetJournalForBookQueryVariables = Exact<{
   userId: number;
@@ -5081,7 +5081,7 @@ export type GetLibraryQueryVariables = Exact<{
 }>;
 
 
-export type GetLibraryQuery = { user_books: Array<{ id: number, rating: number | null, owned: boolean, bookId: number, editionId: number | null, userId: number, statusId: number, privacySettingId: number, hasReview: boolean, readCount: number, dateAdded: string, firstStartedReadingDate: string | null, lastReadDate: string | null, updatedAt: string | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown }, edition: { id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null } | null, userBookReads: Array<{ id: number, progress: number | null, userBookId: number, editionId: number | null, startedAt: string | null, finishedAt: string | null, finishedAtPrecision: number | null, pausedAt: string | null, progressPages: number | null, progressSeconds: number | null, edition: { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number } | null }> }> };
+export type GetLibraryQuery = { user_books: Array<{ id: number, rating: number | null, owned: boolean, bookId: number, editionId: number | null, userId: number, statusId: number, privacySettingId: number, hasReview: boolean, readCount: number, dateAdded: string, firstStartedReadingDate: string | null, lastReadDate: string | null, updatedAt: string | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown }, edition: { id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null } | null, userBookReads: Array<{ id: number, progress: number | null, userBookId: number, editionId: number | null, startedAt: string | null, finishedAt: string | null, finishedAtPrecision: number | null, pausedAt: string | null, progressPages: number | null, progressSeconds: number | null, edition: { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number } | null }> }> };
 
 export type CountLibraryQueryVariables = Exact<{
   userId: number;
@@ -5104,7 +5104,7 @@ export type GetUserBookQueryVariables = Exact<{
 }>;
 
 
-export type GetUserBookQuery = { user_books_by_pk: { id: number, rating: number | null, owned: boolean, reviewMarkdown: string | null, reviewHasSpoilers: boolean, reviewedAt: string | null, privateNotes: string | null, recommendedBy: string | null, recommendedFor: string | null, bookId: number, editionId: number | null, userId: number, statusId: number, privacySettingId: number, hasReview: boolean, readCount: number, dateAdded: string, firstStartedReadingDate: string | null, lastReadDate: string | null, updatedAt: string | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown }, edition: { id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null } | null, userBookReads: Array<{ id: number, progress: number | null, userBookId: number, editionId: number | null, startedAt: string | null, finishedAt: string | null, finishedAtPrecision: number | null, pausedAt: string | null, progressPages: number | null, progressSeconds: number | null, edition: { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number } | null }> } | null };
+export type GetUserBookQuery = { user_books_by_pk: { id: number, rating: number | null, owned: boolean, reviewMarkdown: string | null, reviewHasSpoilers: boolean, reviewedAt: string | null, privateNotes: string | null, recommendedBy: string | null, recommendedFor: string | null, bookId: number, editionId: number | null, userId: number, statusId: number, privacySettingId: number, hasReview: boolean, readCount: number, dateAdded: string, firstStartedReadingDate: string | null, lastReadDate: string | null, updatedAt: string | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown }, edition: { id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null } | null, userBookReads: Array<{ id: number, progress: number | null, userBookId: number, editionId: number | null, startedAt: string | null, finishedAt: string | null, finishedAtPrecision: number | null, pausedAt: string | null, progressPages: number | null, progressSeconds: number | null, edition: { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number } | null }> } | null };
 
 export type GetLibraryChangesQueryVariables = Exact<{
   userId: number;
@@ -5114,7 +5114,7 @@ export type GetLibraryChangesQueryVariables = Exact<{
 }>;
 
 
-export type GetLibraryChangesQuery = { user_books: Array<{ id: number, rating: number | null, owned: boolean, bookId: number, editionId: number | null, userId: number, statusId: number, privacySettingId: number, hasReview: boolean, readCount: number, dateAdded: string, firstStartedReadingDate: string | null, lastReadDate: string | null, updatedAt: string | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown }, edition: { id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null } | null, userBookReads: Array<{ id: number, progress: number | null, userBookId: number, editionId: number | null, startedAt: string | null, finishedAt: string | null, finishedAtPrecision: number | null, pausedAt: string | null, progressPages: number | null, progressSeconds: number | null, edition: { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number } | null }> }> };
+export type GetLibraryChangesQuery = { user_books: Array<{ id: number, rating: number | null, owned: boolean, bookId: number, editionId: number | null, userId: number, statusId: number, privacySettingId: number, hasReview: boolean, readCount: number, dateAdded: string, firstStartedReadingDate: string | null, lastReadDate: string | null, updatedAt: string | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown }, edition: { id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null } | null, userBookReads: Array<{ id: number, progress: number | null, userBookId: number, editionId: number | null, startedAt: string | null, finishedAt: string | null, finishedAtPrecision: number | null, pausedAt: string | null, progressPages: number | null, progressSeconds: number | null, edition: { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number } | null }> }> };
 
 export type GetLibraryIdsQueryVariables = Exact<{
   userId: number;
@@ -5139,7 +5139,7 @@ export type GetListQueryVariables = Exact<{
 }>;
 
 
-export type GetListQuery = { lists_by_pk: { id: number, slug: string | null, name: string, description: string | null, ranked: boolean, privacySettingId: number, defaultView: string, booksCount: number, likesCount: number, userId: number, createdAt: string | null, updatedAt: string | null, listBooks: Array<{ id: number, position: number | null, reason: string | null, listId: number, bookId: number, editionId: number | null, dateAdded: string | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown } }> } | null };
+export type GetListQuery = { lists_by_pk: { id: number, slug: string | null, name: string, description: string | null, ranked: boolean, privacySettingId: number, defaultView: string, booksCount: number, likesCount: number, userId: number, createdAt: string | null, updatedAt: string | null, listBooks: Array<{ id: number, position: number | null, reason: string | null, listId: number, bookId: number, editionId: number | null, dateAdded: string | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown } }> } | null };
 
 export type FindListBookQueryVariables = Exact<{
   listId: number;
@@ -5224,6 +5224,7 @@ export const BookSummaryFragmentDoc = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }
     `, {"fragmentName":"BookSummary"}) as unknown as TypedDocumentString<BookSummaryFragment, unknown>;
 export const AuthorSummaryFragmentDoc = new TypedDocumentString(`
@@ -5279,6 +5280,7 @@ export const BookDetailFragmentDoc = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }
 fragment AuthorSummary on authors {
   id
@@ -6013,6 +6015,7 @@ export const GetBookDocument = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }
 fragment BookDetail on books {
   ...BookSummary
@@ -6068,6 +6071,7 @@ export const GetBookBySlugDocument = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }
 fragment BookDetail on books {
   ...BookSummary
@@ -6123,6 +6127,7 @@ export const GetBooksDocument = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }`) as unknown as TypedDocumentString<GetBooksQuery, GetBooksQueryVariables>;
 export const GetEditionsForBookDocument = new TypedDocumentString(`
     query GetEditionsForBook($bookId: Int!, $limit: Int = 25, $offset: Int = 0) {
@@ -6185,6 +6190,7 @@ export const FindEditionsByIsbnDocument = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }
 fragment EditionSummary on editions {
   id
@@ -6243,6 +6249,7 @@ export const ReleasedBooksDocument = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }`) as unknown as TypedDocumentString<ReleasedBooksQuery, ReleasedBooksQueryVariables>;
 export const GetJournalForBookDocument = new TypedDocumentString(`
     query GetJournalForBook($userId: Int!, $bookId: Int!, $limit: Int = 25, $offset: Int = 0) {
@@ -6342,6 +6349,7 @@ export const GetLibraryDocument = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }
 fragment EditionSummary on editions {
   id
@@ -6524,6 +6532,7 @@ export const GetUserBookDocument = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }
 fragment EditionSummary on editions {
   id
@@ -6631,6 +6640,7 @@ export const GetLibraryChangesDocument = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }
 fragment EditionSummary on editions {
   id
@@ -6755,6 +6765,7 @@ export const GetListDocument = new TypedDocumentString(`
   usersCount: users_count
   cachedImage: cached_image
   cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
 }
 fragment ListSummary on lists {
   id

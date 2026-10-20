@@ -61,6 +61,7 @@ describe("generated TypeScript operations", () => {
     const sample: GetLibraryQuery["user_books"][number]["book"] = {
       id: 1, slug: null, title: null, subtitle: null, releaseYear: null, pages: null,
       audioSeconds: null, rating: null, ratingsCount: 0, usersCount: 0, cachedImage: null, cachedContributors: null,
+      cachedFeaturedSeries: null,
     };
     expect(sample.releaseYear).toBeNull();
   });
