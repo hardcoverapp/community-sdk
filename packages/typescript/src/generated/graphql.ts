@@ -7494,6 +7494,23 @@ export type ClearListPositionsMutationVariables = Exact<{
 
 export type ClearListPositionsMutation = { update_list_books: { affectedRows: number } | null };
 
+export type MarkNotificationsReadMutationVariables = Exact<{
+  userId: number;
+  ids: Array<number> | number;
+  readAt: string;
+}>;
+
+
+export type MarkNotificationsReadMutation = { update_notification_deliveries: { affectedRows: number } | null };
+
+export type MarkAllNotificationsReadMutationVariables = Exact<{
+  userId: number;
+  readAt: string;
+}>;
+
+
+export type MarkAllNotificationsReadMutation = { update_notification_deliveries: { affectedRows: number } | null };
+
 export type CreatePromptMutationVariables = Exact<{
   object: CreatePromptInput;
 }>;
@@ -7906,6 +7923,22 @@ export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type MeQuery = { me: Array<{ id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, accountPrivacySettingId: number, activityPrivacySettingsId: number, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }> };
+
+export type GetNotificationsQueryVariables = Exact<{
+  userId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetNotificationsQuery = { notification_deliveries: Array<{ id: number, read: boolean, readAt: string | null, sentAt: string | null, notification: { id: number, title: string, description: string, link: string | null, priority: number | null, linkText: string | null, notificationTypeId: number, createdAt: string, notifierUser: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string } | null } | null }> };
+
+export type CountUnreadNotificationsQueryVariables = Exact<{
+  userId: number;
+}>;
+
+
+export type CountUnreadNotificationsQuery = { notification_deliveries_aggregate: { aggregate: { count: number } | null } };
 
 export type GetPromptQueryVariables = Exact<{
   id: number;
@@ -9015,6 +9048,26 @@ export const ClearListPositionsDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<ClearListPositionsMutation, ClearListPositionsMutationVariables>;
+export const MarkNotificationsReadDocument = new TypedDocumentString(`
+    mutation MarkNotificationsRead($userId: Int!, $ids: [bigint!]!, $readAt: timestamp!) {
+  update_notification_deliveries(
+    where: { user_id: { _eq: $userId }, id: { _in: $ids }, read: { _eq: false } }
+    _set: { read: true, read_at: $readAt }
+  ) {
+    affectedRows: affected_rows
+  }
+}
+    `) as unknown as TypedDocumentString<MarkNotificationsReadMutation, MarkNotificationsReadMutationVariables>;
+export const MarkAllNotificationsReadDocument = new TypedDocumentString(`
+    mutation MarkAllNotificationsRead($userId: Int!, $readAt: timestamp!) {
+  update_notification_deliveries(
+    where: { user_id: { _eq: $userId }, channel_id: { _eq: 1 }, read: { _eq: false } }
+    _set: { read: true, read_at: $readAt }
+  ) {
+    affectedRows: affected_rows
+  }
+}
+    `) as unknown as TypedDocumentString<MarkAllNotificationsReadMutation, MarkAllNotificationsReadMutationVariables>;
 export const CreatePromptDocument = new TypedDocumentString(`
     mutation CreatePrompt($object: CreatePromptInput!) {
   insert_prompt(object: $object) {
@@ -10545,6 +10598,57 @@ fragment Me on users {
   accountPrivacySettingId: account_privacy_setting_id
   activityPrivacySettingsId: activity_privacy_settings_id
 }`) as unknown as TypedDocumentString<MeQuery, MeQueryVariables>;
+export const GetNotificationsDocument = new TypedDocumentString(`
+    query GetNotifications($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  notification_deliveries(
+    where: { user_id: { _eq: $userId }, channel_id: { _eq: 1 } }
+    order_by: [{ sent_at: desc }, { id: desc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    read
+    readAt: read_at
+    sentAt: sent_at
+    notification {
+      id
+      title
+      description
+      link
+      linkText: link_text
+      notificationTypeId: notification_type_id
+      priority
+      createdAt: created_at
+      notifierUser: notifier_user {
+        ...UserProfile
+      }
+    }
+  }
+}
+    fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<GetNotificationsQuery, GetNotificationsQueryVariables>;
+export const CountUnreadNotificationsDocument = new TypedDocumentString(`
+    query CountUnreadNotifications($userId: Int!) {
+  notification_deliveries_aggregate(
+    where: { user_id: { _eq: $userId }, channel_id: { _eq: 1 }, read: { _eq: false } }
+  ) {
+    aggregate {
+      count
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<CountUnreadNotificationsQuery, CountUnreadNotificationsQueryVariables>;
 export const GetPromptDocument = new TypedDocumentString(`
     query GetPrompt($id: Int!) {
   prompts_by_pk(id: $id) {

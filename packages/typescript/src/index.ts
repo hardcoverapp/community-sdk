@@ -117,3 +117,4 @@ export {
 } from "./resources/users.ts";
 export { LikesResource } from "./resources/likes.ts";
 export { ActivitiesResource, type Activity } from "./resources/activities.ts";
+export { NotificationsResource, type Notification } from "./resources/notifications.ts";

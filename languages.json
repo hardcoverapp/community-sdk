@@ -77,6 +77,11 @@
       "label": "`activities`, `likes`, friends on a book"
     },
     {
+      "id": "res-notifications",
+      "group": "Resources",
+      "label": "`notifications`: list, unread count, mark read"
+    },
+    {
       "id": "res-search",
       "group": "Resources",
       "label": "`search` (read)"
@@ -233,7 +238,8 @@
         "res-authors": "done",
         "res-series": "done",
         "res-users": "done",
-        "res-social": "done"
+        "res-social": "done",
+        "res-notifications": "done"
       },
       "examples": {
         "res-me": "examples/quick-start.ts",
@@ -256,7 +262,8 @@
         "res-authors": "examples/catalog.ts",
         "res-series": "examples/catalog.ts",
         "res-users": "examples/social.ts",
-        "res-social": "examples/social.ts"
+        "res-social": "examples/social.ts",
+        "res-notifications": "examples/notifications.ts"
       }
     },
     {

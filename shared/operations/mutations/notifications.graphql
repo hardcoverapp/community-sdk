@@ -1,0 +1,21 @@
+# Marking read uses the bulk form, scoped to the user's own unread deliveries:
+# the per-row update_notification_deliveries_by_pk is blocked for tokens
+# (spec/06 #38).
+
+mutation MarkNotificationsRead($userId: Int!, $ids: [bigint!]!, $readAt: timestamp!) {
+  update_notification_deliveries(
+    where: { user_id: { _eq: $userId }, id: { _in: $ids }, read: { _eq: false } }
+    _set: { read: true, read_at: $readAt }
+  ) {
+    affected_rows
+  }
+}
+
+mutation MarkAllNotificationsRead($userId: Int!, $readAt: timestamp!) {
+  update_notification_deliveries(
+    where: { user_id: { _eq: $userId }, channel_id: { _eq: 1 }, read: { _eq: false } }
+    _set: { read: true, read_at: $readAt }
+  ) {
+    affected_rows
+  }
+}

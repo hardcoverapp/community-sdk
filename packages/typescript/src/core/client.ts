@@ -10,6 +10,7 @@ import { LibraryResource } from "../resources/library.ts";
 import { LikesResource } from "../resources/likes.ts";
 import { ListsResource } from "../resources/lists.ts";
 import { MeResource } from "../resources/me.ts";
+import { NotificationsResource } from "../resources/notifications.ts";
 import { PromptsResource } from "../resources/prompts.ts";
 import { ReadsResource } from "../resources/reads.ts";
 import { SearchResource } from "../resources/search.ts";
@@ -109,6 +110,7 @@ export class HardcoverClient {
   readonly users: UsersResource;
   readonly likes: LikesResource;
   readonly activities: ActivitiesResource;
+  readonly notifications: NotificationsResource;
 
   readonly #token: string;
   readonly #transport: Transport;
@@ -161,6 +163,7 @@ export class HardcoverClient {
     this.users = new UsersResource(this);
     this.likes = new LikesResource(this);
     this.activities = new ActivitiesResource(this);
+    this.notifications = new NotificationsResource(this);
   }
 
   /** Rate-limit state from the most recent response that carried headers. Read-only: pacing relies on it. */

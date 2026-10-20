@@ -1,0 +1,35 @@
+# In-app notifications are the deliveries on channel 1, as the site shows them.
+query GetNotifications($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  notification_deliveries(
+    where: { user_id: { _eq: $userId }, channel_id: { _eq: 1 } }
+    order_by: [{ sent_at: desc }, { id: desc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    read
+    read_at
+    sent_at
+    notification {
+      id
+      title
+      description
+      link
+      link_text
+      notification_type_id
+      priority
+      created_at
+      notifier_user {
+        ...UserProfile
+      }
+    }
+  }
+}
+
+query CountUnreadNotifications($userId: Int!) {
+  notification_deliveries_aggregate(where: { user_id: { _eq: $userId }, channel_id: { _eq: 1 }, read: { _eq: false } }) {
+    aggregate {
+      count
+    }
+  }
+}
