@@ -30,6 +30,24 @@ These already exist in `shared/` and `api-snapshot/`:
 | 9 | Row in `languages.json`, with support flags set honestly | `matrix:check` passes |
 | 10 | Release component in release-please config | First pre-release published |
 
+## The core, file by file (TypeScript)
+
+Each file owns one job, so a port can mirror them one at a time.
+
+| File | Owns |
+|---|---|
+| `core/client.ts` | Options, resource wiring, `request()` and `graphql()`, the send-and-retry loop |
+| `core/allowance.ts` | Rate-limit state: pacing, cold start, contention jitter, batch size |
+| `core/planner.ts` | Batching (`batch: true`): runs, de-duplication, mutation barriers |
+| `core/responses.ts` | A response body to data, or to the right error |
+| `core/rate-limit.ts` | Parsing the `RateLimit` and `RateLimit-Policy` headers |
+| `core/cost.ts` | A request's cost, counted the way the gateway counts it |
+| `core/errors.ts` | The error taxonomy (`shared/errors.json`) |
+| `core/transport.ts` | The HTTP seam: `fetchTransport`, or a mock in tests |
+| `core/token.ts` | Cleaning up pasted tokens, refusing unusable ones |
+| `core/dates.ts`, `core/isbn.ts` | Local dates and ISBN cleanup |
+| `core/json-columns.ts` | Types for the `cached_*` JSON columns |
+
 ## Adding a resource (TypeScript today; the same steps per language)
 
 1. Operations in `shared/operations/` (canonical, snake_case), then
@@ -37,7 +55,7 @@ These already exist in `shared/` and `api-snapshot/`:
 2. Any new ids or string values go in `shared/enums.json`, with a label and,
    where it matters, a `doc` that becomes the hover tooltip.
 3. `src/resources/<name>.ts`: thin methods over the operations, using
-   `pickDefined`, `required` and `nonNull` from `resources/shared.ts`. Follow
+   `pickDefined`, `required`, `nonNull` and `ActionRecord` from `resources/shared.ts`. Follow
    spec/03 Naming (ids first, options last, `Page` for lists, `NotFoundError`,
    remove vs delete) and end every public method's doc with a `Scopes:` line.
 4. Wire it: import, field and constructor in `core/client.ts`, export in

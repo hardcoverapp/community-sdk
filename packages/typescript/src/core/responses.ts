@@ -26,6 +26,12 @@ export type Payload = {
   scope?: unknown;
 };
 
+/** A successful response: its status and parsed body (an object, or an array for a batch). */
+export interface SendResult {
+  status: number;
+  payload: Payload | undefined;
+}
+
 /** The JSON body, or undefined when it isn't a JSON object. */
 export function parseBody(body: string): Payload | undefined {
   try {
