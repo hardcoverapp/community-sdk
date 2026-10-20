@@ -14,8 +14,7 @@ would otherwise repeat:
 - rate limits: pacing from the API's headers, backoff when other apps share the
   same budget, and opt-in batching of concurrent reads
 - one error taxonomy, with missing scopes and failed actions spelled out
-- local details apps get wrong: dates in the reader's timezone, ISBN cleanup,
-  token cleanup
+- local details apps get wrong: ISBN cleanup, token cleanup
 - incremental library sync with a server-side cursor
 
 **Status: TypeScript in progress.** The first consumers are the Hardcover docs

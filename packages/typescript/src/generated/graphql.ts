@@ -4826,7 +4826,7 @@ export type ListBookFragment = { id: number, position: number | null, reason: st
 
 export type UserProfileFragment = { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string };
 
-export type MeFragment = { timezone: string | null, id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, defaultReadingFormatId: number | null, accountPrivacySettingId: number, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string };
+export type MeFragment = { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, accountPrivacySettingId: number, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string };
 
 export type VibeSummaryFragment = { id: number, slug: string, title: string, description: string | null, featured: boolean, vibeType: number, resultType: number, privacySettingId: number, likesCount: number, userId: number, createdAt: string, updatedAt: string, booksGeneratedAt: string | null };
 
@@ -5152,7 +5152,7 @@ export type FindListBookQuery = { list_books: Array<{ id: number, position: numb
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MeQuery = { me: Array<{ timezone: string | null, id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, defaultReadingFormatId: number | null, accountPrivacySettingId: number, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }> };
+export type MeQuery = { me: Array<{ id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, accountPrivacySettingId: number, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }> };
 
 export type SearchQueryVariables = Exact<{
   query: string;
@@ -5503,8 +5503,6 @@ export const UserProfileFragmentDoc = new TypedDocumentString(`
 export const MeFragmentDoc = new TypedDocumentString(`
     fragment Me on users {
   ...UserProfile
-  timezone
-  defaultReadingFormatId: default_reading_format_id
   accountPrivacySettingId: account_privacy_setting_id
 }
     fragment UserProfile on users {
@@ -6829,8 +6827,6 @@ export const MeDocument = new TypedDocumentString(`
 }
 fragment Me on users {
   ...UserProfile
-  timezone
-  defaultReadingFormatId: default_reading_format_id
   accountPrivacySettingId: account_privacy_setting_id
 }`) as unknown as TypedDocumentString<MeQuery, MeQueryVariables>;
 export const SearchDocument = new TypedDocumentString(`

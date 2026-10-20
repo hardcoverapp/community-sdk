@@ -1,5 +1,5 @@
-import { clientNow, type HardcoverClient } from "../core/client.ts";
-import { localDate, toActionAt, type OccurredAt } from "../core/dates.ts";
+import type { HardcoverClient } from "../core/client.ts";
+import { toActionAt, type OccurredAt } from "../core/dates.ts";
 import { NotFoundError } from "../core/errors.ts";
 import { UserBookStatus, type PrivacySetting } from "../generated/enums.ts";
 import type {
@@ -49,7 +49,10 @@ function decodeCursor(cursor: string): { after: string; afterId: number } {
  */
 export interface LibraryEntryPatch {
   status?: UserBookStatus;
-  /** Date for the status change (YYYY-MM-DD, local). Defaults to today when status is Read. */
+  /**
+   * Date for the status change (YYYY-MM-DD, the reader's local day). Leave it
+   * out and the server records today in the reader's own timezone.
+   */
   date?: string;
   startDate?: string;
   /** 0.5 to 5 in half steps; null clears it. */
@@ -176,10 +179,11 @@ export class LibraryResource {
 
   /**
    * Adds a book (Want to Read unless `status` says otherwise).
-   * Scopes: `write:library`, `read:me` (only when marking Read without a date).
+   * Scopes: `write:library`.
    */
   async add(bookId: number, options: LibraryEntryPatch = {}): Promise<LibraryEntry> {
-    const patch = await this.#withDefaults({ status: UserBookStatus.WantToRead, ...options });
+    const patch = { status: UserBookStatus.WantToRead, ...options };
+    assertRating(patch.rating);
     const { insert_user_book } = await this.client.request(operations.AddUserBook, {
       object: { book_id: bookId, ...toWire(patch) },
     });
@@ -187,12 +191,13 @@ export class LibraryResource {
   }
 
   /**
-   * Scopes: `write:library`, `write:reviews` (review fields), `read:me` (only when marking Read without a date).
+   * Scopes: `write:library`, `write:reviews` (review fields).
    */
   async update(id: number, patch: LibraryEntryPatch): Promise<LibraryEntry> {
+    assertRating(patch.rating);
     const { update_user_book } = await this.client.request(operations.UpdateUserBook, {
       id,
-      object: toWire(await this.#withDefaults(patch)),
+      object: toWire(patch),
     });
     return required(update_user_book?.userBook, "update_user_book", "library entry");
   }
@@ -200,7 +205,8 @@ export class LibraryResource {
   /**
    * The server manages reads from status: Currently Reading starts a read (a
    * new one on a re-read), Read finishes it. It also writes the journal entries.
-   * Scopes: `write:library`, `read:me` (only when marking Read without a date).
+   * Without `date`, the server records today in the reader's own timezone.
+   * Scopes: `write:library`.
    */
   setStatus(
     id: number,
@@ -221,14 +227,5 @@ export class LibraryResource {
   async remove(id: number): Promise<void> {
     const { delete_user_book } = await this.client.request(operations.RemoveUserBook, { id });
     if (!delete_user_book?.id) throw new NotFoundError("library entry", id);
-  }
-
-  // Validates, and mirrors the app: marking Read without a date records today
-  // in the user's timezone (app: services/UserBookService/useUserBookService.ts).
-  async #withDefaults(patch: LibraryEntryPatch): Promise<LibraryEntryPatch> {
-    assertRating(patch.rating);
-    if (patch.status !== UserBookStatus.Read || patch.date !== undefined) return patch;
-    const { timezone } = await this.client.me.get();
-    return { ...patch, date: localDate(clientNow(this.client), timezone) };
   }
 }

@@ -12,10 +12,10 @@ fragment UserProfile on users {
   created_at
 }
 
-# `me` only. timezone matters for user_date handling (spec/02-app-usage.md#dates).
+# `me` only. API tokens can't read the owner-only columns (timezone,
+# default_reading_format_id, email without read:me:email), so they stay out.
+# The server applies the timezone itself (spec/02-app-usage.md#dates).
 fragment Me on users {
   ...UserProfile
-  timezone
-  default_reading_format_id
   account_privacy_setting_id
 }

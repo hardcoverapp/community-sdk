@@ -25,8 +25,11 @@ describeLiveWrites(`library writes (${target})`, () => {
 
       const read = await client.library.setStatus(entryId, UserBookStatus.Read);
       expect(read.statusId).toBe(UserBookStatus.Read);
-      const { timezone } = await client.me.get();
-      expect(read.lastReadDate).toBe(localDate(new Date(), timezone));
+      // The server stamps today in the reader's timezone, which tokens can't
+      // read; every zone's today is within a day of UTC's.
+      const day = 86_400_000;
+      const nearToday = [-day, 0, day].map((offset) => localDate(new Date(Date.now() + offset), "UTC"));
+      expect(nearToday).toContain(read.lastReadDate);
 
       const rated = await client.library.rate(entryId, 4.5);
       expect(rated.rating).toBe(4.5);

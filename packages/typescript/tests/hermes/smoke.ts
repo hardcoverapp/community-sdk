@@ -39,7 +39,7 @@ const hasIntlTimeZones = () => {
 
 async function main() {
   await check("client: token cleanup and a request", async () => {
-    const c = client(ok({ me: [{ id: 1, username: "reader", timezone: "UTC" }] }));
+    const c = client(ok({ me: [{ id: 1, username: "reader" }] }));
     const me = await c.me.get();
     assert(me.username === "reader", "me.get returned the user");
   });
@@ -111,7 +111,7 @@ async function main() {
   });
 
   await check(
-    "dates: localDate in the user's timezone (Intl)",
+    "dates: localDate in a given timezone (Intl)",
     () => {
       const at = new Date("2026-09-29T02:30:00Z");
       assert(localDate(at, "America/Denver") === "2026-09-28", "Denver is still Sep 28");
@@ -120,20 +120,14 @@ async function main() {
     () => (hasIntlTimeZones() ? undefined : "this Hermes build has no Intl time zones (devices get them from iOS/Android)"),
   );
 
-  await check(
-    "library: marking Read defaults the date (needs Intl)",
-    async () => {
-      const transport = new MockTransport([
-        ok({ me: [{ id: 1, username: "r", timezone: "America/Denver" }] }),
-        ok({ insert_user_book: { id: 7, error: null, userBook: { id: 7 } } }),
-      ]);
-      const c = new HardcoverClient({ token: "hc_pat_smoke", transport, now: () => new Date("2026-09-29T02:30:00Z") });
-      await c.library.add(100, { status: UserBookStatus.Read });
-      const sent = JSON.parse(transport.requests[1]!.body) as { variables: { object: { user_date: string } } };
-      assert(sent.variables.object.user_date === "2026-09-28", `user_date ${sent.variables.object.user_date}`);
-    },
-    () => (hasIntlTimeZones() ? undefined : "this Hermes build has no Intl time zones"),
-  );
+  await check("library: marking Read leaves the date to the server", async () => {
+    const transport = new MockTransport([ok({ insert_user_book: { id: 7, error: null, userBook: { id: 7 } } })]);
+    const c = new HardcoverClient({ token: "hc_pat_smoke", transport });
+    await c.library.add(100, { status: UserBookStatus.Read });
+    const sent = JSON.parse(transport.requests[0]!.body) as { variables: { object: Record<string, unknown> } };
+    assert(transport.requests.length === 1, `${transport.requests.length} requests`);
+    assert(!("user_date" in sent.variables.object), "sent a user_date");
+  });
 
   for (const r of results) log(`${r.status}  ${r.name}${r.detail ? `  (${r.detail})` : ""}`);
   const count = (s: string) => results.filter((r) => r.status === s).length;

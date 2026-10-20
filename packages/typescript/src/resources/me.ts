@@ -5,7 +5,7 @@ import { operations } from "../operations.ts";
 
 export type Me = MeQuery["me"][number];
 
-/** The token's user. Fetched once per client and shared by resources that need the user id or timezone. */
+/** The token's user. Fetched once per client and shared by resources that need the user id. */
 export class MeResource {
   #cached: Promise<Me> | undefined;
 

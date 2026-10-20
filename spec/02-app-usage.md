@@ -79,9 +79,14 @@ The status ids are 1 Want to Read, 2 Currently Reading, 3 Read, 4 Paused,
 - `user_date` and `user_start_date` are **local** `YYYY-MM-DD` dates in the
   user's timezone, not UTC.
 - Setting status to Read sets `user_date` to today unless the caller supplies
-  dates (`services/UserBookService/useUserBookService.ts`).
-- The SDK takes an explicit timezone (defaulting to `me.timezone`, then to the
-  runtime zone) so "today" matches what the app would store.
+  dates. The app's client sends the device's date
+  (`services/UserBookService/useUserBookService.ts`); when `user_date` is
+  absent, the server stamps `user.local_date`, today in the reader's own
+  timezone (`UserBookService#user_current_date`, falling back to UTC).
+- The SDK sends no default date and lets the server stamp it. `users.timezone`
+  is owner-only in Hasura and API tokens can't read it, and the server is the
+  one place that knows the reader's zone (app decision record
+  `2026-09-16-day-bucketed-writes-round-trip`).
 - `finished_at_precision` is 0 unknown, 1 day, 2 month, 3 year. Use it when
   only a month or year is known.
 

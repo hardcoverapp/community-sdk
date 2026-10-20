@@ -42,7 +42,7 @@ export async function handleErrors(hc: HardcoverClient, bookId: number) {
 /** Your tests can drive a real client with canned responses. */
 export async function testWithoutTheNetwork() {
   const transport = new MockTransport([
-    { status: 200, body: { data: { me: [{ id: 1, username: "reader", timezone: "UTC" }] } } },
+    { status: 200, body: { data: { me: [{ id: 1, username: "reader" }] } } },
   ]);
   const hc = new HardcoverClient({ token: "test-token", transport });
 

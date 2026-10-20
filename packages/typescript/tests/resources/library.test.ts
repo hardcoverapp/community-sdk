@@ -1,16 +1,12 @@
 // Resource behavior the SDK owns: input mapping (idiomatic in, wire names out,
-// only fields the caller set), date defaults, validation, unwrapping, paging.
+// only fields the caller set), validation, unwrapping, paging.
 // Real response shapes are covered by tests/live.
 import { describe, expect, it } from "vitest";
 import { NotFoundError, UserBookStatus, PrivacySetting } from "../../src/index.ts";
 import type { MockResponse } from "../../src/testing/index.ts";
-import { me, setupWith } from "../helpers.ts";
+import { me, setup, setupWith } from "../helpers.ts";
 
-const ME = me({ timezone: "America/Denver" });
-// 02:30 UTC on Sep 29 is still Sep 28 in Denver.
-const NOW = new Date("2026-09-29T02:30:00Z");
-const setup = (...responses: MockResponse[]) => setupWith({ now: () => NOW }, ...responses);
-
+const ME = me();
 
 const userBookEnvelope = (field: string, userBook: Record<string, unknown>) => ({
   status: 200,
@@ -43,15 +39,15 @@ describe("library.add", () => {
     });
   });
 
-  it("marks Read with today's date in the user's timezone", async () => {
-    const { client, sent } = setup(ME, userBookEnvelope("insert_user_book", { id: 7 }));
+  it("marks Read without a date, so the server stamps the reader's local day", async () => {
+    const { client, sent } = setup(userBookEnvelope("insert_user_book", { id: 7 }));
     await client.library.add(100, { status: UserBookStatus.Read });
 
-    expect(sent().map((r) => r.operationName)).toEqual(["Me", "AddUserBook"]);
-    expect(sent()[1]!.variables).toEqual({ object: { book_id: 100, status_id: 3, user_date: "2026-09-28" } });
+    expect(sent().map((r) => r.operationName)).toEqual(["AddUserBook"]);
+    expect(sent()[0]!.variables).toEqual({ object: { book_id: 100, status_id: 3 } });
   });
 
-  it("uses an explicit read date without looking up the user", async () => {
+  it("passes an explicit read date through", async () => {
     const { client, sent } = setup(userBookEnvelope("insert_user_book", { id: 7 }));
     await client.library.add(100, { status: UserBookStatus.Read, date: "2025-12-31" });
 
@@ -81,11 +77,12 @@ describe("library.update / setStatus / rate", () => {
     });
   });
 
-  it("setStatus to Read defaults the date like add does", async () => {
-    const { client, sent } = setup(ME, userBookEnvelope("update_user_book", { id: 7 }));
+  it("setStatus to Read leaves the date to the server, like add does", async () => {
+    const { client, sent } = setup(userBookEnvelope("update_user_book", { id: 7 }));
     await client.library.setStatus(7, UserBookStatus.Read);
 
-    expect(sent()[1]!.variables).toEqual({ id: 7, object: { status_id: 3, user_date: "2026-09-28" } });
+    expect(sent()).toHaveLength(1);
+    expect(sent()[0]!.variables).toEqual({ id: 7, object: { status_id: 3 } });
   });
 
   it("setStatus to other statuses sends no date", async () => {

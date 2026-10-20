@@ -50,7 +50,7 @@ export interface HardcoverClientOptions {
   onRateLimit?: (state: RateLimitState) => void;
   /** Injectable for tests; defaults to setTimeout. */
   sleep?: (ms: number) => Promise<void>;
-  /** Injectable clock for date defaults and pacing; defaults to the current time. */
+  /** Injectable clock for pacing; defaults to the current time. */
   now?: () => Date;
   /**
    * Wait for the burst allowance to refill before sending, when the last
@@ -98,14 +98,6 @@ interface Queued {
 }
 
 const noop = () => {};
-
-// The injected clock stays off the public surface; resources read it here.
-const clocks = new WeakMap<HardcoverClient, () => Date>();
-
-/** Internal: the client's clock (the `now` option, or the system time). Not exported from the package. */
-export function clientNow(client: HardcoverClient): Date {
-  return (clocks.get(client) ?? (() => new Date()))();
-}
 
 export class HardcoverClient {
   /** Rate-limit state from the most recent response that carried headers. Read-only: pacing relies on it. */
@@ -165,7 +157,6 @@ export class HardcoverClient {
     this.#random = options.random ?? Math.random;
     this.#onRateLimit = options.onRateLimit;
     this.#now = options.now ?? (() => new Date());
-    clocks.set(this, this.#now);
     this.#pace = options.pace ?? true;
     this.#batch = options.batch ?? false;
     this.me = new MeResource(this);

@@ -9,7 +9,7 @@ Where a language's idiom conflicts with a rule here, the idiom wins on
 
 **Why the SDK exists.** It does what every app would otherwise have to work
 out and repeat on its own: the easy-to-forget local details (splitting a scope
-list into an array, local dates in the user's timezone, idiomatic casing),
+list into an array, cleaning up pasted ISBNs, idiomatic casing),
 friendly interaction with the API (typed errors, pacing, retries that never
 double-write), and the hard parts (bulk adds with partial failures, targeting
 the right read on a re-read). What the API decides (matching, journaling,
@@ -96,10 +96,10 @@ of this.
 | `onWarning` | `console.warn` | Problems that don't stop the client, e.g. a deprecated legacy JWT |
 | `pace` | true | Wait for the rate-limit allowance before sending (see Pacing) |
 | `sleep` | `setTimeout` | Injectable for tests |
-| `now` | current time | Injectable clock for tests (date defaults, pacing) |
+| `now` | current time | Injectable clock for tests (pacing) |
 
-The timezone for date defaults comes from `me.timezone`, then the runtime
-zone. (A `timezone` option to override it: planned.)
+Date defaults belong to the server: with no date given, it records the
+reader's local day from their own timezone (spec/02, Dates).
 
 ## Auth
 
@@ -260,7 +260,8 @@ returns entries changed after a cursor, oldest first, with the next cursor and
 - **Stats** (decided 2026-10-07, not built): a limited, optional module. It
   covers what every reading app's stats screen repeats: fetching a period's
   finished reads with their books, tags and editions (paged and paced), and
-  the period itself (life, year, month or custom, in the reader's timezone),
+  the period itself (life, year, month or custom, in a timezone the app
+  passes: API tokens can't read the reader's profile timezone, see spec/02),
   plus the basic totals and breakdowns (books, pages, time read, ratings,
   formats, genres and moods, top authors). Anything more specific (pace
   prediction, heatmaps, how a chart looks) is the app's. Module boundary and
