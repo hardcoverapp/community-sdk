@@ -196,6 +196,33 @@
       }
     ]
   },
+  "ListMemberStatus": {
+    "source": "rails/app/models/list_member.rb (enum :status)",
+    "type": "int",
+    "notes": "A collaborative list member's status. Invitees answer with accepted, ignored or spam (lists.respond).",
+    "values": [
+      {
+        "id": 0,
+        "key": "INVITED",
+        "label": "Invited"
+      },
+      {
+        "id": 1,
+        "key": "ACCEPTED",
+        "label": "Accepted"
+      },
+      {
+        "id": 2,
+        "key": "IGNORED",
+        "label": "Ignored"
+      },
+      {
+        "id": 3,
+        "key": "SPAM",
+        "label": "Marked as spam"
+      }
+    ]
+  },
   "DatePrecision": {
     "source": "features/BookButtonDrawer/pages/EditDateReadPage/EditDateReadFormContent.tsx",
     "type": "int",

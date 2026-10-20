@@ -41,3 +41,54 @@ mutation RemoveListBook($id: Int!) {
     list_id
   }
 }
+
+mutation FollowList($listId: Int!) {
+  upsert_followed_list(list_id: $listId) {
+    id
+    errors
+  }
+}
+
+mutation UnfollowList($listId: Int!) {
+  delete_followed_list(list_id: $listId) {
+    success
+  }
+}
+
+# Collaborative lists. The server's rules (ListMembers::*Service): only the
+# owner invites, behind a feature flag; private lists take no members;
+# followers-only lists take only readers the owner follows; only the invitee
+# answers (accepted, ignored or spam); the owner removes anyone, a member
+# removes themself.
+
+mutation InviteListMember($object: ListMemberInput!) {
+  insert_list_member(object: $object) {
+    id
+    list_id
+    user_id
+  }
+}
+
+mutation RespondToListInvite($listId: Int!, $status: String!) {
+  update_list_member(list_id: $listId, status: $status) {
+    list_id
+    user_id
+    status
+  }
+}
+
+mutation RemoveListMember($listId: Int!, $userId: Int!) {
+  delete_list_member(list_id: $listId, user_id: $userId) {
+    list_id
+    user_id
+    removed
+  }
+}
+
+# Reordering, step 1 of 3 (as the app does it): clear the positions first, so
+# setting the new ones can't collide on the list's unique positions.
+mutation ClearListPositions($listId: Int!, $listBookIds: [Int!]!) {
+  update_list_books(where: { list_id: { _eq: $listId }, id: { _in: $listBookIds } }, _set: { position: null }) {
+    affected_rows
+  }
+}

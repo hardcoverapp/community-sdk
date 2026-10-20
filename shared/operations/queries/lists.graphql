@@ -28,3 +28,52 @@ query FindListBook($listId: Int!, $bookId: Int!) {
     ...ListBook
   }
 }
+
+query GetFollowedLists($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  followed_lists(where: { user_id: { _eq: $userId } }, order_by: { created_at: desc }, limit: $limit, offset: $offset) {
+    id
+    created_at
+    list {
+      ...ListSummary
+    }
+  }
+}
+
+# Collaborative lists: everyone invited to a list, with their status
+# (ListMemberStatus: 0 invited, 1 accepted, 2 ignored, 3 spam).
+query GetListMembers($listId: Int!) {
+  list_members(where: { list_id: { _eq: $listId } }, order_by: { created_at: asc }) {
+    id
+    list_id
+    user_id
+    status
+    created_at
+    user {
+      id
+      username
+      name
+      cached_image
+    }
+  }
+}
+
+# The signed-in user's invites and memberships, newest first.
+query GetListMemberships($userId: Int!) {
+  list_members(where: { user_id: { _eq: $userId } }, order_by: { created_at: desc }) {
+    id
+    list_id
+    user_id
+    status
+    created_at
+    list {
+      ...ListSummary
+    }
+  }
+}
+
+# Every row id on a list, for checking a reorder covers the whole list.
+query GetListBookIds($listId: Int!) {
+  list_books(where: { list_id: { _eq: $listId } }, order_by: { id: asc }) {
+    id
+  }
+}

@@ -50,9 +50,13 @@ export {
   type AddBookOptions,
   type AddBooksResult,
   type AddedBook,
+  type FollowedList,
+  type InviteResponse,
   type List,
   type ListBookRow,
   type ListInput,
+  type ListMember,
+  type ListMembership,
   type ListWithBooks,
   type NotAddedBook,
 } from "./resources/lists.ts";

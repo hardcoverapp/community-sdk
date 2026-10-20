@@ -2,8 +2,15 @@ import type { HardcoverClient } from "../core/client.ts";
 import { HardcoverError, NotFoundError } from "../core/errors.ts";
 import { cleanIsbn } from "../core/isbn.ts";
 import type { WithJsonColumns } from "../core/json-columns.ts";
-import type { PrivacySetting } from "../generated/enums.ts";
-import type { AddBookToListMutation, GetListQuery, ListSummaryFragment } from "../generated/graphql.ts";
+import { ListMemberStatus, type PrivacySetting } from "../generated/enums.ts";
+import type {
+  AddBookToListMutation,
+  GetFollowedListsQuery,
+  GetListMembershipsQuery,
+  GetListMembersQuery,
+  GetListQuery,
+  ListSummaryFragment,
+} from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { pickDefined, required, type ActionRecord } from "./shared.ts";
@@ -62,6 +69,24 @@ export interface AddBooksResult {
   added: AddedBook[];
   notAdded: NotAddedBook[];
 }
+
+export type FollowedList = WithJsonColumns<GetFollowedListsQuery["followed_lists"][number]>;
+
+/** Someone invited to a collaborative list, with their `status` (ListMemberStatus). */
+export type ListMember = WithJsonColumns<GetListMembersQuery["list_members"][number]>;
+
+/** One of the signed-in user's invites or memberships, with its list. */
+export type ListMembership = WithJsonColumns<GetListMembershipsQuery["list_members"][number]>;
+
+/** How an invitee answers an invite. */
+export type InviteResponse = typeof ListMemberStatus.Accepted | typeof ListMemberStatus.Ignored | typeof ListMemberStatus.Spam;
+
+// The update_list_member action takes the status by name.
+const RESPONSE_NAMES: Record<InviteResponse, string> = {
+  [ListMemberStatus.Accepted]: "accepted",
+  [ListMemberStatus.Ignored]: "ignored",
+  [ListMemberStatus.Spam]: "spam",
+};
 
 /** The API allows 5 top-level fields per request (spec/01 Limits). */
 const BATCH_SIZE = 5;
@@ -176,6 +201,125 @@ export class ListsResource {
 
     return report(codes, matches, outcomes);
   }
+
+  // ---- Reordering ----
+
+  /**
+   * Puts a ranked list's books in a new order: pass every list-book id on the
+   * list (the `id` of each row in `listBooks`), first to last; they get
+   * positions 0, 1, 2, … as the server numbers them. Positions are
+   * unique on a list, so a partial order could collide; anything missing or
+   * extra throws before a change is made. Does what the app does: clears the
+   * positions, sets the new ones (5 per request), then touches the list so
+   * its public page refreshes. 4 requests plus one per 5 books.
+   * Scopes: `read:lists`, `write:lists`.
+   */
+  async reorder(listId: number, listBookIds: number[]): Promise<void> {
+    const list = await this.get(listId, { limit: 0 });
+    if (!list) throw new NotFoundError("list", listId);
+
+    // Only ranked lists keep an order; the server leaves other lists' positions empty.
+    if (!list.ranked) throw new RangeError("Only a ranked list has an order; make it ranked first");
+
+    await this.#assertWholeList(listId, listBookIds);
+
+    await this.client.request(operations.ClearListPositions, { listId, listBookIds });
+
+    for (let i = 0; i < listBookIds.length; i += BATCH_SIZE) {
+      await this.#setPositions(listBookIds.slice(i, i + BATCH_SIZE), i);
+    }
+
+    // Saving the list unchanged bumps its updated_at, which refreshes the cached page.
+    await this.update(listId, { name: list.name });
+  }
+
+  async #assertWholeList(listId: number, listBookIds: number[]): Promise<void> {
+    const { list_books } = await this.client.request(operations.GetListBookIds, { listId });
+
+    const onList = new Set(list_books.map((row) => row.id));
+    const given = new Set(listBookIds);
+
+    const sameRows = given.size === listBookIds.length && given.size === onList.size && [...given].every((rowId) => onList.has(rowId));
+    if (!sameRows) {
+      throw new RangeError("Pass every list-book id on the list exactly once, in the new order");
+    }
+  }
+
+  // Positions start at 0, as the server normalizes them; `before` is how many rows came earlier.
+  async #setPositions(listBookIds: number[], before: number): Promise<void> {
+    const fields = listBookIds.map(
+      (rowId, i) => `p${i}: update_list_books_by_pk(pk_columns: { id: ${rowId} }, _set: { position: ${before + i} }) { id }`,
+    );
+
+    await this.client.graphql(`mutation SetListPositions {\n  ${fields.join("\n  ")}\n}`);
+  }
+
+  // ---- Following ----
+
+  /** Follows a list. Safe to repeat. Scopes: `write:lists`. */
+  async follow(listId: number): Promise<void> {
+    await this.client.request(operations.FollowList, { listId });
+  }
+
+  /** Stops following a list. Returns false if you weren't following it. Scopes: `write:lists`. */
+  async unfollow(listId: number): Promise<boolean> {
+    const { delete_followed_list } = await this.client.request(operations.UnfollowList, { listId });
+
+    return delete_followed_list?.success ?? false;
+  }
+
+  /** Lists the signed-in user follows, most recently followed first. Scopes: `read:me`, `read:lists`. */
+  async followed({ limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<FollowedList>> {
+    const userId = await this.client.me.id();
+    const { followed_lists } = await this.client.request(operations.GetFollowedLists, { userId, limit, offset });
+
+    return toPage(followed_lists, limit, offset);
+  }
+
+  // ---- Collaborative lists ----
+
+  /** Everyone invited to a list, with their status. Scopes: `read:lists`. */
+  async members(listId: number): Promise<ListMember[]> {
+    const { list_members } = await this.client.request(operations.GetListMembers, { listId });
+
+    return list_members;
+  }
+
+  /** The signed-in user's invites and memberships, newest first. Scopes: `read:me`, `read:lists`. */
+  async memberships(): Promise<ListMembership[]> {
+    const userId = await this.client.me.id();
+    const { list_members } = await this.client.request(operations.GetListMemberships, { userId });
+
+    return list_members;
+  }
+
+  /**
+   * Invites a reader to edit your list. Owner only, and behind a feature flag
+   * for now. Private lists take no members; followers-only lists only readers
+   * you follow. Re-inviting someone already invited is harmless.
+   * Scopes: `write:lists`.
+   */
+  async invite(listId: number, userId: number): Promise<void> {
+    await this.client.request(operations.InviteListMember, { object: { list_id: listId, user_id: userId } });
+  }
+
+  /** Answers an invite to someone else's list. Only the invitee can. Scopes: `write:lists`. */
+  async respond(listId: number, response: InviteResponse): Promise<void> {
+    await this.client.request(operations.RespondToListInvite, { listId, status: RESPONSE_NAMES[response] });
+  }
+
+  /**
+   * Takes a member off a list: the owner can remove anyone, and a member can
+   * remove themself (leave). Returns false if they weren't a member.
+   * Scopes: `write:lists`.
+   */
+  async removeMember(listId: number, userId: number): Promise<boolean> {
+    const { delete_list_member } = await this.client.request(operations.RemoveListMember, { listId, userId });
+
+    return delete_list_member?.removed ?? false;
+  }
+
+  // ---- Bulk add internals ----
 
   // One lookup for every code; codes with no exact edition simply don't match.
   async #matchEditions(keys: string[]): Promise<Match[]> {

@@ -11,6 +11,7 @@ Hardcover docs site pages as each resource lands there.
 | [shelve-a-book.ts](shelve-a-book.ts) | Add, status, rating, review, remove |
 | [reading-progress.ts](reading-progress.ts) | Progress in pages / percent / seconds, backdating with `occurredAt`, a re-read |
 | [bulk-scan-to-list.ts](bulk-scan-to-list.ts) | Scanning barcodes into a list by exact ISBN, one or a whole shelf |
+| [shared-lists.ts](shared-lists.ts) | Ranking a list, following lists, editing a list together |
 | [search.ts](search.ts) | Searching every type, tuning with the API's options |
 | [books.ts](books.ts) | Book details, editions, exact ISBN lookup, trending, new releases, ordered batches |
 | [year-in-review.ts](year-in-review.ts) | A year of finished reads with their books, logging and fixing a past read, owned editions |

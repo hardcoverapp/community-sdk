@@ -97,6 +97,11 @@ export type ListInput = {
   url?: string | null | undefined;
 };
 
+export type ListMemberInput = {
+  list_id: number;
+  user_id: number;
+};
+
 export type PromptAnswerCreateInput = {
   book_id: number;
   description?: string | null | undefined;
@@ -7442,6 +7447,51 @@ export type RemoveListBookMutationVariables = Exact<{
 
 export type RemoveListBookMutation = { delete_list_book: { id: number | null, listId: number | null } | null };
 
+export type FollowListMutationVariables = Exact<{
+  listId: number;
+}>;
+
+
+export type FollowListMutation = { upsert_followed_list: { id: number | null, errors: Array<string | null> | null } | null };
+
+export type UnfollowListMutationVariables = Exact<{
+  listId: number;
+}>;
+
+
+export type UnfollowListMutation = { delete_followed_list: { success: boolean } | null };
+
+export type InviteListMemberMutationVariables = Exact<{
+  object: ListMemberInput;
+}>;
+
+
+export type InviteListMemberMutation = { insert_list_member: { id: number | null, listId: number | null, userId: number | null } | null };
+
+export type RespondToListInviteMutationVariables = Exact<{
+  listId: number;
+  status: string;
+}>;
+
+
+export type RespondToListInviteMutation = { update_list_member: { status: string | null, listId: number | null, userId: number | null } | null };
+
+export type RemoveListMemberMutationVariables = Exact<{
+  listId: number;
+  userId: number;
+}>;
+
+
+export type RemoveListMemberMutation = { delete_list_member: { removed: boolean | null, listId: number | null, userId: number | null } | null };
+
+export type ClearListPositionsMutationVariables = Exact<{
+  listId: number;
+  listBookIds: Array<number> | number;
+}>;
+
+
+export type ClearListPositionsMutation = { update_list_books: { affectedRows: number } | null };
+
 export type CreatePromptMutationVariables = Exact<{
   object: CreatePromptInput;
 }>;
@@ -7766,6 +7816,36 @@ export type FindListBookQueryVariables = Exact<{
 
 
 export type FindListBookQuery = { list_books: Array<{ id: number, position: number | null, reason: string | null, listId: number, bookId: number, editionId: number | null, dateAdded: string | null }> };
+
+export type GetFollowedListsQueryVariables = Exact<{
+  userId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetFollowedListsQuery = { followed_lists: Array<{ id: number, createdAt: string, list: { id: number, slug: string | null, name: string, description: string | null, ranked: boolean, privacySettingId: number, defaultView: string, booksCount: number, likesCount: number, userId: number, createdAt: string | null, updatedAt: string | null } }> };
+
+export type GetListMembersQueryVariables = Exact<{
+  listId: number;
+}>;
+
+
+export type GetListMembersQuery = { list_members: Array<{ id: number, status: number, listId: number, userId: number, createdAt: string, user: { id: number, username: string | null, name: string | null, cachedImage: unknown } | null }> };
+
+export type GetListMembershipsQueryVariables = Exact<{
+  userId: number;
+}>;
+
+
+export type GetListMembershipsQuery = { list_members: Array<{ id: number, status: number, listId: number, userId: number, createdAt: string, list: { id: number, slug: string | null, name: string, description: string | null, ranked: boolean, privacySettingId: number, defaultView: string, booksCount: number, likesCount: number, userId: number, createdAt: string | null, updatedAt: string | null } | null }> };
+
+export type GetListBookIdsQueryVariables = Exact<{
+  listId: number;
+}>;
+
+
+export type GetListBookIdsQuery = { list_books: Array<{ id: number }> };
 
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -8707,6 +8787,58 @@ export const RemoveListBookDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<RemoveListBookMutation, RemoveListBookMutationVariables>;
+export const FollowListDocument = new TypedDocumentString(`
+    mutation FollowList($listId: Int!) {
+  upsert_followed_list(list_id: $listId) {
+    id
+    errors
+  }
+}
+    `) as unknown as TypedDocumentString<FollowListMutation, FollowListMutationVariables>;
+export const UnfollowListDocument = new TypedDocumentString(`
+    mutation UnfollowList($listId: Int!) {
+  delete_followed_list(list_id: $listId) {
+    success
+  }
+}
+    `) as unknown as TypedDocumentString<UnfollowListMutation, UnfollowListMutationVariables>;
+export const InviteListMemberDocument = new TypedDocumentString(`
+    mutation InviteListMember($object: ListMemberInput!) {
+  insert_list_member(object: $object) {
+    id
+    listId: list_id
+    userId: user_id
+  }
+}
+    `) as unknown as TypedDocumentString<InviteListMemberMutation, InviteListMemberMutationVariables>;
+export const RespondToListInviteDocument = new TypedDocumentString(`
+    mutation RespondToListInvite($listId: Int!, $status: String!) {
+  update_list_member(list_id: $listId, status: $status) {
+    listId: list_id
+    userId: user_id
+    status
+  }
+}
+    `) as unknown as TypedDocumentString<RespondToListInviteMutation, RespondToListInviteMutationVariables>;
+export const RemoveListMemberDocument = new TypedDocumentString(`
+    mutation RemoveListMember($listId: Int!, $userId: Int!) {
+  delete_list_member(list_id: $listId, user_id: $userId) {
+    listId: list_id
+    userId: user_id
+    removed
+  }
+}
+    `) as unknown as TypedDocumentString<RemoveListMemberMutation, RemoveListMemberMutationVariables>;
+export const ClearListPositionsDocument = new TypedDocumentString(`
+    mutation ClearListPositions($listId: Int!, $listBookIds: [Int!]!) {
+  update_list_books(
+    where: { list_id: { _eq: $listId }, id: { _in: $listBookIds } }
+    _set: { position: null }
+  ) {
+    affectedRows: affected_rows
+  }
+}
+    `) as unknown as TypedDocumentString<ClearListPositionsMutation, ClearListPositionsMutationVariables>;
 export const CreatePromptDocument = new TypedDocumentString(`
     mutation CreatePrompt($object: CreatePromptInput!) {
   insert_prompt(object: $object) {
@@ -10074,6 +10206,92 @@ export const FindListBookDocument = new TypedDocumentString(`
   reason
   dateAdded: date_added
 }`) as unknown as TypedDocumentString<FindListBookQuery, FindListBookQueryVariables>;
+export const GetFollowedListsDocument = new TypedDocumentString(`
+    query GetFollowedLists($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  followed_lists(
+    where: { user_id: { _eq: $userId } }
+    order_by: { created_at: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    createdAt: created_at
+    list {
+      ...ListSummary
+    }
+  }
+}
+    fragment ListSummary on lists {
+  id
+  slug
+  name
+  description
+  privacySettingId: privacy_setting_id
+  ranked
+  defaultView: default_view
+  booksCount: books_count
+  likesCount: likes_count
+  userId: user_id
+  createdAt: created_at
+  updatedAt: updated_at
+}`) as unknown as TypedDocumentString<GetFollowedListsQuery, GetFollowedListsQueryVariables>;
+export const GetListMembersDocument = new TypedDocumentString(`
+    query GetListMembers($listId: Int!) {
+  list_members(
+    where: { list_id: { _eq: $listId } }
+    order_by: { created_at: asc }
+  ) {
+    id
+    listId: list_id
+    userId: user_id
+    status
+    createdAt: created_at
+    user {
+      id
+      username
+      name
+      cachedImage: cached_image
+    }
+  }
+}
+    `) as unknown as TypedDocumentString<GetListMembersQuery, GetListMembersQueryVariables>;
+export const GetListMembershipsDocument = new TypedDocumentString(`
+    query GetListMemberships($userId: Int!) {
+  list_members(
+    where: { user_id: { _eq: $userId } }
+    order_by: { created_at: desc }
+  ) {
+    id
+    listId: list_id
+    userId: user_id
+    status
+    createdAt: created_at
+    list {
+      ...ListSummary
+    }
+  }
+}
+    fragment ListSummary on lists {
+  id
+  slug
+  name
+  description
+  privacySettingId: privacy_setting_id
+  ranked
+  defaultView: default_view
+  booksCount: books_count
+  likesCount: likes_count
+  userId: user_id
+  createdAt: created_at
+  updatedAt: updated_at
+}`) as unknown as TypedDocumentString<GetListMembershipsQuery, GetListMembershipsQueryVariables>;
+export const GetListBookIdsDocument = new TypedDocumentString(`
+    query GetListBookIds($listId: Int!) {
+  list_books(where: { list_id: { _eq: $listId } }, order_by: { id: asc }) {
+    id
+  }
+}
+    `) as unknown as TypedDocumentString<GetListBookIdsQuery, GetListBookIdsQueryVariables>;
 export const MeDocument = new TypedDocumentString(`
     query Me {
   me {

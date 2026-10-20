@@ -82,6 +82,19 @@ export const Platform = {
 } as const;
 export type Platform = (typeof Platform)[keyof typeof Platform];
 
+/** A collaborative list member's status. Invitees answer with accepted, ignored or spam (lists.respond). Source: rails/app/models/list_member.rb (enum :status) */
+export const ListMemberStatus = {
+  /** Invited */
+  Invited: 0,
+  /** Accepted */
+  Accepted: 1,
+  /** Ignored */
+  Ignored: 2,
+  /** Marked as spam */
+  Spam: 3,
+} as const;
+export type ListMemberStatus = (typeof ListMemberStatus)[keyof typeof ListMemberStatus];
+
 /** Source: features/BookButtonDrawer/pages/EditDateReadPage/EditDateReadFormContent.tsx */
 export const DatePrecision = {
   Unknown: 0,
