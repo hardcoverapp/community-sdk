@@ -25,8 +25,9 @@ import { MeResource } from "../resources/me.ts";
 import { ReadsResource } from "../resources/reads.ts";
 import { SearchResource } from "../resources/search.ts";
 import { VibesResource } from "../resources/vibes.ts";
+import { Allowance } from "./allowance.ts";
 import type { WithJsonColumns } from "./json-columns.ts";
-import { parseRateLimit, type RateLimitState } from "./rate-limit.ts";
+import type { RateLimitState } from "./rate-limit.ts";
 import { normalizeToken } from "./token.ts";
 import { fetchTransport, TransportFailure, type HttpResponse, type Transport } from "./transport.ts";
 
@@ -72,11 +73,6 @@ export interface HardcoverClientOptions {
 }
 
 const NETWORK_BACKOFF_MS = [250, 1_000, 4_000];
-/**
- * Burst capacity of the smallest tier (free, halved for legacy JWTs). Until
- * the first response brings real numbers, pacing and batching assume this.
- */
-const SMALLEST_BURST_CAPACITY = 5;
 const SDK_USER_AGENT = "hardcover-sdk-typescript/0.0.0";
 
 type Payload = {
@@ -103,7 +99,7 @@ const noop = () => {};
 export class HardcoverClient {
   /** Rate-limit state from the most recent response that carried headers. Read-only: pacing relies on it. */
   get rateLimit(): RateLimitState | undefined {
-    return this.#rateLimit;
+    return this.#allowance.state;
   }
 
   readonly endpoint: string;
@@ -121,18 +117,8 @@ export class HardcoverClient {
   readonly #maxRetries: number;
   readonly #userAgent: string;
   readonly #sleep: (ms: number) => Promise<void>;
-  readonly #random: () => number;
-  /** 429s in a row, and how many of those were contention (spec/03 Contention backoff). */
-  #consecutive429 = 0;
-  #contended429 = 0;
-  readonly #onRateLimit: ((state: RateLimitState) => void) | undefined;
-  readonly #pace: boolean;
-  #rateLimit: RateLimitState | undefined;
-  readonly #now: () => Date;
-  /** When `rateLimit` was received, in ms from `#now()`. */
-  #rateLimitAt = 0;
-  /** Set after waiting out a 429; the wait already covered the refill. Cleared by the next headers. */
-  #allowanceWaited = false;
+  /** Rate-limit state, pacing and contention backoff (core/allowance.ts). */
+  readonly #allowance: Allowance;
   readonly #batch: boolean;
   /** Reads waiting to be sent together; a mutation closes it. */
   #run: Map<string, Queued> | undefined;
@@ -141,13 +127,6 @@ export class HardcoverClient {
   /** Sends since the last mutation; the next mutation waits for all of them. */
   readonly #inFlight = new Set<Promise<void>>();
 
-  /** Cost of requests that have taken their share of the allowance and haven't been answered yet. */
-  #reserved = 0;
-  /** Requests waiting for the first rate-limit headers (cold start). */
-  #waitingForAnswer: (() => void)[] = [];
-  /** The server answered without rate-limit headers, so there's nothing to pace by. */
-  #unreported = false;
-
   constructor(options: HardcoverClientOptions) {
     this.endpoint = options.endpoint ?? environments[options.environment ?? "prod"].graphql;
     this.#token = normalizeToken(options.token, options.onWarning ?? ((message) => console.warn(message)));
@@ -155,11 +134,16 @@ export class HardcoverClient {
     this.#maxRetries = options.maxRetries ?? 3;
     this.#userAgent = options.userAgent ? `${options.userAgent} ${SDK_USER_AGENT}` : SDK_USER_AGENT;
     this.#sleep = options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
-    this.#random = options.random ?? Math.random;
-    this.#onRateLimit = options.onRateLimit;
-    this.#now = options.now ?? (() => new Date());
-    this.#pace = options.pace ?? true;
     this.#batch = options.batch ?? false;
+
+    this.#allowance = new Allowance({
+      pace: options.pace ?? true,
+      now: options.now ?? (() => new Date()),
+      sleep: this.#sleep,
+      random: options.random ?? Math.random,
+      onRateLimit: options.onRateLimit,
+    });
+
     this.me = new MeResource(this);
     this.library = new LibraryResource(this);
     this.reads = new ReadsResource(this);
@@ -246,34 +230,12 @@ export class HardcoverClient {
   // so each is paced by the headers of the last. Settles every caller; never throws.
   async #sendRun(pending: Queued[]): Promise<void> {
     while (pending.length > 0) {
-      const room = this.#batchRoom();
+      const room = this.#allowance.batchRoom();
       let cost = pending[0]!.cost;
       let size = 1;
       while (size < pending.length && cost + pending[size]!.cost <= room) cost += pending[size++]!.cost;
       await this.#sendChunk(pending.splice(0, size));
     }
-  }
-
-  // How many units the next array request can carry: the allowance as it
-  // stands now, never more than the tier's burst, and always at least one.
-  #batchRoom(): number {
-    const capacity = this.#rateLimit?.burst?.limit ?? SMALLEST_BURST_CAPACITY;
-    const remaining = this.#remainingNow() ?? capacity;
-
-    return Math.max(1, Math.min(capacity, remaining));
-  }
-
-  // The last reported allowance plus what has refilled since. Without this, a
-  // client that sat idle would keep splitting batches by an old, low number.
-  #remainingNow(): number | undefined {
-    const burst = this.#rateLimit?.burst;
-    if (burst?.remaining === undefined) return undefined;
-    if (!burst.perMinute) return burst.remaining;
-
-    const elapsedSeconds = (this.#now().getTime() - this.#rateLimitAt) / 1_000;
-    const refilled = burst.remaining + elapsedSeconds * (burst.perMinute / 60);
-
-    return Math.floor(Math.min(refilled, burst.limit ?? refilled));
   }
 
   async #sendChunk(chunk: Queued[]): Promise<void> {
@@ -345,12 +307,12 @@ export class HardcoverClient {
     for (let attempt = 0; ; attempt++) {
       const canRetry = attempt < this.#maxRetries;
       let response: HttpResponse;
-      await this.#reserve(cost);
+      await this.#allowance.reserve(cost);
 
       try {
         response = await this.#transport.send(request);
       } catch (cause) {
-        this.#release(cost);
+        this.#allowance.release(cost);
 
         // Only a TransportFailure means the request may not have reached the
         // server. Anything else is a bug in a custom or mock transport:
@@ -370,22 +332,15 @@ export class HardcoverClient {
       }
 
       // What this client believed before this response, to tell contention from an ordinary 429.
-      const hadRoom = this.#hadRoomFor(cost);
+      const hadRoom = this.#allowance.hadRoomFor(cost);
+
       let rateLimit: RateLimitState | undefined;
       try {
-        rateLimit = parseRateLimit(response.headers);
-        if (rateLimit) {
-          this.#rateLimit = rateLimit;
-          this.#rateLimitAt = this.#now().getTime();
-          this.#allowanceWaited = false;
-          this.#onRateLimit?.(rateLimit);
-        } else if (!this.#rateLimit) {
-          this.#unreported = true;
-        }
+        rateLimit = this.#allowance.update(response.headers);
       } finally {
         // Release after reading the headers, so waiting requests see the new
         // numbers. In `finally` so a throwing onRateLimit hook can't keep it.
-        this.#release(cost);
+        this.#allowance.release(cost);
       }
 
       const payload = parseBody(response.body);
@@ -393,8 +348,8 @@ export class HardcoverClient {
 
       if (failure) {
         if (failure instanceof RateLimitError && failure.window === "burst" && canRetry) {
-          await this.#sleep(failure.retryAfterSeconds * 1_000 + this.#contentionJitterMs(hadRoom));
-          this.#allowanceWaited = true;
+          await this.#sleep(failure.retryAfterSeconds * 1_000 + this.#allowance.contentionJitterMs(hadRoom));
+          this.#allowance.waitedOut();
           continue;
         }
         const transient = failure instanceof ServerError || failure instanceof TimeoutError;
@@ -405,101 +360,9 @@ export class HardcoverClient {
         throw failure;
       }
 
-      this.#consecutive429 = 0;
-      this.#contended429 = 0;
+      this.#allowance.succeeded();
       return { status: response.status, payload };
     }
-  }
-  // Did the last headers say there was room for a request of this cost,
-  // after what this client's other requests had already reserved?
-  #hadRoomFor(cost: number): boolean {
-    const remaining = this.#rateLimit?.burst?.remaining;
-    if (remaining === undefined || this.#allowanceWaited) return false;
-
-    const reservedByOthers = this.#reserved - cost;
-    return remaining - reservedByOthers >= cost;
-  }
-
-  // Contention backoff (spec/03): a 429 despite headers showing room, or a
-  // repeat 429, means another client for this user is spending the shared
-  // budget. Add full jitter that grows with each contended 429, so competing
-  // clients spread out instead of waking together. Ordinary 429s add nothing.
-  #contentionJitterMs(hadRoom: boolean): number {
-    const contended = hadRoom || this.#consecutive429 > 0;
-    this.#consecutive429++;
-    if (!contended) return 0;
-    this.#contended429++;
-    return this.#random() * Math.min(30_000, 1_000 * 2 ** this.#contended429);
-  }
-
-  // Pacing (spec/03). Every request takes its cost from the allowance before
-  // it goes out and gives it back when it's answered, so requests sent at the
-  // same moment queue behind each other instead of all spending the same
-  // remaining units. Uses only headers the gateway sends; a 429 is still
-  // handled (and retried) if pacing is off or another client shares the token.
-  //
-  // The check and the reservation happen without yielding in between;
-  // otherwise every request sent in the same tick would see the same total.
-  async #reserve(cost: number): Promise<void> {
-    if (!this.#pace) {
-      this.#reserved += cost;
-      return;
-    }
-
-    // Cold start: before any response, the client doesn't know its tier.
-    // Send up to the smallest tier's burst, then wait for an answer to learn
-    // the real numbers (spec/06 #29).
-    while (this.#coldAndFull(cost)) {
-      await new Promise<void>((wake) => this.#waitingForAnswer.push(wake));
-    }
-
-    const waitMs = this.#allowanceWaitMs(cost);
-    this.#reserved += cost;
-    if (waitMs <= 0) return;
-
-    try {
-      await this.#sleep(waitMs);
-    } catch (error) {
-      this.#release(cost);
-      throw error;
-    }
-  }
-
-  #release(cost: number): void {
-    this.#reserved -= cost;
-
-    // Anyone held for the first headers can look again.
-    const waiting = this.#waitingForAnswer;
-    this.#waitingForAnswer = [];
-    for (const wake of waiting) wake();
-  }
-
-  #coldAndFull(cost: number): boolean {
-    const cold = !this.#rateLimit?.burst && !this.#unreported;
-    const somethingInFlight = this.#reserved > 0;
-    const wouldExceed = this.#reserved + cost > SMALLEST_BURST_CAPACITY;
-
-    return cold && somethingInFlight && wouldExceed;
-  }
-
-  // How long this request waits for the allowance, counting what's already
-  // reserved ahead of it: the remaining units minus those, refilled over time.
-  #allowanceWaitMs(cost: number): number {
-    const burst = this.#rateLimit?.burst;
-    if (this.#allowanceWaited || burst?.remaining === undefined) return 0;
-
-    const available = burst.remaining - this.#reserved;
-    const shortfall = cost - available;
-    if (shortfall <= 0) return 0;
-
-    // Empty bucket: at least the announced reset. Partial: time to refill the shortfall.
-    const perSecond = burst.perMinute ? burst.perMinute / 60 : undefined;
-    const refillSeconds = perSecond ? shortfall / perSecond : (burst.resetSeconds ?? 0);
-    const resetSeconds = burst.remaining === 0 ? (burst.resetSeconds ?? 0) : 0;
-    const waitSeconds = Math.max(resetSeconds, refillSeconds);
-
-    const alreadyPassedMs = this.#now().getTime() - this.#rateLimitAt;
-    return waitSeconds * 1_000 - alreadyPassedMs;
   }
 }
 
