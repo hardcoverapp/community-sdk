@@ -48,6 +48,26 @@ describe("books", () => {
     expect(sent()[0]!.variables).toEqual({ isbns: ["9780593135204"] });
   });
 
+  it("released passes the date range through, most readers first", async () => {
+    const { client, sent } = setup(ok({ books: [book(5), book(2)] }));
+    const page = await client.books.released({ from: "2026-10-12", to: "2026-10-18", limit: 2 });
+    expect(page.items.map((b) => b.id)).toEqual([5, 2]);
+    expect(page).toMatchObject({ limit: 2, offset: 0, hasMore: true });
+    expect(sent()[0]).toMatchObject({
+      operationName: "ReleasedBooks",
+      variables: { from: "2026-10-12", to: "2026-10-18", limit: 2, offset: 0 },
+    });
+  });
+
+  it("trending caps limit at the API's 100 so hasMore stays honest", async () => {
+    const ids = Array.from({ length: 100 }, (_, i) => i + 1);
+    const { client, sent } = setup(ok({ books_trending: { ids, error: null } }), ok({ books: ids.map(book) }));
+    const page = await client.books.trending({ duration: "week", limit: 200 });
+    expect(sent()[0]!.variables).toMatchObject({ limit: 100 });
+    expect(page).toMatchObject({ limit: 100, hasMore: true });
+  });
+
+
   it("trending returns books in trending order (ids, then the books)", async () => {
     const { client, sent } = setup(
       ok({ books_trending: { ids: [9, 4, 6], error: null } }),

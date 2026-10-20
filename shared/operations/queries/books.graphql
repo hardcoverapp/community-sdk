@@ -48,3 +48,18 @@ query TrendingBookIds($duration: TrendingDuration = month, $limit: Int = 25, $of
     error
   }
 }
+
+# Books first released in a date range (inclusive), most readers first.
+# Matches the site's release calendar: active books only, by the book's own
+# release date, so a reissue or translation of an older book isn't "new".
+query ReleasedBooks($from: date!, $to: date!, $limit: Int = 25, $offset: Int = 0) {
+  books(
+    where: { release_date: { _gte: $from, _lte: $to }, book_status_id: { _eq: 1 } }
+    order_by: [{ users_count: desc }, { id: asc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    ...BookSummary
+  }
+}
+

@@ -63,7 +63,11 @@ export function goalProgress(goal: Pick<Goal, "metric" | "goal" | "progress">): 
 
 /** Reading goals. The server calculates progress; apps never set it. */
 export class GoalsResource {
-  constructor(private readonly client: HardcoverClient) {}
+  private readonly client: HardcoverClient;
+
+  constructor(client: HardcoverClient) {
+    this.client = client;
+  }
 
   /** The signed-in user's goals, newest end date first. Scopes: `read:me`, `read:goals`. */
   async list({ includeArchived = false }: { includeArchived?: boolean } = {}): Promise<Goal[]> {

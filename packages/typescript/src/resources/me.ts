@@ -9,7 +9,11 @@ export type Me = MeQuery["me"][number];
 export class MeResource {
   #cached: Promise<Me> | undefined;
 
-  constructor(private readonly client: HardcoverClient) {}
+  private readonly client: HardcoverClient;
+
+  constructor(client: HardcoverClient) {
+    this.client = client;
+  }
 
   /** Concurrent callers share one request. Scopes: `read:me`. */
   get({ refresh = false }: { refresh?: boolean } = {}): Promise<Me> {

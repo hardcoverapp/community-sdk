@@ -60,7 +60,11 @@ function progressFields(read: Read, input: ProgressInput): Record<string, number
  * and it journals every change itself. Don't also write journal entries for these.
  */
 export class ReadsResource {
-  constructor(private readonly client: HardcoverClient) {}
+  private readonly client: HardcoverClient;
+
+  constructor(client: HardcoverClient) {
+    this.client = client;
+  }
 
   /** All reads for a library entry, newest first. Scopes: `read:library`. */
   async list(userBookId: number): Promise<Read[]> {

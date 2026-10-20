@@ -1,5 +1,5 @@
 /**
- * Book details, editions and trending. Catalog reads need `read:catalog`.
+ * Book details, editions, trending and new releases. Catalog reads need `read:catalog`.
  */
 import { HardcoverClient } from "@hardcover/sdk";
 
@@ -31,4 +31,10 @@ export async function trendingAndBatches(hc: HardcoverClient) {
   // Many books at once, returned in the order you asked for.
   const books = await hc.books.getMany(trending.items.map((b) => b.id).reverse());
   console.log(books.map((b) => b.title));
+}
+
+export async function newReleases(hc: HardcoverClient) {
+  // Books first released this week, most readers first. Dates are inclusive.
+  const { items } = await hc.books.released({ from: "2026-10-12", to: "2026-10-18", limit: 10 });
+  for (const b of items) console.log(b.releaseYear, b.title, b.usersCount);
 }

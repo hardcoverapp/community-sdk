@@ -16,9 +16,16 @@ export type BookSummary = BookSummaryFragment;
 export type Edition = EditionSummaryFragment;
 export type EditionWithBook = FindEditionsByIsbnQuery["editions"][number];
 
+/** The most ids `books_trending` returns per call (spec/01 row caps). */
+const TRENDING_MAX = 100;
+
 /** Catalog reads. */
 export class BooksResource {
-  constructor(private readonly client: HardcoverClient) {}
+  private readonly client: HardcoverClient;
+
+  constructor(client: HardcoverClient) {
+    this.client = client;
+  }
 
   /** Scopes: `read:catalog`. */
   async get(id: number): Promise<Book | null> {
@@ -62,10 +69,23 @@ export class BooksResource {
   }
 
   /**
-   * Trending books, in trending order. Two requests: the API returns ids, then the books are fetched.
+   * Books first released between `from` and `to` (inclusive, `YYYY-MM-DD`), most readers first.
+   * Uses each book's own release date, so a reissue or translation of an older book isn't included.
    * Scopes: `read:catalog`.
    */
-  async trending({ duration = "month", limit = DEFAULT_LIMIT, offset = 0 }: PageOptions & { duration?: TrendingDuration } = {}): Promise<Page<BookSummary>> {
+  async released({ from, to, limit = DEFAULT_LIMIT, offset = 0 }: PageOptions & { from: string; to: string }): Promise<Page<BookSummary>> {
+    const { books } = await this.client.request(operations.ReleasedBooks, { from, to, limit, offset });
+    return toPage(books, limit, offset);
+  }
+
+  /**
+   * Trending books, in trending order. Two requests: the API returns ids, then the books are fetched.
+   * The API returns at most 100 ids per call, so `limit` is capped there; page on with `offset`.
+   * Scopes: `read:catalog`.
+   */
+  async trending({ duration = "month", limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions & { duration?: TrendingDuration } = {}): Promise<Page<BookSummary>> {
+    // Asking for more than the cap would return 100 ids and wrongly report hasMore: false.
+    const limit = Math.min(requested, TRENDING_MAX);
     const { books_trending } = await this.client.request(operations.TrendingBookIds, { duration, limit, offset });
     const ids = nonNull(required(books_trending, "books_trending", "result").ids);
     const books = await this.getMany(ids);

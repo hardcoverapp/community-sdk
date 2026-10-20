@@ -121,9 +121,28 @@ From the `operations:` map in `scope_definitions.yml`. Where the table has them,
 | `read:vibes` | vibes |
 | `read:account` | collection_imports, collection_import_results, newsletter, referrals_for_user, subscriptions |
 
-**Row caps** on some selects: `users` 100, `goals` 100, `list_books` 1000,
-`followed_user_books` 1000, `book_series` 997. Pagination helpers must stop at
-the cap instead of looping forever.
+**Row caps.** Most selects cap the rows one query returns, and a larger
+`limit` is cut to the cap without an error. API tokens get the `user` role
+(`user_email` with the email scope, which inherits `user`). Caps for `user`, from
+`app/hasura/metadata/databases/Default/tables/*.yaml` (checked 2026-10-19;
+`book_series` and `series` confirmed against production):
+
+| Cap | Tables |
+|---|---|
+| 100 | activities, authors, book_characters, book_collections, characters, collection_imports, contributions, filter_lists, goals, images, likes, list_members, lists, notification_deliveries, notification_settings, notifications, prompt_answers, prompt_books_summary, prompts, publishers, reading_journals, reading_journals_summary, series, tags, users, vibes |
+| 500 | book_mappings |
+| 997 | book_series |
+| 998 | taggable_counts |
+| 1000 | books, contributor_role_categories, contributor_role_specializations, contributor_roles, contributor_specializations, filter_list_entities, followed_user_books, following_user_books, follows, links, list_books, tag_categories, taggings, user_blocks, user_book_reads, user_referrals |
+| 2000 | filter_list_subscriptions |
+| 5000 | editions |
+
+Not capped: `user_books` and the remaining tables. The `reader` base role is
+lower for `follows` and `user_book_reads` (100), but it's never issued in a
+token. `books_trending` (a Rails action, not a Hasura permission) returns at
+most 100 ids per call. Pagination helpers must stop at the cap instead of
+looping forever, and a page shorter than the requested `limit` only means
+"done" when the limit was at or under the cap.
 
 ## Writes: Hasura actions
 

@@ -2,7 +2,7 @@
 type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 /** Internal type. DO NOT USE DIRECTLY. */
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
-import { DocumentTypeDecoration } from '@graphql-typed-document-node/core';
+import type { DocumentTypeDecoration } from '@graphql-typed-document-node/core';
 export type BasicTag = {
   category: string;
   spoiler: boolean;
@@ -5037,6 +5037,16 @@ export type TrendingBookIdsQueryVariables = Exact<{
 
 export type TrendingBookIdsQuery = { books_trending: { ids: Array<number | null> | null, error: string | null } | null };
 
+export type ReleasedBooksQueryVariables = Exact<{
+  from: string;
+  to: string;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type ReleasedBooksQuery = { books: Array<{ id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown }> };
+
 export type GetJournalForBookQueryVariables = Exact<{
   userId: number;
   bookId: number;
@@ -6209,6 +6219,31 @@ export const TrendingBookIdsDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<TrendingBookIdsQuery, TrendingBookIdsQueryVariables>;
+export const ReleasedBooksDocument = new TypedDocumentString(`
+    query ReleasedBooks($from: date!, $to: date!, $limit: Int = 25, $offset: Int = 0) {
+  books(
+    where: { release_date: { _gte: $from, _lte: $to }, book_status_id: { _eq: 1 } }
+    order_by: [{ users_count: desc }, { id: asc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    ...BookSummary
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+}`) as unknown as TypedDocumentString<ReleasedBooksQuery, ReleasedBooksQueryVariables>;
 export const GetJournalForBookDocument = new TypedDocumentString(`
     query GetJournalForBook($userId: Int!, $bookId: Int!, $limit: Int = 25, $offset: Int = 0) {
   reading_journals(

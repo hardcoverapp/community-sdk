@@ -87,6 +87,93 @@ a decision before the SDK depends on it. Record decisions in
     merges re-pointing `book_id`) skip `updated_at` and won't show up as
     changes; `list_books` don't touch their list.
 
+## From consumers
+
+Found by real apps using the SDK. The first internal consumer is the Hardcover
+Weekly video (`~/Developer/hardcover/weekly-video`, 2026-10-19): a Node script
+that reads trending books, new releases and reader counts with a read-only
+production token. The mobile apps come next and will likely hit the same things.
+
+### Already changed (2026-10-19)
+
+- **The SDK runs from source under plain Node.** Node 24 strips types but
+  can't transform them, and two things stopped it: generated code imported
+  `DocumentTypeDecoration` as a value (codegen now sets `useTypeImports: true`),
+  and 18 constructors used parameter properties (`constructor(private readonly
+  client)`) in the resources, errors and `TransportFailure`. They're now plain
+  fields, and `erasableSyntaxOnly` in `tsconfig.json` keeps it that way. This
+  doesn't replace packaging (#28).
+- **`books.released({ from, to, limit, offset })`** with the shared
+  `ReleasedBooks` operation: books first released in a date range, most readers
+  first, active books only. It mirrors the site's release calendar
+  (`Letterbooks::Finders::UpcomingFinder`: `Book.active` by `release_date`) and
+  uses the book's own release date, so reissues and translations aren't "new".
+  Test, example and spec/03 row added.
+- **`books.trending` caps `limit` at 100.** The API silently returns at most
+  100 ids, so `limit: 200` came back with 100 books and `hasMore: false`. The
+  cap is now in the SDK, `hasMore` is right, and callers page with `offset`.
+  Test added; the cap is in spec/01's row caps.
+### Open: SDK
+
+28. **Packaging is the real fix for non-bundler consumers.** The source runs
+    under Node now (above), but a published package can't ship `.ts`: Node
+    refuses to strip types under `node_modules`. The video links the package
+    with `link:`, which resolves outside `node_modules`, so it works today only
+    for local consumers. ESM/CJS builds stay first in the next steps.
+29. **A cold burst without `batch` fails.** 25 concurrent `books.get` calls
+    sent before any rate-limit headers arrived all went out at once, and the
+    resulting 429s outlasted `maxRetries` (`RateLimitError`, burst window,
+    tier limit 30). With `batch: true` the same code runs cleanly. Options: make
+    `batch` the default, or have pacing assume the smallest burst capacity (10)
+    until the first headers arrive. Mobile screens that fan out per-row lookups
+    will hit this.
+30. **Series for a list of books costs one request each.** `BookSummary` has
+    no series; only `BookDetail` (via `get`) does, so the video's
+    "one book per series" filter does 25 `GetBook` calls. A `getMany` variant
+    returning `BookDetail` (one `books(where: { id: { _in } })` request), or
+    `bookSeries` on the summary, would make it one. Mobile book lists showing
+    "Series #3" need the same.
+31. **jsonb fields arrive as `unknown`.** Every consumer casts `cachedImage`
+    (`{ url, color, width, height }`) and `cachedContributors`
+    (`[{ author: { name, slug, … }, contribution }]`). Typed shapes or small
+    helpers (cover URL, primary author, a series label like "Red Rising Saga
+    #1", choosing the series with the most main-line books when there are
+    several) would save every app the same code.
+
+### Open: for the API project
+
+32. **`books_trending` caps at 100 ids, undocumented.** A larger `limit` is cut
+    without notice. Worth stating in the docs (or returning an error).
+33. **Trending has no counts, and there's no growth ranking.** `books_trending`
+    returns ids only, ranked by distinct readers finishing in the window
+    (`TrendingBookService`). The video's "fastest growing" scene snapshots
+    `users_count` weekly and divides the gain by last week's count, which only
+    works from the second week and only for books already in a trending pool. A
+    `books_trending(ranking: growth)` option, or counts alongside the ids, would
+    be accurate from day one; the server already has the per-window counts.
+    **In progress:** hardcoverapp/hardcover#4630 (Ziv) adds a `books_growth`
+    action from nightly snapshots, ranked by gained / (start + 50). The SDK
+    draft, `books.growth()`, waits on the `books-growth` branch until it deploys.
+
+34. **Odd row caps.** `book_series` is capped at 997 (raised from 100 in
+    `bddaa2ba2`, 2024-08-06, "to make series page work") and `taggable_counts`
+    at 998, where everything else is 100, 500, 1000, 2000 or 5000. Intentional
+    (kept just under 1000 for a reason), or should they be 1000? The docs
+    should show whatever is chosen. Full list in spec/01.
+35. **Row caps aren't in the API docs.** None of the per-table caps (spec/01)
+    appear on the docs site, so a client asking for more silently gets fewer
+    rows. Each cap belongs on its resource's own schema page (Kylie's call,
+    2026-10-19), not in one central limits table. Filed as
+    hardcoverapp/hardcover-docs#231, assigned to Kylie.
+
+36. **`books_trending` can return an empty list.** On a cache miss,
+    `TrendingBookService` returns `[]` and only queues a background warm (a
+    deliberate guard against recomputing under load), so a call can briefly see
+    no trending books at all. Seen 2026-10-20 from the weekly video. Consumers
+    need a short retry, or the SDK could retry once when `ids` is empty; the
+    API could also mark the result as "warming". Also worth documenting:
+    `duration: week` is a rolling last-7-days window, not a calendar week.
+
 ## Environment and access
 
 7. **Staging web host.** `api-staging.hardcover.app` is confirmed. What's the

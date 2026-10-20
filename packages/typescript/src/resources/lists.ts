@@ -50,7 +50,11 @@ const BATCH_SIZE = 5;
 type Pending = { key: string; bookId: number; editionId: number };
 
 export class ListsResource {
-  constructor(private readonly client: HardcoverClient) {}
+  private readonly client: HardcoverClient;
+
+  constructor(client: HardcoverClient) {
+    this.client = client;
+  }
 
   /** The signed-in user's lists. Scopes: `read:me`, `read:lists`. */
   async mine(options: PageOptions = {}): Promise<Page<List>> {

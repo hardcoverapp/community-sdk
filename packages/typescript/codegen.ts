@@ -12,6 +12,7 @@ const config: CodegenConfig = {
       config: {
         documentMode: "string",
         enumsAsTypes: true,
+        useTypeImports: true,
         avoidOptionals: { field: true, inputValue: false, object: false },
         scalars: {
           bigint: "number",

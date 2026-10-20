@@ -116,7 +116,11 @@ function toWire(fields: VibeFields, signals?: VibeSignal[], exclusions?: VibeExc
  * back as ActionError.
  */
 export class VibesResource {
-  constructor(private readonly client: HardcoverClient) {}
+  private readonly client: HardcoverClient;
+
+  constructor(client: HardcoverClient) {
+    this.client = client;
+  }
 
   /** Your vibes, most recently changed first. Scopes: `read:me`, `read:vibes`. */
   async mine(options: PageOptions = {}): Promise<Page<Vibe>> {

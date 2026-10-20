@@ -102,7 +102,11 @@ const statusIds = (status: UserBookStatus | UserBookStatus[] | undefined): { sta
 
 /** The signed-in user's library ("user books"). */
 export class LibraryResource {
-  constructor(private readonly client: HardcoverClient) {}
+  private readonly client: HardcoverClient;
+
+  constructor(client: HardcoverClient) {
+    this.client = client;
+  }
 
   /** One request plus a cached `me` lookup. Scopes: `read:me`, `read:library`. */
   async list({ status, limit = DEFAULT_LIMIT, offset = 0 }: PageOptions & { status?: UserBookStatus | UserBookStatus[] } = {}): Promise<Page<LibraryListItem>> {

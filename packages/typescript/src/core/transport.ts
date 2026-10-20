@@ -17,13 +17,12 @@ export interface Transport {
 
 /** The request never produced a response. `kind` decides which HardcoverError it becomes. */
 export class TransportFailure extends Error {
-  constructor(
-    readonly kind: "network" | "timeout",
-    message: string,
-    options?: { cause?: unknown },
-  ) {
+  readonly kind: "network" | "timeout";
+
+  constructor(kind: "network" | "timeout", message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = "TransportFailure";
+    this.kind = kind;
   }
 }
 

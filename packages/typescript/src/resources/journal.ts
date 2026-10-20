@@ -45,7 +45,11 @@ const WIRE: Record<keyof JournalEntryInput, string> = {
  * Writing those other events yourself duplicates them (see JournalEvent).
  */
 export class JournalResource {
-  constructor(private readonly client: HardcoverClient) {}
+  private readonly client: HardcoverClient;
+
+  constructor(client: HardcoverClient) {
+    this.client = client;
+  }
 
   /** The signed-in user's entries for a book, newest first. Scopes: `read:me`, `read:journal`. */
   async forBook(bookId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<JournalEntry>> {

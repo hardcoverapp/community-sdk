@@ -59,7 +59,11 @@ function toHit<T>(document: unknown): T {
  * tidies the response. One search per request.
  */
 export class SearchResource {
-  constructor(private readonly client: HardcoverClient) {}
+  private readonly client: HardcoverClient;
+
+  constructor(client: HardcoverClient) {
+    this.client = client;
+  }
 
   /** Scopes: `read:catalog`. */
   books(query: string, options?: SearchOptions): Promise<SearchResults<BookHit>> {
