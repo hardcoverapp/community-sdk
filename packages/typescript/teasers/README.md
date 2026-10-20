@@ -2,8 +2,7 @@
 
 Images of real SDK calls, for the README, docs and posts. Each shows a snippet
 exactly as it runs (type-checked against the SDK) and a rendering of what it
-returned from the live API on 2026-10-20 (prompts: a local copy of it, until
-a prod token with `read:prompts` is available).
+returned from the live API on 2026-10-20.
 
 They're illustrative: the SDK returns JSON data, and the covers and cards are
 drawn from it for display. Every image says so.
