@@ -7266,6 +7266,10 @@ export type AuthorSummaryFragment = { id: number, slug: string | null, name: str
 
 export type SeriesSummaryFragment = { id: number, slug: string, name: string, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null };
 
+export type AuthorDetailFragment = { bio: string | null, location: string | null, id: number, slug: string | null, name: string, bornYear: number | null, deathYear: number | null, usersCount: number, canonicalId: number | null, cachedImage: unknown, booksCount: number };
+
+export type SeriesDetailFragment = { description: string | null, id: number, slug: string, name: string, canonicalId: number | null, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null, author: { id: number, slug: string | null, name: string, cachedImage: unknown, booksCount: number } | null };
+
 export type EditionSummaryFragment = { id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null };
 
 export type JournalEntryFragment = { id: number, event: string | null, entry: string | null, metadata: unknown, bookId: number | null, editionId: number | null, privacySettingId: number, actionAt: string, createdAt: string };
@@ -7510,6 +7514,59 @@ export type DeleteVibeMutationVariables = Exact<{
 
 export type DeleteVibeMutation = { delete_vibe: { success: boolean } | null };
 
+export type GetAuthorQueryVariables = Exact<{
+  id: number;
+}>;
+
+
+export type GetAuthorQuery = { authors_by_pk: { bio: string | null, location: string | null, id: number, slug: string | null, name: string, bornYear: number | null, deathYear: number | null, usersCount: number, canonicalId: number | null, cachedImage: unknown, booksCount: number } | null };
+
+export type GetAuthorBySlugQueryVariables = Exact<{
+  slug: string;
+}>;
+
+
+export type GetAuthorBySlugQuery = { authors: Array<{ bio: string | null, location: string | null, id: number, slug: string | null, name: string, bornYear: number | null, deathYear: number | null, usersCount: number, canonicalId: number | null, cachedImage: unknown, booksCount: number }> };
+
+export type GetAuthorBooksQueryVariables = Exact<{
+  authorId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetAuthorBooksQuery = { books: Array<{ id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown }> };
+
+export type GetAuthorSeriesQueryVariables = Exact<{
+  authorId: number;
+}>;
+
+
+export type GetAuthorSeriesQuery = { series: Array<{ id: number, slug: string, name: string, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null }> };
+
+export type GetSeriesQueryVariables = Exact<{
+  id: number;
+}>;
+
+
+export type GetSeriesQuery = { series_by_pk: { description: string | null, id: number, slug: string, name: string, canonicalId: number | null, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null, author: { id: number, slug: string | null, name: string, cachedImage: unknown, booksCount: number } | null } | null };
+
+export type GetSeriesBySlugQueryVariables = Exact<{
+  slug: string;
+}>;
+
+
+export type GetSeriesBySlugQuery = { series: Array<{ description: string | null, id: number, slug: string, name: string, canonicalId: number | null, booksCount: number, primaryBooksCount: number | null, isCompleted: boolean | null, author: { id: number, slug: string | null, name: string, cachedImage: unknown, booksCount: number } | null }> };
+
+export type GetSeriesBooksQueryVariables = Exact<{
+  seriesId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetSeriesBooksQuery = { book_series: Array<{ position: number | null, details: string | null, compilation: boolean, featured: boolean, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown } | null }> };
+
 export type GetBookQueryVariables = Exact<{
   id: number;
 }>;
@@ -7565,6 +7622,21 @@ export type ReleasedBooksQueryVariables = Exact<{
 
 
 export type ReleasedBooksQuery = { books: Array<{ id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown }> };
+
+export type GetEditionQueryVariables = Exact<{
+  id: number;
+}>;
+
+
+export type GetEditionQuery = { editions_by_pk: { id: number, title: string | null, subtitle: string | null, asin: string | null, pages: number | null, bookId: number, isbn10: string | null, isbn13: string | null, audioSeconds: number | null, releaseDate: string | null, releaseYear: number | null, readingFormatId: number, editionFormat: string | null, cachedImage: unknown, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown }, language: { code2: string | null, language: string } | null, publisher: { id: number, name: string | null, slug: string } | null } | null };
+
+export type FindBookMappingsQueryVariables = Exact<{
+  platformId: number;
+  externalIds: Array<string> | string;
+}>;
+
+
+export type FindBookMappingsQuery = { book_mappings: Array<{ externalId: string, editionId: number | null, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown } }> };
 
 export type GetJournalForBookQueryVariables = Exact<{
   userId: number;
@@ -7884,6 +7956,47 @@ fragment SeriesSummary on series {
   primaryBooksCount: primary_books_count
   isCompleted: is_completed
 }`, {"fragmentName":"BookDetail"}) as unknown as TypedDocumentString<BookDetailFragment, unknown>;
+export const AuthorDetailFragmentDoc = new TypedDocumentString(`
+    fragment AuthorDetail on authors {
+  ...AuthorSummary
+  bio
+  bornYear: born_year
+  deathYear: death_year
+  location
+  usersCount: users_count
+  canonicalId: canonical_id
+}
+    fragment AuthorSummary on authors {
+  id
+  slug
+  name
+  cachedImage: cached_image
+  booksCount: books_count
+}`, {"fragmentName":"AuthorDetail"}) as unknown as TypedDocumentString<AuthorDetailFragment, unknown>;
+export const SeriesDetailFragmentDoc = new TypedDocumentString(`
+    fragment SeriesDetail on series {
+  ...SeriesSummary
+  description
+  canonicalId: canonical_id
+  author {
+    ...AuthorSummary
+  }
+}
+    fragment AuthorSummary on authors {
+  id
+  slug
+  name
+  cachedImage: cached_image
+  booksCount: books_count
+}
+fragment SeriesSummary on series {
+  id
+  slug
+  name
+  booksCount: books_count
+  primaryBooksCount: primary_books_count
+  isCompleted: is_completed
+}`, {"fragmentName":"SeriesDetail"}) as unknown as TypedDocumentString<SeriesDetailFragment, unknown>;
 export const EditionSummaryFragmentDoc = new TypedDocumentString(`
     fragment EditionSummary on editions {
   id
@@ -8718,6 +8831,188 @@ export const DeleteVibeDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<DeleteVibeMutation, DeleteVibeMutationVariables>;
+export const GetAuthorDocument = new TypedDocumentString(`
+    query GetAuthor($id: Int!) {
+  authors_by_pk(id: $id) {
+    ...AuthorDetail
+  }
+}
+    fragment AuthorSummary on authors {
+  id
+  slug
+  name
+  cachedImage: cached_image
+  booksCount: books_count
+}
+fragment AuthorDetail on authors {
+  ...AuthorSummary
+  bio
+  bornYear: born_year
+  deathYear: death_year
+  location
+  usersCount: users_count
+  canonicalId: canonical_id
+}`) as unknown as TypedDocumentString<GetAuthorQuery, GetAuthorQueryVariables>;
+export const GetAuthorBySlugDocument = new TypedDocumentString(`
+    query GetAuthorBySlug($slug: String!) {
+  authors(where: { slug: { _eq: $slug } }, limit: 1) {
+    ...AuthorDetail
+  }
+}
+    fragment AuthorSummary on authors {
+  id
+  slug
+  name
+  cachedImage: cached_image
+  booksCount: books_count
+}
+fragment AuthorDetail on authors {
+  ...AuthorSummary
+  bio
+  bornYear: born_year
+  deathYear: death_year
+  location
+  usersCount: users_count
+  canonicalId: canonical_id
+}`) as unknown as TypedDocumentString<GetAuthorBySlugQuery, GetAuthorBySlugQueryVariables>;
+export const GetAuthorBooksDocument = new TypedDocumentString(`
+    query GetAuthorBooks($authorId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  books(
+    where: { book_status_id: { _eq: 1 }, contributions: { author_id: { _eq: $authorId } } }
+    order_by: [{ users_count: desc }, { id: asc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    ...BookSummary
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
+}`) as unknown as TypedDocumentString<GetAuthorBooksQuery, GetAuthorBooksQueryVariables>;
+export const GetAuthorSeriesDocument = new TypedDocumentString(`
+    query GetAuthorSeries($authorId: Int!) {
+  series(
+    where: {
+      canonical_id: { _is_null: true }
+      book_series: {
+        book: { book_status_id: { _eq: 1 }, contributions: { author_id: { _eq: $authorId } } }
+      }
+    }
+    order_by: { name: asc }
+  ) {
+    ...SeriesSummary
+  }
+}
+    fragment SeriesSummary on series {
+  id
+  slug
+  name
+  booksCount: books_count
+  primaryBooksCount: primary_books_count
+  isCompleted: is_completed
+}`) as unknown as TypedDocumentString<GetAuthorSeriesQuery, GetAuthorSeriesQueryVariables>;
+export const GetSeriesDocument = new TypedDocumentString(`
+    query GetSeries($id: Int!) {
+  series_by_pk(id: $id) {
+    ...SeriesDetail
+  }
+}
+    fragment AuthorSummary on authors {
+  id
+  slug
+  name
+  cachedImage: cached_image
+  booksCount: books_count
+}
+fragment SeriesSummary on series {
+  id
+  slug
+  name
+  booksCount: books_count
+  primaryBooksCount: primary_books_count
+  isCompleted: is_completed
+}
+fragment SeriesDetail on series {
+  ...SeriesSummary
+  description
+  canonicalId: canonical_id
+  author {
+    ...AuthorSummary
+  }
+}`) as unknown as TypedDocumentString<GetSeriesQuery, GetSeriesQueryVariables>;
+export const GetSeriesBySlugDocument = new TypedDocumentString(`
+    query GetSeriesBySlug($slug: String!) {
+  series(where: { slug: { _eq: $slug } }, limit: 1) {
+    ...SeriesDetail
+  }
+}
+    fragment AuthorSummary on authors {
+  id
+  slug
+  name
+  cachedImage: cached_image
+  booksCount: books_count
+}
+fragment SeriesSummary on series {
+  id
+  slug
+  name
+  booksCount: books_count
+  primaryBooksCount: primary_books_count
+  isCompleted: is_completed
+}
+fragment SeriesDetail on series {
+  ...SeriesSummary
+  description
+  canonicalId: canonical_id
+  author {
+    ...AuthorSummary
+  }
+}`) as unknown as TypedDocumentString<GetSeriesBySlugQuery, GetSeriesBySlugQueryVariables>;
+export const GetSeriesBooksDocument = new TypedDocumentString(`
+    query GetSeriesBooks($seriesId: Int!, $limit: Int = 50, $offset: Int = 0) {
+  book_series(
+    where: { series_id: { _eq: $seriesId }, book: { book_status_id: { _eq: 1 } } }
+    order_by: [{ position: asc_nulls_last }, { book: { users_count: desc } }, { id: asc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    position
+    details
+    compilation
+    featured
+    book {
+      ...BookSummary
+    }
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
+}`) as unknown as TypedDocumentString<GetSeriesBooksQuery, GetSeriesBooksQueryVariables>;
 export const GetBookDocument = new TypedDocumentString(`
     query GetBook($id: Int!) {
   books_by_pk(id: $id) {
@@ -8973,6 +9268,87 @@ export const ReleasedBooksDocument = new TypedDocumentString(`
   cachedContributors: cached_contributors
   cachedFeaturedSeries: cached_featured_series
 }`) as unknown as TypedDocumentString<ReleasedBooksQuery, ReleasedBooksQueryVariables>;
+export const GetEditionDocument = new TypedDocumentString(`
+    query GetEdition($id: Int!) {
+  editions_by_pk(id: $id) {
+    ...EditionSummary
+    book {
+      ...BookSummary
+    }
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
+}
+fragment EditionSummary on editions {
+  id
+  bookId: book_id
+  title
+  subtitle
+  isbn10: isbn_10
+  isbn13: isbn_13
+  asin
+  pages
+  audioSeconds: audio_seconds
+  releaseDate: release_date
+  releaseYear: release_year
+  readingFormatId: reading_format_id
+  editionFormat: edition_format
+  cachedImage: cached_image
+  language {
+    code2
+    language
+  }
+  publisher {
+    id
+    name
+    slug
+  }
+}`) as unknown as TypedDocumentString<GetEditionQuery, GetEditionQueryVariables>;
+export const FindBookMappingsDocument = new TypedDocumentString(`
+    query FindBookMappings($platformId: Int!, $externalIds: [String!]!) {
+  book_mappings(
+    where: {
+      platform_id: { _eq: $platformId }
+      external_id: { _in: $externalIds }
+      book: { book_status_id: { _eq: 1 } }
+    }
+    order_by: { id: asc }
+  ) {
+    externalId: external_id
+    editionId: edition_id
+    book {
+      ...BookSummary
+    }
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
+}`) as unknown as TypedDocumentString<FindBookMappingsQuery, FindBookMappingsQueryVariables>;
 export const GetJournalForBookDocument = new TypedDocumentString(`
     query GetJournalForBook($userId: Int!, $bookId: Int!, $limit: Int = 25, $offset: Int = 0) {
   reading_journals(

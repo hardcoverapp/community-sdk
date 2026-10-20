@@ -63,3 +63,31 @@ query ReleasedBooks($from: date!, $to: date!, $limit: Int = 25, $offset: Int = 0
   }
 }
 
+
+query GetEdition($id: Int!) {
+  editions_by_pk(id: $id) {
+    ...EditionSummary
+    book {
+      ...BookSummary
+    }
+  }
+}
+
+# Books other services know by these ids (Goodreads, Open Library, …), for
+# imports and sync. Active books only.
+query FindBookMappings($platformId: Int!, $externalIds: [String!]!) {
+  book_mappings(
+    where: {
+      platform_id: { _eq: $platformId }
+      external_id: { _in: $externalIds }
+      book: { book_status_id: { _eq: 1 } }
+    }
+    order_by: { id: asc }
+  ) {
+    external_id
+    edition_id
+    book {
+      ...BookSummary
+    }
+  }
+}

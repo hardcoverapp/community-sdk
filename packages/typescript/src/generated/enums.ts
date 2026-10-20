@@ -39,6 +39,49 @@ export const ReadingFormat = {
 } as const;
 export type ReadingFormat = (typeof ReadingFormat)[keyof typeof ReadingFormat];
 
+/** Where an external id comes from, for books.findByExternalIds. The API stores mappings per platform. Source: platforms table (api.hardcover.app, 2026-10-20) */
+export const Platform = {
+  /** Goodreads */
+  Goodreads: 1,
+  /** LibraryThing */
+  LibraryThing: 2,
+  /** Open Library */
+  OpenLibrary: 3,
+  /** OCLC (WorldCat) */
+  Oclc: 4,
+  /** Library of Congress control number */
+  Lccn: 5,
+  /** Wikidata */
+  Wikidata: 18,
+  /** Amazon (ASIN) */
+  Amazon: 19,
+  /** Google Books */
+  Google: 20,
+  /** Alibris */
+  Alibris: 21,
+  /** Amazon.ca (ASIN) */
+  AmazonCa: 22,
+  /** PaperBackSwap */
+  PaperbackSwap: 23,
+  /** Amazon.de (ASIN) */
+  AmazonDe: 24,
+  /** Library and Archives Canada */
+  CanadianNationalLibrary: 25,
+  /** Amazon.co.uk (ASIN) */
+  AmazonUk: 26,
+  /** The StoryGraph */
+  StoryGraph: 27,
+  /** Inventaire */
+  Inventaire: 28,
+  /** AbeBooks */
+  AbeBooks: 29,
+  /** Hardcover CSV import */
+  HardcoverCsv: 30,
+  /** Audible */
+  Audible: 32,
+} as const;
+export type Platform = (typeof Platform)[keyof typeof Platform];
+
 /** Source: features/BookButtonDrawer/pages/EditDateReadPage/EditDateReadFormContent.tsx */
 export const DatePrecision = {
   Unknown: 0,

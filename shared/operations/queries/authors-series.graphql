@@ -1,0 +1,71 @@
+query GetAuthor($id: Int!) {
+  authors_by_pk(id: $id) {
+    ...AuthorDetail
+  }
+}
+
+query GetAuthorBySlug($slug: String!) {
+  authors(where: { slug: { _eq: $slug } }, limit: 1) {
+    ...AuthorDetail
+  }
+}
+
+# Books the author has a credit on, most readers first. Queried as books (not
+# contributions) so a book with two credits (author and narrator) appears once.
+# book_status_id 1 is an active book, as the site lists them.
+query GetAuthorBooks($authorId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  books(
+    where: { book_status_id: { _eq: 1 }, contributions: { author_id: { _eq: $authorId } } }
+    order_by: [{ users_count: desc }, { id: asc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    ...BookSummary
+  }
+}
+
+# Series with at least one active book by the author, by name.
+query GetAuthorSeries($authorId: Int!) {
+  series(
+    where: {
+      canonical_id: { _is_null: true }
+      book_series: { book: { book_status_id: { _eq: 1 }, contributions: { author_id: { _eq: $authorId } } } }
+    }
+    order_by: { name: asc }
+  ) {
+    ...SeriesSummary
+  }
+}
+
+query GetSeries($id: Int!) {
+  series_by_pk(id: $id) {
+    ...SeriesDetail
+  }
+}
+
+query GetSeriesBySlug($slug: String!) {
+  series(where: { slug: { _eq: $slug } }, limit: 1) {
+    ...SeriesDetail
+  }
+}
+
+# Every entry in the series, in position order (entries without a position,
+# like box sets, last). The site's own reading order drops compilations,
+# range entries and duplicates server-side; the API doesn't expose it yet
+# (spec/06), so each entry carries what an app needs to filter.
+query GetSeriesBooks($seriesId: Int!, $limit: Int = 50, $offset: Int = 0) {
+  book_series(
+    where: { series_id: { _eq: $seriesId }, book: { book_status_id: { _eq: 1 } } }
+    order_by: [{ position: asc_nulls_last }, { book: { users_count: desc } }, { id: asc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    position
+    details
+    compilation
+    featured
+    book {
+      ...BookSummary
+    }
+  }
+}

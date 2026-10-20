@@ -5,10 +5,12 @@ import type {
   BookDetailFragment,
   BookSummaryFragment,
   EditionSummaryFragment,
+  FindBookMappingsQuery,
   FindEditionsByIsbnQuery,
   TrendingDuration,
 } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
+import type { Platform } from "../generated/enums.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { nonNull, required } from "./shared.ts";
 
@@ -16,6 +18,12 @@ export type Book = WithJsonColumns<BookDetailFragment>;
 export type BookSummary = WithJsonColumns<BookSummaryFragment>;
 export type Edition = WithJsonColumns<EditionSummaryFragment>;
 export type EditionWithBook = WithJsonColumns<FindEditionsByIsbnQuery["editions"][number]>;
+
+/**
+ * A book another service knows by `externalId`. `editionId` is the exact
+ * edition when the mapping names one.
+ */
+export type ExternalMatch = WithJsonColumns<FindBookMappingsQuery["book_mappings"][number]>;
 
 export interface ReleasedOptions extends PageOptions {
   /** First day, inclusive (YYYY-MM-DD). */
@@ -90,6 +98,29 @@ export class BooksResource {
     const { editions } = await this.client.request(operations.FindEditionsByIsbn, { isbns: cleaned });
 
     return editions;
+  }
+
+  /** An edition by id, with its book. Scopes: `read:catalog`. */
+  async edition(id: number): Promise<EditionWithBook | null> {
+    const { editions_by_pk } = await this.client.request(operations.GetEdition, { id });
+
+    return editions_by_pk ?? null;
+  }
+
+  /**
+   * Books other services know by these ids, e.g. Goodreads or Open Library
+   * ids from an import. Ids with no match are left out; one id can match
+   * more than one book. Hardcover stores ids as strings, so numbers are
+   * converted.
+   * Scopes: `read:catalog`.
+   */
+  async findByExternalIds(platform: Platform, ids: (string | number)[]): Promise<ExternalMatch[]> {
+    const externalIds = [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
+    if (externalIds.length === 0) return [];
+
+    const { book_mappings } = await this.client.request(operations.FindBookMappings, { platformId: platform, externalIds });
+
+    return book_mappings;
   }
 
   /**

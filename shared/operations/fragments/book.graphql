@@ -56,3 +56,25 @@ fragment SeriesSummary on series {
   primary_books_count
   is_completed
 }
+
+# An author's page. canonical_id is set when this author was merged into
+# another; follow it to the record the site shows.
+fragment AuthorDetail on authors {
+  ...AuthorSummary
+  bio
+  born_year
+  death_year
+  location
+  users_count
+  canonical_id
+}
+
+# A series' page. canonical_id works as for authors.
+fragment SeriesDetail on series {
+  ...SeriesSummary
+  description
+  canonical_id
+  author {
+    ...AuthorSummary
+  }
+}

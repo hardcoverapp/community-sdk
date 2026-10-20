@@ -60,6 +60,7 @@ export {
   type BookSummary,
   type Edition,
   type EditionWithBook,
+  type ExternalMatch,
   type ReleasedOptions,
   type TrendingOptions,
 } from "./resources/books.ts";
@@ -89,3 +90,5 @@ export {
   type PromptInput,
   type PromptListOptions,
 } from "./resources/prompts.ts";
+export { AuthorsResource, type Author, type SeriesSummary } from "./resources/authors.ts";
+export { SeriesResource, type Series, type SeriesEntry } from "./resources/series.ts";

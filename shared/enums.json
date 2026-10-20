@@ -94,6 +94,108 @@
     ],
     "notes": "ID 3 is unused."
   },
+  "Platform": {
+    "source": "platforms table (api.hardcover.app, 2026-10-20)",
+    "type": "int",
+    "notes": "Where an external id comes from, for books.findByExternalIds. The API stores mappings per platform.",
+    "values": [
+      {
+        "id": 1,
+        "key": "GOODREADS",
+        "label": "Goodreads"
+      },
+      {
+        "id": 2,
+        "key": "LIBRARY_THING",
+        "label": "LibraryThing"
+      },
+      {
+        "id": 3,
+        "key": "OPEN_LIBRARY",
+        "label": "Open Library"
+      },
+      {
+        "id": 4,
+        "key": "OCLC",
+        "label": "OCLC (WorldCat)"
+      },
+      {
+        "id": 5,
+        "key": "LCCN",
+        "label": "Library of Congress control number"
+      },
+      {
+        "id": 18,
+        "key": "WIKIDATA",
+        "label": "Wikidata"
+      },
+      {
+        "id": 19,
+        "key": "AMAZON",
+        "label": "Amazon (ASIN)"
+      },
+      {
+        "id": 20,
+        "key": "GOOGLE",
+        "label": "Google Books"
+      },
+      {
+        "id": 21,
+        "key": "ALIBRIS",
+        "label": "Alibris"
+      },
+      {
+        "id": 22,
+        "key": "AMAZON_CA",
+        "label": "Amazon.ca (ASIN)"
+      },
+      {
+        "id": 23,
+        "key": "PAPERBACK_SWAP",
+        "label": "PaperBackSwap"
+      },
+      {
+        "id": 24,
+        "key": "AMAZON_DE",
+        "label": "Amazon.de (ASIN)"
+      },
+      {
+        "id": 25,
+        "key": "CANADIAN_NATIONAL_LIBRARY",
+        "label": "Library and Archives Canada"
+      },
+      {
+        "id": 26,
+        "key": "AMAZON_UK",
+        "label": "Amazon.co.uk (ASIN)"
+      },
+      {
+        "id": 27,
+        "key": "STORY_GRAPH",
+        "label": "The StoryGraph"
+      },
+      {
+        "id": 28,
+        "key": "INVENTAIRE",
+        "label": "Inventaire"
+      },
+      {
+        "id": 29,
+        "key": "ABE_BOOKS",
+        "label": "AbeBooks"
+      },
+      {
+        "id": 30,
+        "key": "HARDCOVER_CSV",
+        "label": "Hardcover CSV import"
+      },
+      {
+        "id": 32,
+        "key": "AUDIBLE",
+        "label": "Audible"
+      }
+    ]
+  },
   "DatePrecision": {
     "source": "features/BookButtonDrawer/pages/EditDateReadPage/EditDateReadFormContent.tsx",
     "type": "int",

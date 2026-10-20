@@ -10,7 +10,8 @@ decides; the SDK passes its answers through, and takes care of what every app
 would otherwise repeat:
 
 - typed resources (`library`, `reads`, `lists`, `journal`, `goals`, `vibes`,
-  `prompts`, `books`, `search`) with one consistent shape across them
+  `prompts`, `books`, `authors`, `series`, `search`) with one consistent shape
+  across them
 - rate limits: pacing from the API's headers, backoff when other apps share the
   same budget, and opt-in batching of concurrent reads
 - one error taxonomy, with missing scopes and failed actions spelled out
@@ -45,6 +46,8 @@ changing it.
 | **Resources** |  |  |  |  |  |
 | `me` (read) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `books` / `editions` (read) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `authors` (read) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `series` (read) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `search` (read) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `library` (user books): read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `library` (user books): write | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |

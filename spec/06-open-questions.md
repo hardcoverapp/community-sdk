@@ -187,6 +187,19 @@ production token. The mobile apps come next and will likely hit the same things.
     need a short retry, or the SDK could retry once when `ids` is empty; the
     API could also mark the result as "warming". Also worth documenting:
     `duration: week` is a rolling last-7-days window, not a calendar week.
+37. **A series' reading order is Rails-only.** The site's series page uses
+    `Series#primary_reading_order`: active, non-compilation entries, without
+    range-style details ("1-3") or partial books (unless all are partial), the
+    most-read book per position. The API exposes only raw `book_series`, so
+    `series.books` returns every entry and documents a simpler filter (skip
+    compilations, first entry per position). Exposing the computed order
+    (a column, view or action) would let every SDK match the site exactly.
+38. **Blocked `_by_pk` mutations exist on prod.** `scope_definitions.yml`
+    blocks `update_notification_deliveries_by_pk` and
+    `update_notification_settings_by_pk` as "don't actually exist", but prod
+    exposes both, with the narrow per-row shape a typed SDK wants. Mapping them
+    to `write:notifications` would avoid the bulk `where:` form for "mark
+    read". Also `bookles` is still in the scope map but gone from prod.
 
 ## Environment and access
 

@@ -17,5 +17,6 @@ Hardcover docs site pages as each resource lands there.
 | [journal.ts](journal.ts) | Notes and quotes; why most journal entries are the server's job |
 | [vibes.ts](vibes.ts) | Building a recommendation vibe from signals, and reading results honestly |
 | [goals.ts](goals.ts) | Reading challenges, merge-on-update, `goalProgress()` units |
+| [catalog.ts](catalog.ts) | Author pages, a series reading order, importing by Goodreads id, an edition by id |
 | [prompts.ts](prompts.ts) | Browsing prompts and their ranked books, answering, following, asking your own |
 | [errors-and-testing.ts](errors-and-testing.ts) | Error types apps handle, and testing with `MockTransport` |

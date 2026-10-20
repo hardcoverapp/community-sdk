@@ -1,6 +1,7 @@
 import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
 import { environments, type Environment } from "../generated/environments.ts";
 import { operationInfo, type OperationInfo } from "../operations.ts";
+import { AuthorsResource } from "../resources/authors.ts";
 import { BooksResource } from "../resources/books.ts";
 import { GoalsResource } from "../resources/goals.ts";
 import { JournalResource } from "../resources/journal.ts";
@@ -10,6 +11,7 @@ import { MeResource } from "../resources/me.ts";
 import { PromptsResource } from "../resources/prompts.ts";
 import { ReadsResource } from "../resources/reads.ts";
 import { SearchResource } from "../resources/search.ts";
+import { SeriesResource } from "../resources/series.ts";
 import { VibesResource } from "../resources/vibes.ts";
 import { Allowance } from "./allowance.ts";
 import { requestCost } from "./cost.ts";
@@ -99,6 +101,8 @@ export class HardcoverClient {
   readonly goals: GoalsResource;
   readonly vibes: VibesResource;
   readonly prompts: PromptsResource;
+  readonly authors: AuthorsResource;
+  readonly series: SeriesResource;
 
   readonly #token: string;
   readonly #transport: Transport;
@@ -146,6 +150,8 @@ export class HardcoverClient {
     this.goals = new GoalsResource(this);
     this.vibes = new VibesResource(this);
     this.prompts = new PromptsResource(this);
+    this.authors = new AuthorsResource(this);
+    this.series = new SeriesResource(this);
   }
 
   /** Rate-limit state from the most recent response that carried headers. Read-only: pacing relies on it. */
