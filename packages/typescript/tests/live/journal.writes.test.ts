@@ -14,7 +14,7 @@ describeLiveWrites(`journal (${target})`, () => {
     try {
       const me = await client.me.get();
       const note = await client.journal.add(bookId, { entry: "The Rocky chapters are the best part." });
-      expect(note).toMatchObject({ event: JournalEvent.Note, bookId, privacySettingId: me.accountPrivacySettingId });
+      expect(note).toMatchObject({ event: JournalEvent.Note, bookId, privacySettingId: me.activityPrivacySettingsId });
 
       const quote = await client.journal.add(bookId, {
         event: JournalEvent.Quote,

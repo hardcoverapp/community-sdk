@@ -15,7 +15,9 @@ fragment UserProfile on users {
 # `me` only. API tokens can't read the owner-only columns (timezone,
 # default_reading_format_id, email without read:me:email), so they stay out.
 # The server applies the timezone itself (spec/02-app-usage.md#dates).
+# activity_privacy_settings_id is the app's default for journal entries.
 fragment Me on users {
   ...UserProfile
   account_privacy_setting_id
+  activity_privacy_settings_id
 }

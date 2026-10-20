@@ -60,11 +60,15 @@ export class JournalResource {
 
   /**
    * Adds an entry (a note unless `event` says otherwise).
+   * Without `privacy`, it uses the reader's activity privacy setting, as the
+   * app does for new entries.
    * Scopes: `write:library`, `read:me` (only when privacy isn't given).
    */
   async add(bookId: number, input: JournalEntryInput = {}): Promise<JournalEntry> {
-    // The API requires a privacy setting; default to the user's own account setting.
-    const privacy = input.privacy ?? ((await this.client.me.get()).accountPrivacySettingId as PrivacySetting);
+    // The API requires a privacy setting and doesn't default it. The app uses
+    // the reader's activity privacy (JournalForm, AddProgressEntryDrawer), not
+    // the account setting.
+    const privacy = input.privacy ?? ((await this.client.me.get()).activityPrivacySettingsId as PrivacySetting);
     const object = {
       book_id: bookId,
       ...pickDefined({ event: JournalEvent.Note, ...input, privacy, tags: input.tags ?? [] }, WIRE),

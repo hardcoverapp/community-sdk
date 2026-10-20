@@ -29,4 +29,4 @@ export const envelope = (root: string, key: string, value: unknown): MockRespons
 
 /** The `Me` response. Fields can be overridden per test. */
 export const me = (overrides: Record<string, unknown> = {}): MockResponse =>
-  ok({ me: [{ id: 42, username: "reader", accountPrivacySettingId: 2, ...overrides }] });
+  ok({ me: [{ id: 42, username: "reader", accountPrivacySettingId: 2, activityPrivacySettingsId: 3, ...overrides }] });

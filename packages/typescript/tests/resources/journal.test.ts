@@ -10,14 +10,14 @@ const created = (entry: Record<string, unknown>) => ok({ insert_reading_journal:
 
 
 describe("journal.add", () => {
-  it("defaults to a note, no tags, and the user's own account privacy", async () => {
+  it("defaults to a note, no tags, and the reader's activity privacy (not the account's)", async () => {
     const { client, sent } = setup(ME, created({ id: 5, event: "note", entry: "Rocky!" }));
     const entry = await client.journal.add(100, { entry: "Rocky!" });
 
     expect(entry).toMatchObject({ id: 5, event: "note" });
     expect(sent().map((r) => r.operationName)).toEqual(["Me", "AddJournalEntry"]);
     expect(sent()[1]!.variables).toEqual({
-      object: { book_id: 100, event: "note", entry: "Rocky!", privacy_setting_id: 2, tags: [] },
+      object: { book_id: 100, event: "note", entry: "Rocky!", privacy_setting_id: 3, tags: [] },
     });
   });
 
