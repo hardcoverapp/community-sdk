@@ -76,3 +76,16 @@ export {
   type VibeSignal,
   type VibeUpdate,
 } from "./resources/vibes.ts";
+export {
+  PromptsResource,
+  type FollowedPrompt,
+  type Prompt,
+  type PromptAnswer,
+  type PromptAnswerOptions,
+  type PromptAnswerResult,
+  type PromptAnswerWithBook,
+  type PromptBook,
+  type PromptForBook,
+  type PromptInput,
+  type PromptListOptions,
+} from "./resources/prompts.ts";

@@ -122,6 +122,16 @@
       "label": "`vibes`: write (Supporter perk)"
     },
     {
+      "id": "res-prompts-read",
+      "group": "Resources",
+      "label": "`prompts`: read"
+    },
+    {
+      "id": "res-prompts-write",
+      "group": "Resources",
+      "label": "`prompts`: write (ask, answer, follow)"
+    },
+    {
       "id": "test-mock",
       "group": "Testing",
       "label": "Mock transport + shared fixtures"
@@ -197,7 +207,9 @@
         "res-goals-write": "done",
         "rt-react-native": "partial",
         "res-vibes-read": "done",
-        "res-vibes-write": "done"
+        "res-vibes-write": "done",
+        "res-prompts-read": "done",
+        "res-prompts-write": "done"
       },
       "examples": {
         "res-me": "examples/quick-start.ts",
@@ -214,7 +226,9 @@
         "res-goals-read": "examples/goals.ts",
         "res-goals-write": "examples/goals.ts",
         "res-vibes-read": "examples/vibes.ts",
-        "res-vibes-write": "examples/vibes.ts"
+        "res-vibes-write": "examples/vibes.ts",
+        "res-prompts-read": "examples/prompts.ts",
+        "res-prompts-write": "examples/prompts.ts"
       }
     },
     {

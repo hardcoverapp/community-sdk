@@ -1,0 +1,71 @@
+# Prompt writes. Rules the server owns (Prompt model, Hasura::PromptsController):
+# - prompts are always public; the question is unique and at most 140 characters;
+#   a description is required,
+# - once a prompt has more than 5 answers, an update changes only its description,
+# - answering the same book twice returns the existing answer (and updates its note),
+# - an answer is journaled by the server.
+
+mutation CreatePrompt($object: CreatePromptInput!) {
+  insert_prompt(object: $object) {
+    id
+    error
+    prompt {
+      ...PromptSummary
+    }
+  }
+}
+
+mutation UpdatePrompt($object: UpdatePromptInput!) {
+  update_prompt(object: $object) {
+    id
+    error
+    prompt {
+      ...PromptSummary
+    }
+  }
+}
+
+mutation DeletePrompt($id: Int!) {
+  delete_prompts_by_pk(id: $id) {
+    id
+  }
+}
+
+mutation AnswerPrompt($object: PromptAnswerCreateInput!) {
+  insert_prompt_answer(object: $object) {
+    id
+    prompt_answer {
+      ...PromptAnswer
+    }
+    prompt_book {
+      answers_count
+    }
+  }
+}
+
+mutation UpdatePromptAnswer($id: Int!, $description: String) {
+  update_prompt_answers_by_pk(pk_columns: { id: $id }, _set: { description: $description }) {
+    ...PromptAnswer
+  }
+}
+
+mutation DeletePromptAnswer($id: Int!) {
+  delete_prompt_answer(id: $id) {
+    id
+    prompt_id
+    book_id
+  }
+}
+
+mutation FollowPrompt($promptId: Int!) {
+  upsert_followed_prompt(prompt_id: $promptId) {
+    id
+    errors
+  }
+}
+
+mutation UnfollowPrompt($promptId: Int!) {
+  delete_followed_prompt(prompt_id: $promptId) {
+    success
+  }
+}

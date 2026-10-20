@@ -7,6 +7,7 @@ import { JournalResource } from "../resources/journal.ts";
 import { LibraryResource } from "../resources/library.ts";
 import { ListsResource } from "../resources/lists.ts";
 import { MeResource } from "../resources/me.ts";
+import { PromptsResource } from "../resources/prompts.ts";
 import { ReadsResource } from "../resources/reads.ts";
 import { SearchResource } from "../resources/search.ts";
 import { VibesResource } from "../resources/vibes.ts";
@@ -97,6 +98,7 @@ export class HardcoverClient {
   readonly journal: JournalResource;
   readonly goals: GoalsResource;
   readonly vibes: VibesResource;
+  readonly prompts: PromptsResource;
 
   readonly #token: string;
   readonly #transport: Transport;
@@ -143,6 +145,7 @@ export class HardcoverClient {
     this.journal = new JournalResource(this);
     this.goals = new GoalsResource(this);
     this.vibes = new VibesResource(this);
+    this.prompts = new PromptsResource(this);
   }
 
   /** Rate-limit state from the most recent response that carried headers. Read-only: pacing relies on it. */

@@ -10,7 +10,7 @@ decides; the SDK passes its answers through, and takes care of what every app
 would otherwise repeat:
 
 - typed resources (`library`, `reads`, `lists`, `journal`, `goals`, `vibes`,
-  `books`, `search`) with one consistent shape across them
+  `prompts`, `books`, `search`) with one consistent shape across them
 - rate limits: pacing from the API's headers, backoff when other apps share the
   same budget, and opt-in batching of concurrent reads
 - one error taxonomy, with missing scopes and failed actions spelled out
@@ -58,6 +58,8 @@ changing it.
 | `goals`: write | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `vibes`: read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `vibes`: write (Supporter perk) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `prompts`: read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `prompts`: write (ask, answer, follow) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Testing** |  |  |  |  |  |
 | Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
 | Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |

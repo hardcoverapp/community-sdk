@@ -1,0 +1,75 @@
+query GetPrompt($id: Int!) {
+  prompts_by_pk(id: $id) {
+    ...PromptSummary
+  }
+}
+
+query GetPromptBySlug($slug: String!) {
+  prompts(where: { slug: { _eq: $slug } }, limit: 1) {
+    ...PromptSummary
+  }
+}
+
+# Browsing. The SDK builds `where` (e.g. featured only) and `orderBy`
+# (most answered, or newest) from idiomatic options.
+query GetPrompts($where: prompts_bool_exp!, $orderBy: [prompts_order_by!]!, $limit: Int = 25, $offset: Int = 0) {
+  prompts(where: $where, order_by: $orderBy, limit: $limit, offset: $offset) {
+    ...PromptSummary
+  }
+}
+
+query GetPromptsForUser($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  prompts(where: { user_id: { _eq: $userId } }, order_by: { created_at: desc }, limit: $limit, offset: $offset) {
+    ...PromptSummary
+  }
+}
+
+# A prompt's books, most answered first: the ranking the site shows.
+query GetPromptBooks($promptId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  prompt_books_summary(
+    where: { prompt_id: { _eq: $promptId } }
+    order_by: { answers_count: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    answers_count
+    book {
+      ...BookSummary
+    }
+  }
+}
+
+# The prompts a book was given as an answer to, where it was picked most first.
+query GetPromptsForBook($bookId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  prompt_books_summary(
+    where: { book_id: { _eq: $bookId } }
+    order_by: { answers_count: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    answers_count
+    prompt {
+      ...PromptSummary
+    }
+  }
+}
+
+# One reader's answers to one prompt, newest first.
+query GetPromptAnswersForUser($userId: Int!, $promptId: Int!) {
+  prompt_answers(where: { user_id: { _eq: $userId }, prompt_id: { _eq: $promptId } }, order_by: { created_at: desc }) {
+    ...PromptAnswer
+    book {
+      ...BookSummary
+    }
+  }
+}
+
+query GetFollowedPrompts($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  followed_prompts(where: { user_id: { _eq: $userId } }, order_by: { created_at: desc }, limit: $limit, offset: $offset) {
+    id
+    created_at
+    prompt {
+      ...PromptSummary
+    }
+  }
+}

@@ -1,0 +1,25 @@
+# Prompts are community questions ("What's your favorite cozy fantasy?") that
+# readers answer with books. They're always public (Prompt model validation).
+
+fragment PromptSummary on prompts {
+  id
+  slug
+  question
+  description
+  featured
+  answers_count
+  books_count
+  users_count
+  user_id
+  created_at
+}
+
+# One reader's answer: a book, with an optional note on why.
+fragment PromptAnswer on prompt_answers {
+  id
+  prompt_id
+  book_id
+  user_id
+  description
+  created_at
+}
