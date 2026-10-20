@@ -3,9 +3,6 @@ import { environments, type Environment } from "../generated/environments.ts";
 import { operationInfo, type OperationInfo } from "../operations.ts";
 import { fieldCount, requestCost } from "./cost.ts";
 import {
-  ActionError,
-  AuthenticationError,
-  GraphQLError,
   HardcoverError,
   InvalidRequestError,
   NetworkError,
@@ -28,6 +25,7 @@ import { VibesResource } from "../resources/vibes.ts";
 import { Allowance } from "./allowance.ts";
 import type { WithJsonColumns } from "./json-columns.ts";
 import type { RateLimitState } from "./rate-limit.ts";
+import { classify, parseBody, toData, type Payload } from "./responses.ts";
 import { normalizeToken } from "./token.ts";
 import { fetchTransport, TransportFailure, type HttpResponse, type Transport } from "./transport.ts";
 
@@ -74,15 +72,6 @@ export interface HardcoverClientOptions {
 
 const NETWORK_BACKOFF_MS = [250, 1_000, 4_000];
 const SDK_USER_AGENT = "hardcover-sdk-typescript/0.0.0";
-
-type Payload = {
-  data?: Record<string, unknown> | null;
-  errors?: unknown;
-  error?: unknown;
-  error_description?: unknown;
-  message?: unknown;
-  scope?: unknown;
-};
 
 /** A read waiting in the planner's queue. Identical reads share one entry. */
 interface Queued {
@@ -369,95 +358,4 @@ export class HardcoverClient {
 interface SendResult {
   status: number;
   payload: Payload | undefined;
-}
-
-// One operation's result: its data, or the GraphQL or action error it reported.
-function toData(payload: Payload | undefined, status: number, operationName: string | undefined): Record<string, unknown> {
-  if (!payload) throw new HardcoverError("Response was not valid JSON", { status, operationName });
-  if (Array.isArray(payload.errors) && payload.errors.length > 0) {
-    throw new GraphQLError(payload.errors.map(toErrorDetail), payload.data ?? null, { status, operationName });
-  }
-  const data = payload.data ?? {};
-  assertNoActionErrors(data, operationName);
-  return data;
-}
-
-function parseBody(body: string): Payload | undefined {
-  try {
-    const parsed: unknown = JSON.parse(body);
-    return parsed && typeof parsed === "object" ? (parsed as Payload) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function str(value: unknown): string | undefined {
-  return typeof value === "string" ? value : undefined;
-}
-
-// Maps non-2xx responses onto the shared taxonomy (shared/errors.json).
-function classify(
-  response: HttpResponse,
-  payload: Payload | undefined,
-  rateLimit: RateLimitState | undefined,
-  operationName: string | undefined,
-): HardcoverError | undefined {
-  const { status } = response;
-  if (status >= 200 && status < 300) return undefined;
-
-  const code = str(payload?.error);
-  const firstError = Array.isArray(payload?.errors) ? str(payload.errors[0]) : undefined;
-  const message = str(payload?.error_description) ?? str(payload?.message) ?? code ?? firstError ?? `HTTP ${status}`;
-  const options = { status, operationName };
-
-  if (status === 401) return new AuthenticationError(message, options);
-
-  if (status === 403) {
-    // `scope` lists every missing scope, space-separated (graphql_controller.rb).
-    if (code === "insufficient_scope") {
-      return new ScopeError(message, (str(payload?.scope) ?? "").split(/\s+/).filter(Boolean), options);
-    }
-    if (code === "unsupported_operation") return new UnsupportedOperationError(message, options);
-    if (code === "top_level_limit_exceeded" || firstError === "request_exceeds_capacity") {
-      return new RequestTooLargeError(message, options);
-    }
-    return new HardcoverError(message, options);
-  }
-
-  if (status === 400) return new InvalidRequestError(message, options);
-  if (status === 408) return new TimeoutError(message, false, options);
-
-  if (status === 429) {
-    const dailySpent = rateLimit?.daily?.remaining === 0;
-    const window = dailySpent ? "daily" : "burst";
-    const bucket = dailySpent ? rateLimit?.daily : rateLimit?.burst;
-    const retryAfter = Number(response.headers["retry-after"]);
-    const retryAfterSeconds = Number.isFinite(retryAfter) && retryAfter >= 0 ? retryAfter : (bucket?.resetSeconds ?? 1);
-    return new RateLimitError(message, retryAfterSeconds, window, bucket?.limit, bucket?.remaining, options);
-  }
-
-  if (status >= 500) return new ServerError(message, options);
-  return new HardcoverError(message, options);
-}
-
-function toErrorDetail(raw: unknown) {
-  const e = (raw ?? {}) as { message?: unknown; extensions?: { path?: unknown; code?: unknown } };
-  return {
-    message: str(e.message) ?? "Unknown GraphQL error",
-    path: str(e.extensions?.path),
-    code: str(e.extensions?.code),
-  };
-}
-
-// Hasura actions report failures inside `data` with HTTP 200, as either
-// `error: String` or `errors: [String]`.
-function assertNoActionErrors(data: Record<string, unknown>, operationName: string | undefined): void {
-  for (const [field, value] of Object.entries(data)) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) continue;
-    const envelope = value as { error?: unknown; errors?: unknown };
-    const messages: string[] = [];
-    if (typeof envelope.error === "string" && envelope.error) messages.push(envelope.error);
-    if (Array.isArray(envelope.errors)) messages.push(...envelope.errors.map(String));
-    if (messages.length > 0) throw new ActionError(field, messages, data, { operationName });
-  }
 }
