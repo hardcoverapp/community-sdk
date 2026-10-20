@@ -75,6 +75,7 @@ export {
   type Edition,
   type EditionWithBook,
   type ExternalMatch,
+  type FriendEntry,
   type ReleasedOptions,
   type TrendingOptions,
 } from "./resources/books.ts";
@@ -106,3 +107,13 @@ export {
 } from "./resources/prompts.ts";
 export { AuthorsResource, type Author, type SeriesSummary } from "./resources/authors.ts";
 export { SeriesResource, type Series, type SeriesEntry } from "./resources/series.ts";
+export {
+  UsersResource,
+  type BlockedUser,
+  type BlockOptions,
+  type Follower,
+  type Following,
+  type UserProfile,
+} from "./resources/users.ts";
+export { LikesResource } from "./resources/likes.ts";
+export { ActivitiesResource, type Activity } from "./resources/activities.ts";

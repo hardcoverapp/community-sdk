@@ -95,6 +95,30 @@ export const ListMemberStatus = {
 } as const;
 export type ListMemberStatus = (typeof ListMemberStatus)[keyof typeof ListMemberStatus];
 
+/** What a like is on, for likes.like / likes.unlike. A review is liked as its library entry (UserBook). Source: rails/app/controllers/hasura/likes_controller.rb (LIKEABLE_TYPES) */
+export const LikeableType = {
+  /** An activity in a feed */
+  Activity: "Activity",
+  /** A list */
+  List: "List",
+  /** A journal entry */
+  JournalEntry: "ReadingJournal",
+  /** A review (its library entry) */
+  Review: "UserBook",
+  /** A vibe */
+  Vibe: "Vibe",
+} as const;
+export type LikeableType = (typeof LikeableType)[keyof typeof LikeableType];
+
+/** A full block stops follows, likes and notifications; an invite block only stops club and buddy-read invites. Source: rails/app/models/block.rb (Block::TYPES) */
+export const BlockType = {
+  /** Full block */
+  Full: "UserBlock",
+  /** Invites only */
+  Invites: "BlockInvite",
+} as const;
+export type BlockType = (typeof BlockType)[keyof typeof BlockType];
+
 /** Source: features/BookButtonDrawer/pages/EditDateReadPage/EditDateReadFormContent.tsx */
 export const DatePrecision = {
   Unknown: 0,

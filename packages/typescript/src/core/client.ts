@@ -1,17 +1,20 @@
 import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
 import { environments, type Environment } from "../generated/environments.ts";
 import { operationInfo, type OperationInfo } from "../operations.ts";
+import { ActivitiesResource } from "../resources/activities.ts";
 import { AuthorsResource } from "../resources/authors.ts";
 import { BooksResource } from "../resources/books.ts";
 import { GoalsResource } from "../resources/goals.ts";
 import { JournalResource } from "../resources/journal.ts";
 import { LibraryResource } from "../resources/library.ts";
+import { LikesResource } from "../resources/likes.ts";
 import { ListsResource } from "../resources/lists.ts";
 import { MeResource } from "../resources/me.ts";
 import { PromptsResource } from "../resources/prompts.ts";
 import { ReadsResource } from "../resources/reads.ts";
 import { SearchResource } from "../resources/search.ts";
 import { SeriesResource } from "../resources/series.ts";
+import { UsersResource } from "../resources/users.ts";
 import { VibesResource } from "../resources/vibes.ts";
 import { Allowance } from "./allowance.ts";
 import { requestCost } from "./cost.ts";
@@ -103,6 +106,9 @@ export class HardcoverClient {
   readonly prompts: PromptsResource;
   readonly authors: AuthorsResource;
   readonly series: SeriesResource;
+  readonly users: UsersResource;
+  readonly likes: LikesResource;
+  readonly activities: ActivitiesResource;
 
   readonly #token: string;
   readonly #transport: Transport;
@@ -152,6 +158,9 @@ export class HardcoverClient {
     this.prompts = new PromptsResource(this);
     this.authors = new AuthorsResource(this);
     this.series = new SeriesResource(this);
+    this.users = new UsersResource(this);
+    this.likes = new LikesResource(this);
+    this.activities = new ActivitiesResource(this);
   }
 
   /** Rate-limit state from the most recent response that carried headers. Read-only: pacing relies on it. */

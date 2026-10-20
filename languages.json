@@ -67,6 +67,16 @@
       "label": "`series` (read)"
     },
     {
+      "id": "res-users",
+      "group": "Resources",
+      "label": "`users`: profiles, follows, blocks"
+    },
+    {
+      "id": "res-social",
+      "group": "Resources",
+      "label": "`activities`, `likes`, friends on a book"
+    },
+    {
       "id": "res-search",
       "group": "Resources",
       "label": "`search` (read)"
@@ -221,7 +231,9 @@
         "res-prompts-read": "done",
         "res-prompts-write": "done",
         "res-authors": "done",
-        "res-series": "done"
+        "res-series": "done",
+        "res-users": "done",
+        "res-social": "done"
       },
       "examples": {
         "res-me": "examples/quick-start.ts",
@@ -242,7 +254,9 @@
         "res-prompts-read": "examples/prompts.ts",
         "res-prompts-write": "examples/prompts.ts",
         "res-authors": "examples/catalog.ts",
-        "res-series": "examples/catalog.ts"
+        "res-series": "examples/catalog.ts",
+        "res-users": "examples/social.ts",
+        "res-social": "examples/social.ts"
       }
     },
     {

@@ -223,6 +223,55 @@
       }
     ]
   },
+  "LikeableType": {
+    "source": "rails/app/controllers/hasura/likes_controller.rb (LIKEABLE_TYPES)",
+    "type": "string",
+    "notes": "What a like is on, for likes.like / likes.unlike. A review is liked as its library entry (UserBook).",
+    "values": [
+      {
+        "id": "Activity",
+        "key": "ACTIVITY",
+        "label": "An activity in a feed"
+      },
+      {
+        "id": "List",
+        "key": "LIST",
+        "label": "A list"
+      },
+      {
+        "id": "ReadingJournal",
+        "key": "JOURNAL_ENTRY",
+        "label": "A journal entry"
+      },
+      {
+        "id": "UserBook",
+        "key": "REVIEW",
+        "label": "A review (its library entry)"
+      },
+      {
+        "id": "Vibe",
+        "key": "VIBE",
+        "label": "A vibe"
+      }
+    ]
+  },
+  "BlockType": {
+    "source": "rails/app/models/block.rb (Block::TYPES)",
+    "type": "string",
+    "notes": "A full block stops follows, likes and notifications; an invite block only stops club and buddy-read invites.",
+    "values": [
+      {
+        "id": "UserBlock",
+        "key": "FULL",
+        "label": "Full block"
+      },
+      {
+        "id": "BlockInvite",
+        "key": "INVITES",
+        "label": "Invites only"
+      }
+    ]
+  },
   "DatePrecision": {
     "source": "features/BookButtonDrawer/pages/EditDateReadPage/EditDateReadFormContent.tsx",
     "type": "int",

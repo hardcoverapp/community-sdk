@@ -1,0 +1,19 @@
+# An entry in an activity feed: what happened (event, data), to which book,
+# by whom.
+fragment Activity on activities {
+  id
+  event
+  object_type
+  data
+  book_id
+  user_id
+  likes_count
+  privacy_setting_id
+  created_at
+  user {
+    ...UserProfile
+  }
+  book {
+    ...BookSummary
+  }
+}

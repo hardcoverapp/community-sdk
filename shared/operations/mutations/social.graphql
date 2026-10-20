@@ -1,0 +1,47 @@
+mutation FollowUser($userId: Int!) {
+  insert_followed_user(user_id: $userId) {
+    id
+    error
+  }
+}
+
+# remove_follower: false unfollows someone you follow; true removes someone
+# who follows you (Hasura::Users::FollowingsController#destroy).
+mutation UnfollowUser($userId: Int!, $removeFollower: Boolean!) {
+  delete_followed_user(user_id: $userId, remove_follower: $removeFollower) {
+    id
+    error
+  }
+}
+
+mutation BlockUser($userId: Int!, $type: String!) {
+  insert_block(blocked_user_id: $userId, type: $type) {
+    id
+    error
+  }
+}
+
+mutation UnblockUser($id: bigint!) {
+  delete_user_blocks_by_pk(id: $id) {
+    id
+  }
+}
+
+mutation Like($likeableId: Int!, $likeableType: String!) {
+  upsert_like(likeable_id: $likeableId, likeable_type: $likeableType) {
+    id
+    likes_count
+  }
+}
+
+mutation Unlike($likeableId: Int!, $likeableType: String!) {
+  delete_like(likeable_id: $likeableId, likeable_type: $likeableType) {
+    likes_count
+  }
+}
+
+mutation DeleteActivity($id: Int!) {
+  delete_activities_by_pk(id: $id) {
+    id
+  }
+}

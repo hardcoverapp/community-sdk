@@ -7295,6 +7295,8 @@ export type PromptSummaryFragment = { id: number, slug: string, question: string
 
 export type PromptAnswerFragment = { id: number, description: string | null, promptId: number, bookId: number, userId: number, createdAt: string | null };
 
+export type ActivityFragment = { id: number, event: string, data: unknown, objectType: string, bookId: number | null, userId: number, likesCount: number, privacySettingId: number, createdAt: string | null, user: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown } | null };
+
 export type UserProfileFragment = { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string };
 
 export type MeFragment = { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, accountPrivacySettingId: number, activityPrivacySettingsId: number, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string };
@@ -7548,6 +7550,59 @@ export type UnfollowPromptMutationVariables = Exact<{
 
 
 export type UnfollowPromptMutation = { delete_followed_prompt: { success: boolean } | null };
+
+export type FollowUserMutationVariables = Exact<{
+  userId: number;
+}>;
+
+
+export type FollowUserMutation = { insert_followed_user: { id: number | null, error: string | null } | null };
+
+export type UnfollowUserMutationVariables = Exact<{
+  userId: number;
+  removeFollower: boolean;
+}>;
+
+
+export type UnfollowUserMutation = { delete_followed_user: { id: number | null, error: string | null } | null };
+
+export type BlockUserMutationVariables = Exact<{
+  userId: number;
+  type: string;
+}>;
+
+
+export type BlockUserMutation = { insert_block: { id: number | null, error: string | null } | null };
+
+export type UnblockUserMutationVariables = Exact<{
+  id: number;
+}>;
+
+
+export type UnblockUserMutation = { delete_user_blocks_by_pk: { id: number } | null };
+
+export type LikeMutationVariables = Exact<{
+  likeableId: number;
+  likeableType: string;
+}>;
+
+
+export type LikeMutation = { upsert_like: { id: number, likesCount: number } | null };
+
+export type UnlikeMutationVariables = Exact<{
+  likeableId: number;
+  likeableType: string;
+}>;
+
+
+export type UnlikeMutation = { delete_like: { likesCount: number } | null };
+
+export type DeleteActivityMutationVariables = Exact<{
+  id: number;
+}>;
+
+
+export type DeleteActivityMutation = { delete_activities_by_pk: { id: number } | null };
 
 export type CreateVibeMutationVariables = Exact<{
   object: VibeInput;
@@ -7934,6 +7989,81 @@ export type SearchQueryVariables = Exact<{
 
 
 export type SearchQuery = { search: { ids: Array<number | null> | null, results: unknown, query: string | null, page: number | null, error: string | null, queryType: string | null, perPage: number | null } | null };
+
+export type GetUserQueryVariables = Exact<{
+  id: number;
+}>;
+
+
+export type GetUserQuery = { users_by_pk: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string } | null };
+
+export type GetUserByUsernameQueryVariables = Exact<{
+  username: string;
+}>;
+
+
+export type GetUserByUsernameQuery = { users: Array<{ id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }> };
+
+export type GetFollowersQueryVariables = Exact<{
+  userId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetFollowersQuery = { followed_users: Array<{ id: number, createdAt: string | null, user: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string } }> };
+
+export type GetFollowingQueryVariables = Exact<{
+  userId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetFollowingQuery = { followed_users: Array<{ id: number, createdAt: string | null, followedUser: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string } }> };
+
+export type GetBlockedUsersQueryVariables = Exact<{
+  userId: number;
+}>;
+
+
+export type GetBlockedUsersQuery = { user_blocks: Array<{ id: number, type: string, createdAt: string, blockedUser: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string } | null }> };
+
+export type GetFriendsForBookQueryVariables = Exact<{
+  userId: number;
+  bookId: number;
+  limit?: number | null | undefined;
+}>;
+
+
+export type GetFriendsForBookQuery = { following_user_books: Array<{ userBook: { id: number, rating: number | null, owned: boolean, reviewMarkdown: string | null, reviewHasSpoilers: boolean, reviewedAt: string | null, bookId: number, editionId: number | null, userId: number, statusId: number, privacySettingId: number, hasReview: boolean, readCount: number, dateAdded: string, firstStartedReadingDate: string | null, lastReadDate: string | null, updatedAt: string | null, user: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }, userBookReads: Array<{ id: number, progress: number | null, userBookId: number, editionId: number | null, startedAt: string | null, finishedAt: string | null, finishedAtPrecision: number | null, pausedAt: string | null, progressPages: number | null, progressSeconds: number | null, edition: { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number } | null }> } | null }> };
+
+export type GetActivitiesForUserQueryVariables = Exact<{
+  userId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetActivitiesForUserQuery = { activities: Array<{ id: number, event: string, data: unknown, objectType: string, bookId: number | null, userId: number, likesCount: number, privacySettingId: number, createdAt: string | null, user: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown } | null }> };
+
+export type GetActivitiesForBookQueryVariables = Exact<{
+  bookId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetActivitiesForBookQuery = { activities: Array<{ id: number, event: string, data: unknown, objectType: string, bookId: number | null, userId: number, likesCount: number, privacySettingId: number, createdAt: string | null, user: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown } | null }> };
+
+export type GetFollowingActivitiesQueryVariables = Exact<{
+  userId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetFollowingActivitiesQuery = { activities: Array<{ id: number, event: string, data: unknown, objectType: string, bookId: number | null, userId: number, likesCount: number, privacySettingId: number, createdAt: string | null, user: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown } | null }> };
 
 export type GetVibesForUserQueryVariables = Exact<{
   userId: number;
@@ -8331,6 +8461,52 @@ export const UserProfileFragmentDoc = new TypedDocumentString(`
   createdAt: created_at
 }
     `, {"fragmentName":"UserProfile"}) as unknown as TypedDocumentString<UserProfileFragment, unknown>;
+export const ActivityFragmentDoc = new TypedDocumentString(`
+    fragment Activity on activities {
+  id
+  event
+  objectType: object_type
+  data
+  bookId: book_id
+  userId: user_id
+  likesCount: likes_count
+  privacySettingId: privacy_setting_id
+  createdAt: created_at
+  user {
+    ...UserProfile
+  }
+  book {
+    ...BookSummary
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
+}
+fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`, {"fragmentName":"Activity"}) as unknown as TypedDocumentString<ActivityFragment, unknown>;
 export const MeFragmentDoc = new TypedDocumentString(`
     fragment Me on users {
   ...UserProfile
@@ -8951,6 +9127,59 @@ export const UnfollowPromptDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<UnfollowPromptMutation, UnfollowPromptMutationVariables>;
+export const FollowUserDocument = new TypedDocumentString(`
+    mutation FollowUser($userId: Int!) {
+  insert_followed_user(user_id: $userId) {
+    id
+    error
+  }
+}
+    `) as unknown as TypedDocumentString<FollowUserMutation, FollowUserMutationVariables>;
+export const UnfollowUserDocument = new TypedDocumentString(`
+    mutation UnfollowUser($userId: Int!, $removeFollower: Boolean!) {
+  delete_followed_user(user_id: $userId, remove_follower: $removeFollower) {
+    id
+    error
+  }
+}
+    `) as unknown as TypedDocumentString<UnfollowUserMutation, UnfollowUserMutationVariables>;
+export const BlockUserDocument = new TypedDocumentString(`
+    mutation BlockUser($userId: Int!, $type: String!) {
+  insert_block(blocked_user_id: $userId, type: $type) {
+    id
+    error
+  }
+}
+    `) as unknown as TypedDocumentString<BlockUserMutation, BlockUserMutationVariables>;
+export const UnblockUserDocument = new TypedDocumentString(`
+    mutation UnblockUser($id: bigint!) {
+  delete_user_blocks_by_pk(id: $id) {
+    id
+  }
+}
+    `) as unknown as TypedDocumentString<UnblockUserMutation, UnblockUserMutationVariables>;
+export const LikeDocument = new TypedDocumentString(`
+    mutation Like($likeableId: Int!, $likeableType: String!) {
+  upsert_like(likeable_id: $likeableId, likeable_type: $likeableType) {
+    id
+    likesCount: likes_count
+  }
+}
+    `) as unknown as TypedDocumentString<LikeMutation, LikeMutationVariables>;
+export const UnlikeDocument = new TypedDocumentString(`
+    mutation Unlike($likeableId: Int!, $likeableType: String!) {
+  delete_like(likeable_id: $likeableId, likeable_type: $likeableType) {
+    likesCount: likes_count
+  }
+}
+    `) as unknown as TypedDocumentString<UnlikeMutation, UnlikeMutationVariables>;
+export const DeleteActivityDocument = new TypedDocumentString(`
+    mutation DeleteActivity($id: Int!) {
+  delete_activities_by_pk(id: $id) {
+    id
+  }
+}
+    `) as unknown as TypedDocumentString<DeleteActivityMutation, DeleteActivityMutationVariables>;
 export const CreateVibeDocument = new TypedDocumentString(`
     mutation CreateVibe($object: VibeInput!) {
   insert_vibe(object: $object) {
@@ -10533,6 +10762,362 @@ export const SearchDocument = new TypedDocumentString(`
   }
 }
     `) as unknown as TypedDocumentString<SearchQuery, SearchQueryVariables>;
+export const GetUserDocument = new TypedDocumentString(`
+    query GetUser($id: Int!) {
+  users_by_pk(id: $id) {
+    ...UserProfile
+  }
+}
+    fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<GetUserQuery, GetUserQueryVariables>;
+export const GetUserByUsernameDocument = new TypedDocumentString(`
+    query GetUserByUsername($username: citext!) {
+  users(where: { username: { _eq: $username } }, limit: 1) {
+    ...UserProfile
+  }
+}
+    fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<GetUserByUsernameQuery, GetUserByUsernameQueryVariables>;
+export const GetFollowersDocument = new TypedDocumentString(`
+    query GetFollowers($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  followed_users(
+    where: { followed_user_id: { _eq: $userId } }
+    order_by: { created_at: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    createdAt: created_at
+    user {
+      ...UserProfile
+    }
+  }
+}
+    fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<GetFollowersQuery, GetFollowersQueryVariables>;
+export const GetFollowingDocument = new TypedDocumentString(`
+    query GetFollowing($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  followed_users(
+    where: { user_id: { _eq: $userId } }
+    order_by: { created_at: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    createdAt: created_at
+    followedUser: followed_user {
+      ...UserProfile
+    }
+  }
+}
+    fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<GetFollowingQuery, GetFollowingQueryVariables>;
+export const GetBlockedUsersDocument = new TypedDocumentString(`
+    query GetBlockedUsers($userId: Int!) {
+  user_blocks(
+    where: { user_id: { _eq: $userId } }
+    order_by: { created_at: desc }
+  ) {
+    id
+    type
+    createdAt: created_at
+    blockedUser: blocked_user {
+      ...UserProfile
+    }
+  }
+}
+    fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<GetBlockedUsersQuery, GetBlockedUsersQueryVariables>;
+export const GetFriendsForBookDocument = new TypedDocumentString(`
+    query GetFriendsForBook($userId: Int!, $bookId: Int!, $limit: Int = 25) {
+  following_user_books(
+    where: { user_id: { _eq: $userId }, book_id: { _eq: $bookId } }
+    limit: $limit
+  ) {
+    userBook: user_book {
+      ...UserBook
+      reviewMarkdown: review_markdown
+      reviewHasSpoilers: review_has_spoilers
+      reviewedAt: reviewed_at
+      user {
+        ...UserProfile
+      }
+    }
+  }
+}
+    fragment UserBookRead on user_book_reads {
+  id
+  userBookId: user_book_id
+  editionId: edition_id
+  startedAt: started_at
+  finishedAt: finished_at
+  finishedAtPrecision: finished_at_precision
+  pausedAt: paused_at
+  progress
+  progressPages: progress_pages
+  progressSeconds: progress_seconds
+  edition {
+    id
+    pages
+    audioSeconds: audio_seconds
+    readingFormatId: reading_format_id
+  }
+}
+fragment UserBook on user_books {
+  id
+  bookId: book_id
+  editionId: edition_id
+  userId: user_id
+  statusId: status_id
+  rating
+  privacySettingId: privacy_setting_id
+  hasReview: has_review
+  owned
+  readCount: read_count
+  dateAdded: date_added
+  firstStartedReadingDate: first_started_reading_date
+  lastReadDate: last_read_date
+  updatedAt: updated_at
+  userBookReads: user_book_reads(order_by: { id: desc }) {
+    ...UserBookRead
+  }
+}
+fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<GetFriendsForBookQuery, GetFriendsForBookQueryVariables>;
+export const GetActivitiesForUserDocument = new TypedDocumentString(`
+    query GetActivitiesForUser($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  activities(
+    where: { user_id: { _eq: $userId } }
+    order_by: { created_at: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    ...Activity
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
+}
+fragment Activity on activities {
+  id
+  event
+  objectType: object_type
+  data
+  bookId: book_id
+  userId: user_id
+  likesCount: likes_count
+  privacySettingId: privacy_setting_id
+  createdAt: created_at
+  user {
+    ...UserProfile
+  }
+  book {
+    ...BookSummary
+  }
+}
+fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<GetActivitiesForUserQuery, GetActivitiesForUserQueryVariables>;
+export const GetActivitiesForBookDocument = new TypedDocumentString(`
+    query GetActivitiesForBook($bookId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  activities(
+    where: { book_id: { _eq: $bookId } }
+    order_by: { created_at: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    ...Activity
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
+}
+fragment Activity on activities {
+  id
+  event
+  objectType: object_type
+  data
+  bookId: book_id
+  userId: user_id
+  likesCount: likes_count
+  privacySettingId: privacy_setting_id
+  createdAt: created_at
+  user {
+    ...UserProfile
+  }
+  book {
+    ...BookSummary
+  }
+}
+fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<GetActivitiesForBookQuery, GetActivitiesForBookQueryVariables>;
+export const GetFollowingActivitiesDocument = new TypedDocumentString(`
+    query GetFollowingActivities($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  activities(
+    where: { user: { followed_by_users: { user_id: { _eq: $userId } } } }
+    order_by: { created_at: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    ...Activity
+  }
+}
+    fragment BookSummary on books {
+  id
+  slug
+  title
+  subtitle
+  releaseYear: release_year
+  pages
+  audioSeconds: audio_seconds
+  rating
+  ratingsCount: ratings_count
+  usersCount: users_count
+  cachedImage: cached_image
+  cachedContributors: cached_contributors
+  cachedFeaturedSeries: cached_featured_series
+}
+fragment Activity on activities {
+  id
+  event
+  objectType: object_type
+  data
+  bookId: book_id
+  userId: user_id
+  likesCount: likes_count
+  privacySettingId: privacy_setting_id
+  createdAt: created_at
+  user {
+    ...UserProfile
+  }
+  book {
+    ...BookSummary
+  }
+}
+fragment UserProfile on users {
+  id
+  username
+  name
+  bio
+  flair
+  cachedImage: cached_image
+  booksCount: books_count
+  followersCount: followers_count
+  followedUsersCount: followed_users_count
+  pro
+  createdAt: created_at
+}`) as unknown as TypedDocumentString<GetFollowingActivitiesQuery, GetFollowingActivitiesQueryVariables>;
 export const GetVibesForUserDocument = new TypedDocumentString(`
     query GetVibesForUser($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
   vibes(

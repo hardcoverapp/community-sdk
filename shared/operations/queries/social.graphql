@@ -1,0 +1,86 @@
+query GetUser($id: Int!) {
+  users_by_pk(id: $id) {
+    ...UserProfile
+  }
+}
+
+# Usernames are case-insensitive (citext).
+query GetUserByUsername($username: citext!) {
+  users(where: { username: { _eq: $username } }, limit: 1) {
+    ...UserProfile
+  }
+}
+
+query GetFollowers($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  followed_users(where: { followed_user_id: { _eq: $userId } }, order_by: { created_at: desc }, limit: $limit, offset: $offset) {
+    id
+    created_at
+    user {
+      ...UserProfile
+    }
+  }
+}
+
+query GetFollowing($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  followed_users(where: { user_id: { _eq: $userId } }, order_by: { created_at: desc }, limit: $limit, offset: $offset) {
+    id
+    created_at
+    followed_user {
+      ...UserProfile
+    }
+  }
+}
+
+query GetBlockedUsers($userId: Int!) {
+  user_blocks(where: { user_id: { _eq: $userId } }, order_by: { created_at: desc }) {
+    id
+    type
+    created_at
+    blocked_user {
+      ...UserProfile
+    }
+  }
+}
+
+# The library entries of people the signed-in user follows, for one book: the
+# "friends who read this" panel. Review fields only, never private notes.
+query GetFriendsForBook($userId: Int!, $bookId: Int!, $limit: Int = 25) {
+  following_user_books(where: { user_id: { _eq: $userId }, book_id: { _eq: $bookId } }, limit: $limit) {
+    user_book {
+      ...UserBook
+      review_markdown
+      review_has_spoilers
+      reviewed_at
+      user {
+        ...UserProfile
+      }
+    }
+  }
+}
+
+query GetActivitiesForUser($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  activities(where: { user_id: { _eq: $userId } }, order_by: { created_at: desc }, limit: $limit, offset: $offset) {
+    ...Activity
+  }
+}
+
+query GetActivitiesForBook($bookId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  activities(where: { book_id: { _eq: $bookId } }, order_by: { created_at: desc }, limit: $limit, offset: $offset) {
+    ...Activity
+  }
+}
+
+# Activity from the people the signed-in user follows, newest first: the
+# author is followed by the user. (activities.followers looks like it fits but
+# maps the author's own follows, so filtering it by the user finds their own
+# activity.)
+query GetFollowingActivities($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
+  activities(
+    where: { user: { followed_by_users: { user_id: { _eq: $userId } } } }
+    order_by: { created_at: desc }
+    limit: $limit
+    offset: $offset
+  ) {
+    ...Activity
+  }
+}

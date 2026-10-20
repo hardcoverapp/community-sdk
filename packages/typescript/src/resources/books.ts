@@ -6,6 +6,7 @@ import type {
   BookSummaryFragment,
   EditionSummaryFragment,
   FindBookMappingsQuery,
+  GetFriendsForBookQuery,
   FindEditionsByIsbnQuery,
   TrendingDuration,
 } from "../generated/graphql.ts";
@@ -23,6 +24,12 @@ export type EditionWithBook = WithJsonColumns<FindEditionsByIsbnQuery["editions"
  * A book another service knows by `externalId`. `editionId` is the exact
  * edition when the mapping names one.
  */
+/**
+ * A library entry of someone the signed-in user follows, with its reader and
+ * any review. Private notes are never included.
+ */
+export type FriendEntry = WithJsonColumns<NonNullable<GetFriendsForBookQuery["following_user_books"][number]["userBook"]>>;
+
 export type ExternalMatch = WithJsonColumns<FindBookMappingsQuery["book_mappings"][number]>;
 
 export interface ReleasedOptions extends PageOptions {
@@ -98,6 +105,23 @@ export class BooksResource {
     const { editions } = await this.client.request(operations.FindEditionsByIsbn, { isbns: cleaned });
 
     return editions;
+  }
+
+  /**
+   * The library entries of people the signed-in user follows, for one book:
+   * who has it, their status and rating, and any review.
+   * Scopes: `read:me`, `read:social`.
+   */
+  async friends(bookId: number, { limit = DEFAULT_LIMIT }: { limit?: number } = {}): Promise<FriendEntry[]> {
+    const userId = await this.client.me.id();
+    const { following_user_books } = await this.client.request(operations.GetFriendsForBook, { userId, bookId, limit });
+
+    const entries: FriendEntry[] = [];
+    for (const row of following_user_books) {
+      if (row.userBook) entries.push(row.userBook);
+    }
+
+    return entries;
   }
 
   /** An edition by id, with its book. Scopes: `read:catalog`. */
