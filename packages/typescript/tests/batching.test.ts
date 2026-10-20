@@ -108,6 +108,30 @@ describe("sizing", () => {
     expect(sent().slice(1).map((b) => (Array.isArray(b) ? b.length : 1))).toEqual([2, 1]);
     expect(slept).toEqual([1_000]); // one unit refills at 60/min
   });
+
+  it("counts what has refilled since the last headers, so an idle client batches fully again", async () => {
+    const clock = { now: 0 };
+    const transport = new MockTransport([
+      { status: 200, headers: headers(1), body: meData },
+      batch(vibe(1), vibe(2), vibe(3)),
+    ]);
+    const client = new HardcoverClient({
+      token: "hc_pat_test",
+      transport,
+      batch: true,
+      now: () => new Date(clock.now),
+      sleep: async () => {},
+    });
+
+    // The last headers said 1 unit left, refilling at 1 per second.
+    await client.request(operations.Me);
+
+    // Ten seconds later there's room for all three again: one request, not three.
+    clock.now += 10_000;
+    await Promise.all([1, 2, 3].map((id) => client.request(operations.GetVibe, { id })));
+
+    expect(transport.requests).toHaveLength(2);
+  });
 });
 
 describe("mutation barriers", () => {

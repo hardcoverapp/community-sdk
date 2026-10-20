@@ -254,10 +254,26 @@ export class HardcoverClient {
     }
   }
 
+  // How many units the next array request can carry: the allowance as it
+  // stands now, never more than the tier's burst, and always at least one.
   #batchRoom(): number {
+    const capacity = this.#rateLimit?.burst?.limit ?? SMALLEST_BURST_CAPACITY;
+    const remaining = this.#remainingNow() ?? capacity;
+
+    return Math.max(1, Math.min(capacity, remaining));
+  }
+
+  // The last reported allowance plus what has refilled since. Without this, a
+  // client that sat idle would keep splitting batches by an old, low number.
+  #remainingNow(): number | undefined {
     const burst = this.#rateLimit?.burst;
-    const capacity = burst?.limit ?? SMALLEST_BURST_CAPACITY;
-    return Math.max(1, Math.min(capacity, burst?.remaining ?? capacity));
+    if (burst?.remaining === undefined) return undefined;
+    if (!burst.perMinute) return burst.remaining;
+
+    const elapsedSeconds = (this.#now().getTime() - this.#rateLimitAt) / 1_000;
+    const refilled = burst.remaining + elapsedSeconds * (burst.perMinute / 60);
+
+    return Math.floor(Math.min(refilled, burst.limit ?? refilled));
   }
 
   async #sendChunk(chunk: Queued[]): Promise<void> {
