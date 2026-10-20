@@ -208,7 +208,7 @@
         "transport": "done",
         "errors": "done",
         "action-envelopes": "done",
-        "rate-limit": "partial",
+        "rate-limit": "done",
         "codegen": "done",
         "auth-pat": "done",
         "test-mock": "partial",

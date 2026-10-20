@@ -378,6 +378,39 @@ Each method notes its operation, its required scope and any extra requests.
 Methods scoped to "my" data resolve `userId` from `me.get()`, which is cached
 per client, so it costs one request per client, not per call.
 
+### Coverage
+
+Decided 2026-10-20: the SDK covers every endpoint the public API gives app
+tokens, unless there's a written reason to leave one out. Audited against prod
+introspection as an app token (`user` role).
+
+**Later** (legitimate, not v1): characters and publishers (`get`, books);
+tags and taggings (browse by genre or mood, a reader's tags); following
+catalog entities (`follows`: authors, books, series, characters); filter lists
+("hidden by me"); collection imports (a full Goodreads-style import workflow);
+notification settings; account data (`subscriptions`, referrals); external
+store links (`links`); box-set children (`book_collections`); per-book journal
+summaries (`reading_journals_summary`); count helpers on other tables.
+
+**Left out on purpose:**
+
+- Catalog writes (`insert/update_book`, `_edition`, `_author`, `_serie`, …) and
+  mapping writes need librarian or mapper roles (`write:catalog:*`).
+- Operations the gateway blocks for tokens: `update_user`,
+  `update_user_privacy_setting`, `update_newsletter`, `insert_report`,
+  `insert_user_flags`, `receipt_validate`, and the per-row
+  `update_notification_deliveries_by_pk` / `update_notification_settings_by_pk`
+  (spec/06 #38).
+- `upsert_user_book_reads`: deprecated in the app, answers "Not implemented".
+- Reference tables the SDK ships as enums (`reading_formats`,
+  `privacy_settings`, statuses, `platforms`, contributor roles, …).
+- Internal or moderation tables (`taggable_counts`, `user_flags`, signup
+  stats, `user_settings`, `images`).
+- Raw Hasura bulk forms (`*_many`, `where:` deletes and updates): exposed only
+  through the narrow methods above.
+- Subscriptions (`*_stream`): the SDK is HTTP only; realtime would be its own
+  module.
+
 ### Journal entries are the server's job
 
 The server journals status changes, read starts and finishes, progress,

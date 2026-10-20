@@ -18,11 +18,24 @@ would otherwise repeat:
 - local details apps get wrong: ISBN cleanup, token cleanup
 - incremental library sync with a server-side cursor
 
-**Status: TypeScript in progress.** The first consumers are the Hardcover docs
-site (live examples) and a React Native app, so TypeScript comes first and must
-run in browsers, Node and React Native (Hermes). Swift, Kotlin (Java-friendly),
-Python and Ruby follow once the shared layer has proven itself. Nothing is
-published to a package registry yet.
+<p align="center">
+  <img src="packages/typescript/teasers/prompts.webp" alt="A prompt's books, most picked first: hc.prompts.books()" width="49%">
+  <img src="packages/typescript/teasers/import.webp" alt="Goodreads ids to Hardcover books in one request: hc.books.findByExternalIds()" width="49%">
+</p>
+
+<p align="center"><sub>Real calls, rendered for illustration (the SDK returns JSON). More in <a href="packages/typescript/teasers">packages/typescript/teasers</a>.</sub></p>
+
+**Status: TypeScript, pre-release.** The TypeScript SDK covers what reading apps
+need from the API: the library and reads, lists, journal, goals, vibes and
+prompts, the catalog (books, authors, series, editions, external ids), people
+and feeds, and notifications. A few niche areas come later, and some endpoints
+are left out on purpose (librarian-only catalog edits, operations the gateway
+blocks for tokens); [spec/03](spec/03-sdk-design.md#coverage) lists both. It
+runs in browsers, Node and React Native (Hermes); OAuth and packaging come
+next, and nothing is published to a package registry yet. The first consumers
+are the Hardcover docs site (live examples) and a React Native app. Swift,
+Kotlin (Java-friendly), Python and Ruby follow once the shared layer has proven
+itself.
 
 ## Language matrix
 
@@ -36,7 +49,7 @@ changing it.
 | GraphQL transport + raw query escape hatch | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Normalized error taxonomy | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Action envelope unwrapping (`error` / `errors`) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
-| Rate-limit pacing, 429 backoff, request batching | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
+| Rate-limit pacing, 429 backoff, request batching | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Types generated from `shared/operations` | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Auth** |  |  |  |  |  |
 | Personal access token | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -97,6 +110,7 @@ shared/
   conformance/    language-neutral behavior tests every SDK must pass
   fixtures/       recorded, scrubbed API responses for mock clients
 packages/         one directory per language (typescript/ first), plus playground/
+  typescript/teasers/  images of real calls, for the README and docs
 scripts/          case-operations, validate-operations, render-matrix
 spec/             the design
 ```
