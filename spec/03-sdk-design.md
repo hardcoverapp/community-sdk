@@ -250,6 +250,14 @@ returns entries changed after a cursor, oldest first, with the next cursor and
   writes (journal entries the server records). Incremental reads (below)
   cover the "only what changed" need; a pluggable cache can come later as an
   optional module.
+- **Stats** (decided 2026-10-07, not built): a limited, optional module. It
+  covers what every reading app's stats screen repeats: fetching a period's
+  finished reads with their books, tags and editions (paged and paced), and
+  the period itself (life, year, month or custom, in the reader's timezone),
+  plus the basic totals and breakdowns (books, pages, time read, ratings,
+  formats, genres and moods, top authors). Anything more specific (pace
+  prediction, heatmaps, how a chart looks) is the app's. Module boundary and
+  packaging (e.g. `@hardcover/sdk/stats`) come with packaging.
 - **API versions**: when the API adds a version header, the client sends the
   version it was generated against and passes deprecation notices to
   `onWarning`. The format and support window are the API side's call.
