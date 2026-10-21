@@ -1,5 +1,4 @@
-// Parses the gateway's rate-limit headers. Formats are defined in
-// api/app/controllers/api/application_controller.rb:
+// Parses the gateway's rate-limit headers:
 //   RateLimit-Policy: "<Tier>";q=60;w=60;burst=10, "daily";q=5000;w=86400
 //   RateLimit:        "<Tier>";r=9;t=1, "daily";r=4999;t=86000
 // Once the daily cap is spent, the tier entry is dropped from RateLimit.
