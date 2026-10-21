@@ -24,6 +24,6 @@
     "deviceVerification": "http://localhost:3000/link",
     "capabilities": "http://localhost:8081/capabilities",
     "discovery": "http://localhost:8081/.well-known/oauth-authorization-server",
-    "$comment": "Matches app/env.example (ROOT_URL, API_ROOT_URL). Conductor workspaces use CONDUCTOR_PORT and CONDUCTOR_PORT+1 instead; pass HARDCOVER_API_URL."
+    "$comment": "Conductor workspaces use CONDUCTOR_PORT and CONDUCTOR_PORT+1 instead; pass HARDCOVER_API_URL."
   }
 }

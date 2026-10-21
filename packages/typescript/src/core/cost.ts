@@ -1,6 +1,5 @@
-// Mirrors the gateway's request weighting: one unit per top-level field
-// (app/api/app/services/graphql_query_limit.rb), with a minimum of 1 per
-// request ([total_fields, 1].max in api/app/controllers/api/application_controller.rb).
+// Mirrors the gateway's request weighting: one unit per top-level field, with
+// a minimum of 1 per request.
 // Introspection and the allowlisted insert_reading_journal add nothing, but a
 // request made only of them still costs 1. Used only to pace requests,
 // so a small scanner is enough; no GraphQL parser ships in the SDK.

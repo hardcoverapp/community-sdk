@@ -1,15 +1,14 @@
 # 02. How the Hardcover app uses the data
 
 This page covers what the first-party clients do today, so the SDK can mirror
-real usage instead of guessing. Paths are relative to
-`app/rails/app/javascript/` unless noted.
+real usage instead of guessing.
 
 ## Clients
 
 | Client | How it gets data |
 |---|---|
 | Web | Inertia props rendered by Rails serializers for page loads (217 pages), plus Apollo Client against `/v1/graphql` for logged-in interactivity and all writes |
-| iOS and Android | Capacitor shells that load `https://hardcover.app/` (`app/rails/capacitor.config.ts`). No native API client and no native auth. Plugins: barcode scanner for ISBN lookup, share, app links, in-app purchase |
+| iOS and Android | Capacitor shells that load `https://hardcover.app/`. No native API client and no native auth. Plugins: barcode scanner for ISBN lookup, share, app links, in-app purchase |
 | Logged-out web | Inertia only; no GraphQL |
 
 The SDK is not a replacement for Inertia props. It targets the same GraphQL
@@ -19,23 +18,20 @@ and depends on the session cookie, so it is not usable by third parties.
 
 ## Apollo layer
 
-- **Setup.** Client in `lib/apollo/client.tsx`, cache in `lib/apollo/cache.ts`.
-  Operations are `gql` literals in `queries/<domain>/`,
-  `services/*/actions/`, and `features/*/queries/`. That's about 135 queries,
-  101 mutations and 52 fragments, with no subscriptions.
-- **No codegen.** Result types are hand-written in `types/*.tsx`. This is the
+- **Setup.** Operations are hand-written `gql` literals spread across the
+  frontend: about 135 queries, 101 mutations and 52 fragments, with no
+  subscriptions.
+- **No codegen.** Result types are hand-written. This is the
   main thing the SDK should do better.
 - **camelCase aliases everywhere** (`bookId: book_id`). The SDK deliberately
   does **not** copy this; see [03 casing](03-sdk-design.md#casing).
 - **Cache keys are composite:** `user_books` by (user, book), `list_books` by
   (list, book), `likes` by (likeable id, likeable type, user).
 - **Rate-limit awareness:**
-  - Batch mutations are split into groups of 5 (`lib/apollo/limits.ts`).
-  - On 429 the client waits for `X-RateLimit-Reset` and retries up to 5 times
-    (`lib/apollo/retry.ts`).
+  - Batch mutations are split into groups of 5.
+  - On 429 the client waits for `X-RateLimit-Reset` and retries up to 5 times.
   - **User-book mutations are not retried on a dropped connection.** The app
-    re-reads to check whether the write landed
-    (`services/UserBookService/verifyThenOfferRetry.ts`).
+    re-reads to check whether the write landed.
 - **Action envelopes.** The app rejects when `error` is set on an action
   result. It is inconsistent about `errors` arrays.
 
@@ -46,7 +42,7 @@ and depends on the session cookie, so it is not usable by third parties.
 | Domain | App operations | Writes | SDK v1 |
 |---|---|---|---|
 | Books / editions | FindBookBySlug, FindBookById, FindBooksByIds, FindBooksByIsbn, FindEditionsForBook, FindTrendingBooksForDashboard | A (librarian) | read |
-| Search | Typesense direct from browser (`lib/search/typesenseDirect.ts`) with a rotating key | none | via the `search` action |
+| Search | Typesense direct from browser with a rotating key | none | via the `search` action |
 | User books | FindUserBook, FindUserBookByBookAndUser, findUserBookDetails (by status), FindFavoritesForUser; Create/Update/DestroyUserBook | A | read + write |
 | Reads / progress | getDatesReadByUserandBook; Insert/Update/DeleteUserBookRead | A | read + write |
 | Reading journal | Insert/Update/DeleteReadingJournalEntry | A | read + write |
@@ -72,21 +68,18 @@ These are enforced in client code, not by the API. The canonical ids are in
 ### Status
 
 The status ids are 1 Want to Read, 2 Currently Reading, 3 Read, 4 Paused,
-5 DNF and 6 Ignored (`types/UserBookStatusType.tsx`).
+5 DNF and 6 Ignored.
 
 ### Dates
 
 - `user_date` and `user_start_date` are **local** `YYYY-MM-DD` dates in the
   user's timezone, not UTC.
 - Setting status to Read sets `user_date` to today unless the caller supplies
-  dates. The app's client sends the device's date
-  (`services/UserBookService/useUserBookService.ts`); when `user_date` is
-  absent, the server stamps `user.local_date`, today in the reader's own
-  timezone (`UserBookService#user_current_date`, falling back to UTC).
+  dates. The app's client sends the device's date; when `user_date` is absent, the
+  server stamps today in the reader's own timezone, falling back to UTC.
 - The SDK sends no default date and lets the server stamp it. `users.timezone`
   is owner-only in Hasura and API tokens can't read it, and the server is the
-  one place that knows the reader's zone (app decision record
-  `2026-09-16-day-bucketed-writes-round-trip`).
+  one place that knows the reader's zone.
 - `finished_at_precision` is 0 unknown, 1 day, 2 month, 3 year. Use it when
   only a month or year is known.
 
@@ -95,7 +88,7 @@ The status ids are 1 Want to Read, 2 Currently Reading, 3 Read, 4 Paused,
 - Stored as `progress_pages` (physical and ebook) or `progress_seconds`
   (audiobook) on a `user_book_reads` row. Which field applies depends on the
   **edition's** `reading_format_id`.
-- Percent is a UI-only concept (`components/progress/.../progressMath.ts`):
+- Percent is a UI-only concept:
   - `pct = floor(value / total * 100)`
   - `value = ceil(pct / 100 * total)`, where `total` is `edition.pages` or
     `edition.audio_seconds`
@@ -104,7 +97,7 @@ The status ids are 1 Want to Read, 2 Currently Reading, 3 Read, 4 Paused,
 
 ### Update inputs are whitelisted
 
-The app only sends fields from `editFields` (`services/UserBookService/constants.ts`).
+The app only sends a whitelisted set of fields.
 The SDK sends only the fields the caller set, which also keeps
 `write:reviews`-protected arguments out of plain status updates.
 
@@ -116,5 +109,4 @@ The SDK sends only the fields the caller set, which also keeps
   are no cursors.
 - **Search results.** `results` is raw Typesense JSON and its shape depends on
   `query_type`. The docs guide (`docs/src/content/docs/api/guides/Searching.mdx`)
-  lists fields, default `fields`/`weights`/`sort` per type, and examples. The
-  app's own defaults are in `lib/search/typesenseDirect.ts`.
+  lists fields, default `fields`/`weights`/`sort` per type, and examples.

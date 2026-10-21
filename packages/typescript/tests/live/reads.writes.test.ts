@@ -49,8 +49,7 @@ describeLiveWrites(`reading progress and re-read (${target})`, () => {
       expect(reads.find((r) => r.id === firstRead!.id)?.finishedAt).toBeTruthy();
 
       // The server journaled every step; the SDK wrote none of these itself.
-      // Starting and finishing journal as read events (UserBookService#started!
-      // and #finished!); status_* events are only for other status changes.
+      // Starting and finishing journal as read events; status_* events are only for other status changes.
       const added = await journal.added();
       const count = (event: string) => added.filter((j) => j.event === event).length;
       expect(count("user_book_read_started"), "one start per read").toBe(2);

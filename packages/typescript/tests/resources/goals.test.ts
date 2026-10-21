@@ -27,8 +27,7 @@ describe("goals", () => {
   });
 
   it("create applies the requested privacy even though the API ignores it on create", async () => {
-    // app/rails/app/controllers/hasura/goals_controller.rb#new_goal overwrites
-    // privacy_setting_id with the account default (spec/06). Update respects it.
+    // The server overwrites privacy_setting_id on create with the account default (spec/06). Update respects it.
     const { client, sent } = setup(
       envelope("insert_goal", goal({ privacySettingId: 1 })),
       envelope("update_goal", goal({ privacySettingId: 3 })),

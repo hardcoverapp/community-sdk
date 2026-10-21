@@ -1,7 +1,6 @@
 {
-  "$comment": "Stable ID enums the API expects as raw integers or strings. Each SDK generates idiomatic enums from this file. Sources are in the app repo, paths relative to app/rails/app/javascript unless noted.",
+  "$comment": "Stable ID enums the API expects as raw integers or strings. Each SDK generates idiomatic enums from this file.",
   "UserBookStatus": {
-    "source": "types/UserBookStatusType.tsx",
     "type": "int",
     "values": [
       {
@@ -43,7 +42,6 @@
     ]
   },
   "PrivacySetting": {
-    "source": "constants/PrivacySettings.ts",
     "type": "int",
     "values": [
       {
@@ -67,7 +65,6 @@
     ]
   },
   "ReadingFormat": {
-    "source": "types/ReadingFormatType.ts",
     "type": "int",
     "values": [
       {
@@ -197,7 +194,6 @@
     ]
   },
   "ListMemberStatus": {
-    "source": "rails/app/models/list_member.rb (enum :status)",
     "type": "int",
     "notes": "A collaborative list member's status. Invitees answer with accepted, ignored or spam (lists.respond).",
     "values": [
@@ -224,7 +220,6 @@
     ]
   },
   "LikeableType": {
-    "source": "rails/app/controllers/hasura/likes_controller.rb (LIKEABLE_TYPES)",
     "type": "string",
     "notes": "What a like is on, for likes.like / likes.unlike. A review is liked as its library entry (UserBook).",
     "values": [
@@ -256,7 +251,6 @@
     ]
   },
   "BlockType": {
-    "source": "rails/app/models/block.rb (Block::TYPES)",
     "type": "string",
     "notes": "A full block stops follows, likes and notifications; an invite block only stops club and buddy-read invites.",
     "values": [
@@ -273,7 +267,6 @@
     ]
   },
   "DatePrecision": {
-    "source": "features/BookButtonDrawer/pages/EditDateReadPage/EditDateReadFormContent.tsx",
     "type": "int",
     "field": "finished_at_precision",
     "values": [
@@ -347,11 +340,9 @@
     "min": 0.5,
     "max": 5,
     "step": 0.5,
-    "source": "components/BookReview/InteractiveStars.tsx",
     "notes": "null clears the rating."
   },
   "JournalEvent": {
-    "source": "app/rails/app/models/reading_journal.rb (event constants, EVENT_FILTERS labels)",
     "type": "string",
     "field": "event",
     "notes": "The API accepts any of these from journal.add. Only notes and quotes are normally written by apps; the rest are journaled by the server as a side effect of library, reads, lists and prompts calls (spec/03 'Journal entries are the server's job'). A manual progress_updated merges into that day's entry.",
@@ -453,10 +444,9 @@
     ]
   },
   "GoalMetric": {
-    "source": "app/rails/app/models/goal.rb (validates :metric, inclusion: book page hour)",
     "type": "string",
     "field": "metric",
-    "notes": "Progress is calculated by the server; apps never set it. For hour goals, `goal` is hours and `progress` is seconds (app/rails/app/models/goal.rb computed_progress).",
+    "notes": "Progress is calculated by the server; apps never set it. For hour goals, `goal` is hours and `progress` is seconds.",
     "values": [
       {
         "id": "book",
@@ -477,7 +467,6 @@
     ]
   },
   "VibeType": {
-    "source": "app/rails/app/models/vibe.rb (enum :vibe_type)",
     "type": "int",
     "field": "vibe_type",
     "notes": "Only custom vibes can be deleted or have their title, description and privacy edited; the others are system vibes the site creates per user.",
@@ -513,7 +502,6 @@
     ]
   },
   "VibeSignalType": {
-    "source": "app/rails/app/models/vibe_signal.rb (SIGNAL_TYPES)",
     "type": "string",
     "field": "signal_type",
     "values": [
@@ -580,7 +568,6 @@
     ]
   },
   "VibeGenre": {
-    "source": "app/rails/app/models/vibe_signal.rb (DIMENSION_VALUES, mirrored from the recommendations service)",
     "type": "string",
     "suggested": true,
     "notes": "Suggested values; the server validates and the taxonomy can grow, so SDKs accept any string.",
@@ -783,7 +770,6 @@
     ]
   },
   "VibeAxiom": {
-    "source": "app/rails/app/models/vibe_signal.rb (DIMENSION_VALUES, mirrored from the recommendations service)",
     "type": "string",
     "suggested": true,
     "values": [
@@ -805,7 +791,6 @@
     ]
   },
   "VibeAudience": {
-    "source": "app/rails/app/models/vibe_signal.rb (DIMENSION_VALUES, mirrored from the recommendations service)",
     "type": "string",
     "suggested": true,
     "values": [
@@ -837,7 +822,6 @@
     ]
   },
   "VibeFormat": {
-    "source": "app/rails/app/models/vibe_signal.rb (DIMENSION_VALUES, mirrored from the recommendations service)",
     "type": "string",
     "suggested": true,
     "values": [
@@ -869,7 +853,6 @@
     ]
   },
   "VibeSeries": {
-    "source": "app/rails/app/models/vibe_signal.rb (DIMENSION_VALUES, mirrored from the recommendations service)",
     "type": "string",
     "suggested": true,
     "values": [
@@ -891,7 +874,6 @@
     ]
   },
   "DynamicSignalCategory": {
-    "source": "app/rails/app/services/recommendations/dynamic_signal_resolver.rb (CATEGORIES)",
     "type": "string",
     "suggested": true,
     "values": [

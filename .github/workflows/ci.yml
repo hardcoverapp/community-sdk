@@ -1,5 +1,5 @@
-# Dormant until the repo has a remote. Mirrors the local checks: every
-# language-independent check, then the TypeScript package. Live API tests are
+# Mirrors the local checks: every language-independent check, then the
+# TypeScript package. Live API tests are
 # never run here implicitly (spec/04); they'd be a separate, manually
 # triggered workflow with environment-scoped secrets.
 name: CI

@@ -91,7 +91,7 @@ of this.
 | `transport` | platform HTTP | Swap in the mock transport for tests |
 | `maxRetries` | 3 | Applies to 429 and to query-only network/5xx retries |
 | `timeoutMs` | 35000 | Just above the server's 30s |
-| `userAgent` | `hardcover-sdk-<lang>/<version>` | Callers append their app name. The gateway logs it per token |
+| `userAgent` | `hardcover-sdk-<lang>/<version>` | Callers append their app name. The gateway logs it per token. Browsers don't let `fetch` set it, so it only arrives from Node and native |
 | `onRateLimit` | none | Hook called with parsed headers after each response |
 | `onWarning` | `console.warn` | Problems that don't stop the client, e.g. a deprecated legacy JWT |
 | `pace` | true | Wait for the rate-limit allowance before sending (see Pacing) |
@@ -129,8 +129,7 @@ packaging and test tooling.
   - `refresh(tokenSet)` rotates. The provider **must persist the new refresh
     token before using the new access token**, via an `onTokens(tokenSet)`
     callback, because reusing a rotated refresh token revokes the whole family.
-    Concurrent refreshes are de-duplicated, as in the app's
-    `refreshSessionToken.ts`.
+    Concurrent refreshes are de-duplicated, as in the app.
   - `revoke(token)`.
 - **On 401** with a refreshable provider: refresh once, replay once, then raise
   `AuthenticationError`.
@@ -414,7 +413,7 @@ summaries (`reading_journals_summary`); count helpers on other tables.
 ### Journal entries are the server's job
 
 The server journals status changes, read starts and finishes, progress,
-ratings and reviews itself (`rails/app/services/user_book_service.rb`), with a
+ratings and reviews itself, with a
 10-minute debounce. Resource methods never write journal entries for those, or
 every step would appear twice. `journal.add` accepts any event, but apps
 normally use it for what only the reader writes (notes, quotes); each

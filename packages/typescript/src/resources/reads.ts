@@ -52,7 +52,7 @@ export type ProgressInput = ({ pages: number } | { seconds: number } | { percent
   occurredAt?: OccurredAt;
 };
 
-// The server's rule (UserBookService#open_user_book_read): started, not finished, newest.
+// The server's rule: started, not finished, newest.
 function openRead(reads: Read[]): Read | null {
   const open = reads.filter((read) => read.startedAt && !read.finishedAt);
   const newestFirst = open.sort((a, b) => b.id - a.id);

@@ -31,7 +31,7 @@
         "description"
       ],
       "retry": false,
-      "notes": "body.scope is a SPACE-SEPARATED list of every missing scope (app/api/app/controllers/graphql_controller.rb), e.g. \"write:library write:reviews\". Split it into missingScopes. The server is authoritative; SDKs never check scopes before sending. Also raised for protected columns (users.email, users.librarian_roles) and protected arguments (review_* fields need write:reviews)."
+      "notes": "body.scope is a SPACE-SEPARATED list of every missing scope, e.g. \"write:library write:reviews\". Split it into missingScopes. The server is authoritative; SDKs never check scopes before sending. Also raised for protected columns (users.email, users.librarian_roles) and protected arguments (review_* fields need write:reviews)."
     },
     {
       "name": "UnsupportedOperationError",
@@ -223,7 +223,7 @@
         }
       ],
       "retry": "queries only",
-      "notes": "Mutations are NOT retried on a dropped connection; the write may have landed. Mirrors the app (app/rails/app/javascript/services/UserBookService/verifyThenOfferRetry.ts)."
+      "notes": "Mutations are NOT retried on a dropped connection; the write may have landed."
     }
   ],
   "baseFields": [

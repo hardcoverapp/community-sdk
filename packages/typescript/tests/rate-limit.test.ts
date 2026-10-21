@@ -1,4 +1,3 @@
-// Header formats come from app/api/app/controllers/api/application_controller.rb.
 import { describe, expect, it } from "vitest";
 import { parseRateLimit } from "../src/core/rate-limit.ts";
 

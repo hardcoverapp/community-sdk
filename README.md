@@ -172,6 +172,7 @@ including local and Conductor targets.
 Issues and pull requests are welcome. Start with the [spec](#spec): changes to
 behavior go through the shared layer (`shared/`) and its conformance cases, so
 every language stays in step. [spec/05](spec/05-adding-a-language.md) covers
-adding a language. Live tests are opt-in and only act the way a real reader
+adding a language. The shared tooling needs Node 24 and pnpm whatever
+language you work in. Live tests are opt-in and only act the way a real reader
 would; they never probe limits or access rules.
 

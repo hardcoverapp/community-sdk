@@ -15,12 +15,6 @@ Current snapshot: local API on app `main` at `f5baad36b` (2026-10-07), which
 includes unreleased changes such as buddy-read privacy. The first snapshot
 (2026-08-28) came from the docs repo's prod introspection.
 
-The upstream sources of truth live in the app repo:
-
-- Scopes and the operation map: `app/shared/scope_definitions.yml` (generated into `app/api/config/capabilities.json`)
-- Actions: `app/hasura/metadata/actions.graphql`, `actions.yaml`
-- Table permissions: `app/hasura/metadata/databases/Default/tables/`
-
 ## Refreshing
 
 ```sh

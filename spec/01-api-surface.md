@@ -1,7 +1,7 @@
 # 01. The public API surface
 
-This page records what a third party can actually reach today, taken from the app
-repo (`app/`) at `9d8335df0` (2026-09-28). Paths are relative to `app/`.
+This page records what a third party can actually reach today, as of
+2026-09-28.
 
 ## Topology
 
@@ -17,15 +17,15 @@ client ──Bearer hc_*──▶ api.hardcover.app  (api/, Rails gateway)
 - **One GraphQL endpoint.** There's no REST API for third parties. `api/` is a
   reverse proxy that authenticates, checks scopes, rate-limits, then forwards
   to Hasura. Requests whose body contains `mutation` go to the primary DB and
-  everything else goes to a read replica (`api/app/controllers/graphql_controller.rb`).
+  everything else goes to a read replica.
   Reading immediately after a write can therefore be briefly stale. SDK
   mutations return the written row from the action envelope so callers don't
   need a follow-up read.
 - **Batching.** A top-level JSON array of `{query, variables}` is accepted, and
   each item is scope-checked separately.
 - **No anonymous access.** Every request needs a user-bound token.
-- **Introspection** is enabled for all roles. `api_limits.yaml` is empty, so
-  Hasura enforces no depth or node limits.
+- **Introspection** is enabled for all roles. Hasura's API limits are empty, so
+  it enforces no depth or node limits.
 
 | Environment | GraphQL | Web (authorize, device link) |
 |---|---|---|
@@ -39,7 +39,7 @@ Canonical copy: [`shared/environments.json`](../shared/environments.json).
 
 Every token matches `hc_<type>_<44 base58 chars>`. The gateway hashes it, looks
 it up, and mints a 5-minute Hasura JWT carrying the token's scopes as session
-variables (`api/app/controllers/application_controller.rb`).
+variables.
 
 | Prefix | Kind | Lifetime | Notes |
 |---|---|---|---|
@@ -59,8 +59,7 @@ API tokens and OAuth are **beta-gated** behind user feature flags
   `client_secret_post`). SPA and native clients are public and must not send one.
   Redirect URIs match exactly. They must be https, except http on loopback
   hosts (any port, per OAuth 2.1), and `native` apps may also register a
-  private-use custom scheme such as `myapp://oauth/callback` (RFC 8252;
-  `rails/app/models/developer_app.rb`).
+  private-use custom scheme such as `myapp://oauth/callback` (RFC 8252).
 - **Device grant (RFC 8628).** `POST /oauth2/device` returns `device_code`,
   `user_code`, `verification_uri` (`/link`), `verification_uri_complete`, with
   a 15-minute expiry. Poll interval is 5s and grows 5s per `slow_down`. The app
@@ -70,7 +69,7 @@ API tokens and OAuth are **beta-gated** behind user feature flags
 - **Revoke (RFC 7009)** always returns 200. **Introspect (RFC 7662)** is for
   confidential clients only.
 
-Sources: `rails/app/controllers/oauth2/*`, `docs/api-authentication.md`.
+Source: `docs/api-authentication.md` on the docs site.
 
 ### Scopes
 
@@ -103,7 +102,7 @@ The gateway also protects individual columns and arguments:
 
 ## Query roots reachable by tokens
 
-From the `operations:` map in `scope_definitions.yml`. Where the table has them,
+From the operation map in `/capabilities`. Where the table has them,
 `_by_pk` and `_aggregate` variants exist too.
 
 | Scope | Roots |
@@ -124,8 +123,8 @@ From the `operations:` map in `scope_definitions.yml`. Where the table has them,
 **Row caps.** Most selects cap the rows one query returns, and a larger
 `limit` is cut to the cap without an error. API tokens get the `user` role
 (`user_email` with the email scope, which inherits `user`). Caps for `user`, from
-`app/hasura/metadata/databases/Default/tables/*.yaml` (checked 2026-10-19;
-`book_series` and `series` confirmed against production):
+the Hasura table permissions (checked 2026-10-19; `book_series` and `series`
+confirmed against production):
 
 | Cap | Tables |
 |---|---|
@@ -146,9 +145,8 @@ looping forever, and a page shorter than the requested `limit` only means
 
 ## Writes: Hasura actions
 
-There are 86 actions (`hasura/metadata/actions.graphql`, `actions.yaml`),
-handled by `rails/app/controllers/hasura/*`. `search` is the exception and is
-handled by `search-proxy/`. Nearly every write is an action. The ones in SDK v1
+There are 86 actions, handled by Rails. `search` is the exception and is
+handled by the search proxy. Nearly every write is an action. The ones in SDK v1
 scope:
 
 | Action | Args | Returns | Scope |
@@ -204,9 +202,6 @@ A few table-level writes are exposed directly:
   "nothing happened" from a failed batch.
 
 ## Limits
-
-Source: `api/app/controllers/api/application_controller.rb`,
-`api/app/services/graphql_query_limit.rb`.
 
 - **Rate limit.** Each user has a token bucket plus a daily cap. Tier, user and
   per-token overrides can all change it, and a developer app's buffer is added

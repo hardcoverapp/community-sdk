@@ -5,14 +5,15 @@ mostly a transport, a codegen config and a conformance runner.
 
 ## What a language gets for free
 
-These already exist in `shared/` and `api-snapshot/`:
+These already exist in `shared/` and `api-snapshot/`. The scripts that check
+and rewrite them run on Node 24 with pnpm, whatever language you're adding:
 
 - every operation and fragment (`shared/operations/`)
 - enums (`shared/enums.json`)
 - the error taxonomy and matching rules (`shared/errors.json`)
 - environments (`shared/environments.json`)
 - behavior tests (`shared/conformance/`)
-- recorded API responses (`shared/fixtures/`)
+- recorded API responses (`shared/fixtures/`, planned: empty today)
 - the schema and scope map (`api-snapshot/`)
 
 ## What a language must build

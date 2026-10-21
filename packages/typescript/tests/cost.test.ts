@@ -1,5 +1,5 @@
-// The gateway charges one unit per top-level field (app/api/app/services/
-// graphql_query_limit.rb). The client counts the same way to pace itself.
+// The gateway charges one unit per top-level field. The client counts the same
+// way to pace itself.
 import { describe, expect, it } from "vitest";
 import { requestCost } from "../src/core/cost.ts";
 import { operations } from "../src/index.ts";
@@ -27,7 +27,7 @@ describe("requestCost", () => {
   });
 
   it("free fields don't add to the count, but every request costs at least 1", () => {
-    // The gateway: [total_fields, 1].max (api/app/controllers/api/application_controller.rb).
+    // The gateway charges at least 1 per request.
     expect(requestCost("query { __schema { types { name } } }")).toBe(1);
     expect(requestCost("mutation { insert_reading_journal(object: {}) { id } }")).toBe(1);
     expect(requestCost("mutation { a: insert_reading_journal(object: {}) { id } b: insert_reading_journal(object: {}) { id } }")).toBe(1);

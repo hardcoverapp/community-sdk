@@ -75,7 +75,7 @@ export function classify(
   if (status === 401) return new AuthenticationError(message, options);
 
   if (status === 403) {
-    // `scope` lists every missing scope, space-separated (graphql_controller.rb).
+    // `scope` lists every missing scope, space-separated.
     if (code === "insufficient_scope") {
       return new ScopeError(message, (str(payload?.scope) ?? "").split(/\s+/).filter(Boolean), options);
     }
