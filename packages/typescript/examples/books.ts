@@ -33,6 +33,26 @@ export async function trendingAndBatches(hc: HardcoverClient) {
   console.log(books.map((b) => b.title));
 }
 
+export async function trendingOnePerSeries(hc: HardcoverClient) {
+  const { items } = await hc.books.trending({ duration: "week", limit: 30 });
+
+  // Every book carries its main series (the one the site shows), so this needs
+  // no extra requests. Standalones have none and always count.
+  const seen = new Set<number>();
+  const onePerSeries = items.filter((book) => {
+    const series = book.cachedFeaturedSeries.series?.id;
+    if (series === undefined) return true;
+    if (seen.has(series)) return false;
+    seen.add(series);
+    return true;
+  });
+
+  for (const book of onePerSeries) {
+    const { series, position } = book.cachedFeaturedSeries;
+    console.log(book.title, series ? `${series.name} #${position}` : "standalone");
+  }
+}
+
 export async function newReleases(hc: HardcoverClient) {
   // Books first released this week, most readers first. Dates are inclusive.
   const { items } = await hc.books.released({ from: "2026-10-12", to: "2026-10-18", limit: 10 });

@@ -15,7 +15,7 @@ Hardcover docs site pages as each resource lands there.
 | [social.ts](social.ts) | Profiles, follows, your feed, friends who read a book, likes, blocks |
 | [notifications.ts](notifications.ts) | The notification bell: unread count, list, mark read |
 | [search.ts](search.ts) | Searching every type, tuning with the API's options |
-| [books.ts](books.ts) | Book details, editions, exact ISBN lookup, trending, new releases, ordered batches |
+| [books.ts](books.ts) | Book details, editions, exact ISBN lookup, trending (one per series), new releases, ordered batches |
 | [year-in-review.ts](year-in-review.ts) | A year of finished reads with their books, logging and fixing a past read, owned editions |
 | [sync-library.ts](sync-library.ts) | Incremental library sync with a cursor, and finding removals |
 | [journal.ts](journal.ts) | Notes and quotes; why most journal entries are the server's job |

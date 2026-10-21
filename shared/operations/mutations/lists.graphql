@@ -55,7 +55,7 @@ mutation UnfollowList($listId: Int!) {
   }
 }
 
-# Collaborative lists. The server's rules (ListMembers::*Service): only the
+# Collaborative lists. The server's rules: only the
 # owner invites, behind a feature flag; private lists take no members;
 # followers-only lists take only readers the owner follows; only the invitee
 # answers (accepted, ignored or spam); the owner removes anyone, a member

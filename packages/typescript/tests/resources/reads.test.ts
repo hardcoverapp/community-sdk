@@ -61,7 +61,7 @@ describe("reads.setProgress", () => {
   it("converts percent to pages for print and ebook editions", async () => {
     const { client, sent } = setup(entry(REREAD), updated());
     await client.reads.setProgress(7, { percent: 15 });
-    // ceil(15 / 100 * 476), the app's own formula (progressMath.ts)
+    // ceil(15 / 100 * 476), the app's own formula
     expect(sent()[1]!.variables).toEqual({ id: 2, read: { progress_pages: 72 } });
   });
 

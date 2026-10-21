@@ -3,7 +3,7 @@
  *
  * Scans match the edition exactly by ISBN-13 or ISBN-10, never through
  * search: the barcode identifies one specific edition, and that's the one
- * that should land on the list. (Decided with the API side, 2026-09-28.)
+ * that should land on the list.
  *
  * lists.addBooks takes the raw scanner output. It matches exact ISBN-13 and
  * ISBN-10 only (spaces and hyphens are fine) and never guesses:
@@ -49,6 +49,7 @@ export async function bulkScanToList(hc: HardcoverClient, scannedCodes: string[]
     await hc.lists.addBook(list.id, first.bookId, { editionId: first.editionId });
   }
 
+  // listBooks is one page (50 by default); booksCount is the whole list.
   const withBooks = await hc.lists.get(list.id);
-  console.log(withBooks?.listBooks.length, "books on the list");
+  console.log(withBooks?.booksCount, "books on the list");
 }

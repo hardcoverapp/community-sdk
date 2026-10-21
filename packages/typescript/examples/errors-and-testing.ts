@@ -18,6 +18,7 @@ import {
   NetworkError,
   RateLimitError,
   ScopeError,
+  TimeoutError,
 } from "@hardcover/sdk";
 import { MockTransport } from "@hardcover/sdk/testing";
 
@@ -32,9 +33,14 @@ export async function handleErrors(hc: HardcoverClient, bookId: number) {
       console.log(`${error.operationName} needs ${error.missingScopes.join(", ")}. Create a token: ${grant}`);
     }
     else if (error instanceof AuthenticationError) console.log("Sign in again");
-    else if (error instanceof RateLimitError) console.log(`Daily limit reached; try in ${error.retryAfterSeconds}s`);
+    else if (error instanceof RateLimitError) {
+      const what = error.window === "daily" ? "Daily limit reached" : "Too busy right now";
+      console.log(`${what}; try in ${error.retryAfterSeconds}s`);
+    }
     else if (error instanceof ActionError) console.log(error.messages.join("\n"));
-    else if (error instanceof NetworkError && error.mayHaveSucceeded) console.log("Check the shelf before retrying");
+    else if ((error instanceof NetworkError || error instanceof TimeoutError) && error.mayHaveSucceeded) {
+      console.log("Check the shelf before retrying");
+    }
     else throw error;
   }
 }

@@ -82,7 +82,7 @@ function assertProgressInput(input: ProgressInput): void {
   if ("percent" in input) assertPercent(input.percent);
 }
 
-// Same math as the app (components/progress/.../progressMath.ts): ceil(pct / 100 * total).
+// Same math as the app: ceil(pct / 100 * total).
 function progressFields(read: Read, input: ProgressInput): Record<string, number> {
   if ("pages" in input) return { progress_pages: input.pages };
   if ("seconds" in input) return { progress_seconds: input.seconds };

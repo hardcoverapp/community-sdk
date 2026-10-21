@@ -1,4 +1,4 @@
-# Prompt writes. Rules the server owns (Prompt model, Hasura::PromptsController):
+# Prompt writes. Rules the server owns:
 # - prompts are always public; the question is unique and at most 140 characters;
 #   a description is required,
 # - once a prompt has more than 5 answers, an update changes only its description,

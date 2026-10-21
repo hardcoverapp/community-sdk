@@ -10,7 +10,7 @@ export async function rankAList(hc: HardcoverClient, bookIds: number[]) {
 
   // Every row on the list, in the new order (here: reversed). Anything missing
   // or extra throws before a change is made.
-  const rows = (await hc.lists.get(list.id))!.listBooks;
+  const rows = (await hc.lists.get(list.id, { limit: bookIds.length }))!.listBooks;
   await hc.lists.reorder(list.id, rows.map((row) => row.id).reverse());
 }
 

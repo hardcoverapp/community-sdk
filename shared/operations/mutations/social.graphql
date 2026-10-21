@@ -6,7 +6,7 @@ mutation FollowUser($userId: Int!) {
 }
 
 # remove_follower: false unfollows someone you follow; true removes someone
-# who follows you (Hasura::Users::FollowingsController#destroy).
+# who follows you.
 mutation UnfollowUser($userId: Int!, $removeFollower: Boolean!) {
   delete_followed_user(user_id: $userId, remove_follower: $removeFollower) {
     id

@@ -1,8 +1,9 @@
 # Teasers
 
-Images of real SDK calls, for the README, docs and posts. Each shows a snippet
-exactly as it runs (type-checked against the SDK) and a rendering of what it
-returned from the live API on 2026-10-20.
+Images of real SDK calls, for the README, docs and posts. Each shows a short
+snippet of a call (shortened for display; the type-checked versions are in
+[examples](../examples)) and a rendering of what it returned from the live API
+on 2026-10-20. They're rendered by a local script, not from this repo.
 
 They're illustrative: the SDK returns JSON data, and the covers and cards are
 drawn from it for display. Every image says so.
