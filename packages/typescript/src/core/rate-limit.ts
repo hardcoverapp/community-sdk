@@ -1,5 +1,5 @@
 // Parses the gateway's rate-limit headers. Formats are defined in
-// app/api/app/controllers/api/application_controller.rb:
+// api/app/controllers/api/application_controller.rb:
 //   RateLimit-Policy: "<Tier>";q=60;w=60;burst=10, "daily";q=5000;w=86400
 //   RateLimit:        "<Tier>";r=9;t=1, "daily";r=4999;t=86000
 // Once the daily cap is spent, the tier entry is dropped from RateLimit.
@@ -12,54 +12,80 @@ export interface RateLimitState {
 
 const DAILY = "daily";
 
-interface ListItem {
-  name: string;
-  params: Record<string, number>;
+type Params = Record<string, number>;
+
+function splitUnquoted(text: string, sep: string): string[] {
+  const parts: string[] = [];
+  let start = 0;
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '"') quoted = !quoted;
+    else if (text[i] === sep && !quoted) {
+      parts.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start));
+  return parts;
 }
 
-// Minimal structured-field list parser: `"name";k=v;k=v, "name";k=v`.
-function parseList(header: string): ListItem[] {
-  const items: ListItem[] = [];
-  for (const match of header.matchAll(/"([^"]*)"((?:\s*;\s*[a-z]+=[^;,]*)*)/gi)) {
-    const params: Record<string, number> = {};
-    for (const [, key, value] of match[2]!.matchAll(/;\s*([a-z]+)=([^;,]*)/gi)) {
-      const n = Number(value!.trim());
-      if (Number.isFinite(n)) params[key!.toLowerCase()] = n;
+// The server only emits `"name";k=v;k=v, "name";k=v` with non-negative integer values, so splitting is enough.
+function parseList(header: string | undefined): Map<string, Params> {
+  const items = new Map<string, Params>();
+
+  for (const item of splitUnquoted(header ?? "", ",")) {
+    const [rawName = "", ...pairs] = splitUnquoted(item, ";");
+    const name = rawName.trim().replace(/^"|"$/g, "");
+    if (!name) continue;
+
+    const params: Params = {};
+    for (const pair of pairs) {
+      const [key = "", value] = pair.split("=").map((s) => s.trim());
+      const n = num(value);
+      if (key && n !== undefined) params[key.toLowerCase()] = n;
     }
-    items.push({ name: match[1]!, params });
+
+    items.set(name, params);
   }
   return items;
 }
 
+// Non-negative safe integers only
 function num(value: string | undefined): number | undefined {
-  if (value === undefined) return undefined;
+  if (value === undefined || !/^\d+$/.test(value)) return undefined;
   const n = Number(value);
-  return Number.isFinite(n) ? n : undefined;
+  return Number.isSafeInteger(n) ? n : undefined;
 }
 
 export function parseRateLimit(
   headers: Record<string, string>,
   nowSeconds = Math.floor(Date.now() / 1000),
 ): RateLimitState | undefined {
-  const policy = headers["ratelimit-policy"];
-  const current = headers["ratelimit"];
+  const policy = parseList(headers["ratelimit-policy"]);
+  const current = parseList(headers["ratelimit"]);
 
-  if (policy !== undefined || current !== undefined) {
+  if (policy.size || current.size) {
     const state: RateLimitState = {};
-    for (const { name, params } of parseList(policy ?? "")) {
+    for (const name of new Set([...policy.keys(), ...current.keys()])) {
+      const policyValues = policy.get(name) ?? {};
+      const currentValues = current.get(name) ?? {};
+
       if (name === DAILY) {
-        state.daily = { ...state.daily, limit: params.q };
+        state.daily = {
+          limit: policyValues.q,
+          remaining: currentValues.r,
+          resetSeconds: currentValues.t,
+        };
       } else {
+        const minuteWindow = (policyValues.w ?? 60) / 60;
+
         state.tier = name;
-        state.burst = { ...state.burst, limit: params.burst, perMinute: params.q };
-      }
-    }
-    for (const { name, params } of parseList(current ?? "")) {
-      if (name === DAILY) {
-        state.daily = { ...state.daily, remaining: params.r, resetSeconds: params.t };
-      } else {
-        state.tier ??= name;
-        state.burst = { ...state.burst, remaining: params.r, resetSeconds: params.t };
+        state.burst = {
+          limit: policyValues.burst,
+          perMinute: policyValues.q ? policyValues.q / minuteWindow : undefined,
+          remaining: currentValues.r,
+          resetSeconds: currentValues.t,
+        };
       }
     }
     return state;
