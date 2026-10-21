@@ -1,5 +1,6 @@
 import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
 import { environments, type Environment } from "../generated/environments.ts";
+import { version } from "../generated/version.ts";
 import { operationInfo, type OperationInfo } from "../operations.ts";
 import { ActivitiesResource } from "../resources/activities.ts";
 import { AuthorsResource } from "../resources/authors.ts";
@@ -50,6 +51,8 @@ export interface HardcoverClientOptions {
   maxRetries?: number;
 
   timeoutMs?: number;
+
+  /** Your app's name, sent ahead of the SDK's. Browsers don't let fetch set User-Agent, so it only reaches the server from Node and native. */
   userAgent?: string;
   onRateLimit?: (state: RateLimitState) => void;
 
@@ -82,7 +85,7 @@ export interface HardcoverClientOptions {
 /** Waits between retries of a network, timeout or 5xx failure. */
 const NETWORK_BACKOFF_MS = [250, 1_000, 4_000];
 
-const SDK_USER_AGENT = "hardcover-sdk-typescript/0.0.0";
+const SDK_USER_AGENT = `hardcover-sdk-typescript/${version}`;
 
 function networkBackoffMs(attempt: number): number {
   return NETWORK_BACKOFF_MS[Math.min(attempt, NETWORK_BACKOFF_MS.length - 1)]!;
@@ -233,8 +236,7 @@ export class HardcoverClient {
         // surface it immediately instead of retrying it as a network blip.
         if (!(cause instanceof TransportFailure)) throw cause;
 
-        // Never replay a mutation that may have landed. Mirrors the app's
-        // UserBookService/verifyThenOfferRetry.ts.
+        // Never replay a mutation that may have landed, as the app does.
         if (!isMutation && canRetry) {
           await this.#sleep(networkBackoffMs(attempt));
           continue;
