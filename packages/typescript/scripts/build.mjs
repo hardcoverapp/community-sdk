@@ -27,7 +27,7 @@ console.log("built dist/");
 
 function pruneDeclarations(dir) {
   const root = dir.pathname;
-  const entries = ["index.d.ts", "oauth/index.d.ts", "testing/index.d.ts"];
+  const entries = ["index.d.ts", "oauth/index.d.ts", "stats/index.d.ts", "testing/index.d.ts"];
 
   // TypeScript lists every file the entry points pull in.
   const listed = execFileSync(

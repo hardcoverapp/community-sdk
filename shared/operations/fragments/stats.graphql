@@ -1,0 +1,7 @@
+# An edition's fields that stats need: page count, audio length, format.
+fragment StatsEdition on editions {
+  id
+  pages
+  audio_seconds
+  reading_format_id
+}

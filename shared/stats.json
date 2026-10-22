@@ -1,0 +1,61 @@
+{
+  "$comment": "Rules for the stats module (spec/03 Stats module), shared by every SDK so they compute identical numbers from the same library data. They mirror the Hardcover app's Stats page (app: Stats::CountedReads and lib/stats/computeStats.ts) except where noted. Cases: shared/conformance/stats.json.",
+
+  "population": {
+    "$comment": "Which library entries stats look at: on the Read shelf, or finished at least once (read_count >= 1) and since moved to another shelf. DNF is out because the server keeps its read_count at 0. Fetched by GetStatsLibrary.",
+    "readStatusId": 3,
+    "minReadCount": 1
+  },
+
+  "countedReads": {
+    "$comment": "Each entry becomes one or more reads. Steps, in order, per entry: (1) No read rows: one synthetic read, counted, finished on last_read_date (may be null). (2) needsFallback = last_read_date is set AND no row has finished_at AND some row's finished_at_precision is not unknownPrecision. (3) If needsFallback, the carrier is the first row (by id) whose precision isn't unknown and that has no started_at, else the first such row whose started_at <= last_read_date. (4) Each row is a read: counted when it's the carrier, or has finished_at, or has a non-null finished_at_precision with progress >= completeProgress; its finishedAt is its own finished_at, else last_read_date when it's the carrier, else null. (5) If needsFallback and there's no carrier, append a synthetic counted read finished on last_read_date. (6) If no read is counted, count the floor row: the first row without started_at, else the row with the latest started_at (ties: highest id). Only counted reads feed the stats.",
+    "unknownPrecision": 0,
+    "completeProgress": 100
+  },
+
+  "readValues": {
+    "$comment": "What one read contributes (UserBookRead#pages/seconds/reading_format_id in the app). For a read row: formatId = the row's edition's reading_format_id, else the entry's edition's; the 'edition' for pages and seconds is the row's own edition only. For a synthetic read the edition is the entry's edition. Audio (formatId == audioFormatId): pages 0, seconds = edition audio_seconds, else book audio_seconds, else 0. Otherwise: seconds 0, pages = edition pages, else book pages, else 0. 'Else' means the value is null or missing; 0 is a value.",
+    "audioFormatId": 2
+  },
+
+  "period": {
+    "$comment": "A period is life (no bounds) or an inclusive from/to pair of local calendar dates (YYYY-MM-DD). A counted read is in a bounded period when its finishedAt is non-null and from <= finishedAt <= to, compared as dates. Life includes reads with no finish date. Month- and year-precision dates are stored as the 1st of the month or year, so they land in that month or year. thisYear/thisMonth take today's date in the caller's time zone.",
+    "kinds": ["life", "year", "month", "custom"]
+  },
+
+  "totals": {
+    "$comment": "books = distinct entries with a counted read in the period. reads = counted reads in the period, re-reads included. pages and seconds = sums over those reads (re-reads included). hoursListened = floor(seconds / 3600). DIFFERS FROM THE APP: the app counts pages and time from the daily progress journal when it has one (server-side Journal::DailyProgressTotals); the API doesn't expose those totals, so this uses finished reads, which is the app's own fallback.",
+    "secondsPerHour": 3600
+  },
+
+  "ratings": {
+    "$comment": "One rating per entry (re-reads don't repeat it). Round each rating to 0.1; keep it only if it's exactly one of the buckets (half stars). Others (null, 0, 4.3) count nowhere. average = sum(bucket * count) / count, not rounded; 0 when there are none. distribution lists every bucket, low to high, including zeros.",
+    "buckets": [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
+  },
+
+  "formats": {
+    "$comment": "Counted per read (re-reads included) by formatId. Ids not listed (or null) are left out. Always returns these three, in this order, including zeros.",
+    "order": [
+      { "id": 1, "label": "Physical Books" },
+      { "id": 4, "label": "Ebooks" },
+      { "id": 2, "label": "Audiobooks" }
+    ]
+  },
+
+  "tags": {
+    "$comment": "Genres and moods come from book.cached_tags[category], the book's top tags in that category. Counted per read (re-reads included): each tag on the book adds 1. Sorted by count, high to low; ties keep first-seen order, where reads are visited in entry order (entry id ascending), then each entry's reads in order (by id, synthetic last). missing = reads whose book has no tags in that category. Returns every tag; the app shows the top 26.",
+    "genreCategory": "Genre",
+    "moodCategory": "Mood"
+  },
+
+  "authors": {
+    "$comment": "One book per entry (re-reads don't repeat it). From book.cached_contributors, keep a contribution when it's primary and not a translator, and its author has a slug. primary = the contribution's own `primary` flag when present; else, with a contributor_role_id, the role-specialization override for (role id, specialization id) when one exists, else the role's primary flag; else (no role id) the legacy text rule: contribution text empty, or lowercased equal to one of legacyPrimaryText. A translator is a contribution whose contributor_role_name, else contribution text, lowercased, equals translatorRole. Group by author slug: booksCount = distinct entries; averageRating = mean of the entries' non-null ratings rounded to 2 decimals, null when none. Sorted by booksCount, high to low; ties keep first-seen order (same visiting order as tags). Returns every author; the app shows the top 6.",
+    "legacyPrimaryText": ["author", "writer", "translator"],
+    "translatorRole": "translator"
+  },
+
+  "byMonth": {
+    "$comment": "Counted reads with a finish date in the period, grouped by finishedAt's YYYY-MM: reads, pages and seconds per month. Only months with reads, oldest first. Apps build their own charts (weeks, years) from this.",
+    "keyFormat": "YYYY-MM"
+  }
+}

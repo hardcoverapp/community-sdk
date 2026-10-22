@@ -11,6 +11,7 @@ not "done" on a feature row in the README matrix until the matching cases pass.
 | `client.json` | Behavior over time: pacing, batching, retries | `tests/client-conformance.test.ts` |
 | `resources/*.json` | Every resource method: what it sends and returns | `tests/resources-conformance.test.ts` |
 | `oauth.json` | Sign-in, redirects, the session's token lifecycle | `tests/oauth-conformance.test.ts` |
+| `stats.json` | The stats module: library rows in, a period's stats out; period builders | `tests/stats-conformance.test.ts` |
 
 Values these cases depend on (retry timings, page sizes, limits) come from
 `../client.json` and `../auth.json`, never from another SDK's source.
@@ -142,3 +143,15 @@ sends and returns. TypeScript runs them in `tests/resources-conformance.test.ts`
   `ArgumentError`: the language's own bad-argument error, raised before any
   request the case doesn't list.
 - A name without a dot is a top-level function. (None today: `goalProgress` is pinned in `vectors.json`.)
+
+## Stats (`stats.json`)
+
+Rules in `../stats.json`. Each case gives `library` (rows exactly as
+`GetStatsLibrary` returns them: canonical snake_case, JSON columns as
+stored), `contributorRoles` (the `GetContributorRoles` result) and a
+`period`; run the language's `computeStats` and compare only the fields in
+`expect`, keys case-insensitively, numbers within 1e-9. A language that
+aliases fields renames the rows the way its own queries would (the
+TypeScript runner camelCases keys outside `cached_*` columns). `periods`
+pins the period builders; `{"error": "invalidPeriod"}` is the language's
+argument error.

@@ -19,6 +19,8 @@ would otherwise repeat:
 - one error taxonomy, with missing scopes and failed actions spelled out
 - local details apps get wrong: ISBN cleanup, token cleanup
 - incremental library sync with a server-side cursor
+- reading stats for a year, a month or life (optional module), matching the
+  site's Stats page
 
 <p align="center">
   <img src="packages/typescript/teasers/prompts.webp" alt="A prompt's books, most picked first: hc.prompts.books()" width="49%">
@@ -83,6 +85,7 @@ changing it.
 | `vibes`: write (Supporter perk) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `prompts`: read | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `prompts`: write (ask, answer, follow) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| `stats` (optional module): period totals and breakdowns | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Testing** |  |  |  |  |  |
 | Mock transport + shared fixtures | 🟡 | ⬜ | ⬜ | ⬜ | ⬜ |
 | Shared conformance suite passes | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -112,6 +115,7 @@ shared/
   errors.json     error taxonomy + how to recognize each raw failure
   auth.json       token prefixes and the OAuth session's rules and timings
   client.json     retries, timeouts, pacing, request cost, page sizes, limits
+  stats.json      how the stats module counts reads, pages, ratings and authors
   environments.json  prod / staging / local endpoints
   conformance/    language-neutral behavior tests every SDK must pass
   fixtures/       recorded, scrubbed API responses for mock clients

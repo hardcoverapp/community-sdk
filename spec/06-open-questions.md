@@ -213,6 +213,15 @@ read-only production token. The mobile apps come next and will likely hit the sa
     family, or the user removing the app on the website. Locally the cache
     is a null store, so the live checks pass immediately. Clearing the cache
     key on revoke (or a much shorter TTL for OAuth tokens) would close it.
+43. **Stats pages and time come from finished reads.** The app's Stats page
+    counts pages and listening time per day from the reading journal
+    (`Journal::DailyProgressTotals`, with remainder accounting for reads
+    finished without logged progress). The API exposes the journal but not
+    those totals, and reproducing the accounting client-side would drift. The
+    stats module uses finished reads instead, which is the app's own
+    fallback, so its pages can differ from the site's for readers who log
+    progress. An API field or action with daily progress totals would let
+    every SDK match the site exactly.
 
 ## Environment and access
 

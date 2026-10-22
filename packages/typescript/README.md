@@ -68,6 +68,21 @@ TVs and command-line tools can use `session.signInWithDevice(...)` instead.
 On React Native, install `react-native-get-random-values` (or pass
 `expo-crypto` as `random`) so sign-in has a secure random source.
 
+## Reading stats
+
+`@hardcover/sdk/stats` computes a reader's stats for a year, a month or
+their whole history, the same way the Stats page on hardcover.app does:
+
+```ts
+import { readingStats, period } from "@hardcover/sdk/stats";
+
+const year = await readingStats(hc, period.thisYear({ timeZone: "America/Denver" }));
+console.log(year.books, year.pages, year.authors[0]?.author.name);
+```
+
+To compare periods without fetching again, call `fetchStatsData(hc)` once and
+`computeStats(data, period)` for each.
+
 ## What the client handles
 
 - **Rate limits.** It paces itself from the API's headers, backs off when

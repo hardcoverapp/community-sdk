@@ -15,6 +15,7 @@ and rewrite them run on Node 24 with pnpm, whatever language you're adding:
 - client constants: retries, timeouts, pacing, cost, page sizes, limits,
   User-Agent format (`shared/client.json`)
 - token rules and OAuth timings (`shared/auth.json`)
+- the stats module's rules (`shared/stats.json`)
 - behavior tests (`shared/conformance/`)
 - recorded API responses (`shared/fixtures/`, planned: empty today)
 - the schema and scope map (`api-snapshot/`)

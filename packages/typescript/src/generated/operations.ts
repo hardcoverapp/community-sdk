@@ -231,6 +231,12 @@ export const operations = {
    */
   GetBooks: documents.GetBooksDocument,
   /**
+   * Query `GetContributorRoles` on `contributor_roles`, `contributor_role_specializations`.
+   *
+   * Scopes: one of `read:catalog`, `read:catalog:data`, `read:catalog:search` (for `contributor_roles`, `contributor_role_specializations`).
+   */
+  GetContributorRoles: documents.GetContributorRolesDocument,
+  /**
    * Query `GetEdition` on `editions_by_pk`.
    *
    * Scopes: one of `read:catalog`, `read:catalog:data`, `read:catalog:search`.
@@ -422,6 +428,12 @@ export const operations = {
    * Scopes: one of `read:catalog`, `read:catalog:data`, `read:catalog:search`.
    */
   GetSeriesBySlug: documents.GetSeriesBySlugDocument,
+  /**
+   * Query `GetStatsLibrary` on `user_books`.
+   *
+   * Scopes: one of `read:library`, `read:library:following`, `read:library:private`, `read:library:public`.
+   */
+  GetStatsLibrary: documents.GetStatsLibraryDocument,
   /**
    * Query `GetUser` on `users_by_pk`.
    *

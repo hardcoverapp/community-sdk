@@ -1,0 +1,2101 @@
+{
+  "$comment": "Stats module cases (spec/03 Stats module, rules in shared/stats.json). Each case gives the library rows exactly as GetStatsLibrary returns them (canonical snake_case; JSON columns as stored), the GetContributorRoles result, and a period. `expect` lists only the ReadingStats fields that case pins; compare those, keys case-insensitively. Numbers compare within 1e-9. Expectations were worked out by hand from the rules. `periods` pins the period builders: each `call` names a builder (year, month, custom, life, thisYear, thisMonth) with its arguments; `out` is the period, or {\"error\": \"invalidPeriod\"} for the language's argument error. thisYear/thisMonth take `now` (an instant) and `timeZone`.",
+  "cases": [
+    {
+      "id": "stats/no-read-rows-counts-once-on-last-read-date",
+      "$comment": "An entry with no read rows is one finished read, dated by last_read_date.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": "2025-03-10",
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": []
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "books": 1,
+        "reads": 1,
+        "pages": 300,
+        "byMonth": [
+          {
+            "month": "2025-03",
+            "reads": 1,
+            "pages": 300,
+            "seconds": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "stats/no-read-rows-without-a-date-counts-in-life-only",
+      "$comment": "No rows and no last_read_date: counted, but with no finish date it's only in life.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": []
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "books": 0,
+        "reads": 0
+      }
+    },
+    {
+      "id": "stats/undated-entry-in-life",
+      "$comment": "The same entry is in life, and byMonth leaves it out (no month).",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": []
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "life"
+      },
+      "expect": {
+        "books": 1,
+        "reads": 1,
+        "pages": 300,
+        "byMonth": []
+      }
+    },
+    {
+      "id": "stats/fallback-date-folds-onto-a-dateless-row",
+      "$comment": "No row has finished_at but last_read_date is set: the first dateless row carries it and counts.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": "2025-06-02",
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": "2025-05-01",
+              "finished_at": null,
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            },
+            {
+              "id": 11,
+              "started_at": null,
+              "finished_at": null,
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "books": 1,
+        "reads": 1,
+        "byMonth": [
+          {
+            "month": "2025-06",
+            "reads": 1,
+            "pages": 300,
+            "seconds": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "stats/fallback-date-folds-onto-a-row-started-before-it",
+      "$comment": "No dateless row: the first row started on or before last_read_date carries it. The later-started row stays open.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": "2025-06-02",
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": "2025-07-01",
+              "finished_at": null,
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            },
+            {
+              "id": 11,
+              "started_at": "2025-05-01",
+              "finished_at": null,
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "books": 1,
+        "reads": 1,
+        "byMonth": [
+          {
+            "month": "2025-06",
+            "reads": 1,
+            "pages": 300,
+            "seconds": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "stats/open-re-read-gets-a-synthetic-completion",
+      "$comment": "Every row started after last_read_date (an open re-read): the completion gets its own counted read; the open row doesn't count.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 2,
+          "read_count": 1,
+          "last_read_date": "2025-02-14",
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": "2025-04-01",
+              "finished_at": null,
+              "finished_at_precision": null,
+              "progress": 30,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "books": 1,
+        "reads": 1,
+        "byMonth": [
+          {
+            "month": "2025-02",
+            "reads": 1,
+            "pages": 300,
+            "seconds": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "stats/unknown-precision-is-never-a-carrier",
+      "$comment": "A row marked 'I don't know' (precision 0) never takes last_read_date. With no other row, nothing needs the fallback; the floor row counts with no date.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": "2025-02-14",
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": null,
+              "finished_at_precision": 0,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "books": 0,
+        "reads": 0
+      }
+    },
+    {
+      "id": "stats/unknown-precision-floor-row-in-life",
+      "$comment": "The same entry still counts once in life.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": "2025-02-14",
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": null,
+              "finished_at_precision": 0,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "life"
+      },
+      "expect": {
+        "books": 1,
+        "reads": 1
+      }
+    },
+    {
+      "id": "stats/undated-finish-counts",
+      "$comment": "A row with a precision and progress >= 100 but no date is a finished read (life only).",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": null,
+              "finished_at_precision": 1,
+              "progress": 100,
+              "edition": null
+            },
+            {
+              "id": 11,
+              "started_at": null,
+              "finished_at": "2025-01-05",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "life"
+      },
+      "expect": {
+        "books": 1,
+        "reads": 2
+      }
+    },
+    {
+      "id": "stats/floor-row-is-the-latest-started",
+      "$comment": "Nothing finished and no last_read_date: the most recently started row counts, undated.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": "2025-01-01",
+              "finished_at": null,
+              "finished_at_precision": null,
+              "progress": 20,
+              "edition": null
+            },
+            {
+              "id": 11,
+              "started_at": "2025-03-01",
+              "finished_at": null,
+              "finished_at_precision": null,
+              "progress": 10,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "life"
+      },
+      "expect": {
+        "books": 1,
+        "reads": 1
+      }
+    },
+    {
+      "id": "stats/re-reads-count-as-reads-not-books",
+      "$comment": "Two finished rows in the year: one book, two reads, pages twice, the rating once.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": 4,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-01-10",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            },
+            {
+              "id": 11,
+              "started_at": null,
+              "finished_at": "2025-09-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "books": 1,
+        "reads": 2,
+        "pages": 600,
+        "ratings": {
+          "average": 4,
+          "count": 1
+        },
+        "byMonth": [
+          {
+            "month": "2025-01",
+            "reads": 1,
+            "pages": 300,
+            "seconds": 0
+          },
+          {
+            "month": "2025-09",
+            "reads": 1,
+            "pages": 300,
+            "seconds": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "stats/dnf-and-unread-entries-are-not-fetched",
+      "$comment": "The library only holds the read population; an entry here with status 5 and read_count 0 would not be returned by GetStatsLibrary. Entries on another shelf after a read still count.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 1,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-05-05",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "books": 1,
+        "reads": 1
+      }
+    },
+    {
+      "id": "stats/audiobook-counts-seconds-not-pages",
+      "$comment": "An audio edition: pages 0, seconds from the edition. Hours are floored.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-03-03",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": {
+                "id": 5,
+                "pages": 400,
+                "audio_seconds": 37000,
+                "reading_format_id": 2
+              }
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "pages": 0,
+        "secondsListened": 37000,
+        "hoursListened": 10,
+        "formats": [
+          {
+            "formatId": 1,
+            "label": "Physical Books",
+            "reads": 0
+          },
+          {
+            "formatId": 4,
+            "label": "Ebooks",
+            "reads": 0
+          },
+          {
+            "formatId": 2,
+            "label": "Audiobooks",
+            "reads": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "stats/row-without-edition-uses-entry-format-and-book-amounts",
+      "$comment": "The row has no edition: format falls back to the entry's edition (audio), but seconds come from the book, not the entry's edition.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": {
+            "id": 5,
+            "pages": null,
+            "audio_seconds": 99999,
+            "reading_format_id": 2
+          },
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": 7200,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-03-03",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "pages": 0,
+        "secondsListened": 7200,
+        "hoursListened": 2
+      }
+    },
+    {
+      "id": "stats/edition-pages-win-over-book-pages-and-zero-is-a-value",
+      "$comment": "Edition pages are used when present, even 0; null falls back to the book.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-03-03",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": {
+                "id": 5,
+                "pages": 0,
+                "audio_seconds": null,
+                "reading_format_id": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 2,
+            "title": "Book 2",
+            "slug": "book-2",
+            "pages": 250,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 20,
+              "started_at": null,
+              "finished_at": "2025-03-04",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": {
+                "id": 6,
+                "pages": null,
+                "audio_seconds": null,
+                "reading_format_id": 1
+              }
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "pages": 250
+      }
+    },
+    {
+      "id": "stats/synthetic-read-uses-entry-edition-pages",
+      "$comment": "A synthetic read's edition is the entry's edition.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": "2025-03-10",
+          "rating": null,
+          "edition": {
+            "id": 5,
+            "pages": 123,
+            "audio_seconds": null,
+            "reading_format_id": 1
+          },
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": []
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "pages": 123
+      }
+    },
+    {
+      "id": "stats/formats-ignore-unknown-ids",
+      "$comment": "Formats count per read; ids other than 1, 4, 2 are left out.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-01-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": {
+                "id": 5,
+                "pages": null,
+                "audio_seconds": null,
+                "reading_format_id": 1
+              }
+            },
+            {
+              "id": 11,
+              "started_at": null,
+              "finished_at": "2025-02-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": {
+                "id": 5,
+                "pages": null,
+                "audio_seconds": null,
+                "reading_format_id": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 2,
+            "title": "Book 2",
+            "slug": "book-2",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 20,
+              "started_at": null,
+              "finished_at": "2025-01-02",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": {
+                "id": 6,
+                "pages": null,
+                "audio_seconds": null,
+                "reading_format_id": 4
+              }
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 3,
+            "title": "Book 3",
+            "slug": "book-3",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 30,
+              "started_at": null,
+              "finished_at": "2025-01-03",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": {
+                "id": 7,
+                "pages": null,
+                "audio_seconds": null,
+                "reading_format_id": 3
+              }
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "reads": 4,
+        "formats": [
+          {
+            "formatId": 1,
+            "label": "Physical Books",
+            "reads": 2
+          },
+          {
+            "formatId": 4,
+            "label": "Ebooks",
+            "reads": 1
+          },
+          {
+            "formatId": 2,
+            "label": "Audiobooks",
+            "reads": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "stats/month-bounds-are-inclusive",
+      "$comment": "March includes the 1st and the 31st, not Feb 28 or Apr 1.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-02-28",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 2,
+            "title": "Book 2",
+            "slug": "book-2",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 20,
+              "started_at": null,
+              "finished_at": "2025-03-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 3,
+            "title": "Book 3",
+            "slug": "book-3",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 30,
+              "started_at": null,
+              "finished_at": "2025-03-31",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 4,
+            "title": "Book 4",
+            "slug": "book-4",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 40,
+              "started_at": null,
+              "finished_at": "2025-04-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "month",
+        "from": "2025-03-01",
+        "to": "2025-03-31"
+      },
+      "expect": {
+        "books": 2,
+        "reads": 2
+      }
+    },
+    {
+      "id": "stats/year-precision-lands-in-its-year",
+      "$comment": "A year-precision finish is stored as January 1.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2024-01-01",
+              "finished_at_precision": 3,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2024-01-01",
+        "to": "2024-12-31"
+      },
+      "expect": {
+        "books": 1,
+        "byMonth": [
+          {
+            "month": "2024-01",
+            "reads": 1,
+            "pages": 300,
+            "seconds": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "stats/ratings-are-half-stars-one-per-book",
+      "$comment": "Off-grid (4.3) and zero ratings are dropped; 4.5 and 5 count. Average is unrounded.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": 4.5,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-01-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": 5,
+          "edition": null,
+          "book": {
+            "id": 2,
+            "title": "Book 2",
+            "slug": "book-2",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 20,
+              "started_at": null,
+              "finished_at": "2025-01-02",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": 4.3,
+          "edition": null,
+          "book": {
+            "id": 3,
+            "title": "Book 3",
+            "slug": "book-3",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 30,
+              "started_at": null,
+              "finished_at": "2025-01-03",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": 0,
+          "edition": null,
+          "book": {
+            "id": 4,
+            "title": "Book 4",
+            "slug": "book-4",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 40,
+              "started_at": null,
+              "finished_at": "2025-01-04",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 5,
+            "title": "Book 5",
+            "slug": "book-5",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 50,
+              "started_at": null,
+              "finished_at": "2025-01-05",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "ratings": {
+          "average": 4.75,
+          "count": 2,
+          "distribution": [
+            {
+              "rating": 0.5,
+              "count": 0
+            },
+            {
+              "rating": 1,
+              "count": 0
+            },
+            {
+              "rating": 1.5,
+              "count": 0
+            },
+            {
+              "rating": 2,
+              "count": 0
+            },
+            {
+              "rating": 2.5,
+              "count": 0
+            },
+            {
+              "rating": 3,
+              "count": 0
+            },
+            {
+              "rating": 3.5,
+              "count": 0
+            },
+            {
+              "rating": 4,
+              "count": 0
+            },
+            {
+              "rating": 4.5,
+              "count": 1
+            },
+            {
+              "rating": 5,
+              "count": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "stats/genres-and-moods-count-per-read",
+      "$comment": "Each read adds 1 per tag on its book; ties keep first-seen order (entry order). missing counts reads with no tags in the category.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {
+              "Genre": [
+                {
+                  "tag": "Fantasy",
+                  "category": "Genre"
+                },
+                {
+                  "tag": "Adventure",
+                  "category": "Genre"
+                }
+              ],
+              "Mood": [
+                {
+                  "tag": "adventurous",
+                  "category": "Mood"
+                }
+              ]
+            },
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-01-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            },
+            {
+              "id": 11,
+              "started_at": null,
+              "finished_at": "2025-02-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 2,
+            "title": "Book 2",
+            "slug": "book-2",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {
+              "Genre": [
+                {
+                  "tag": "Mystery",
+                  "category": "Genre"
+                },
+                {
+                  "tag": "Adventure",
+                  "category": "Genre"
+                }
+              ]
+            },
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 20,
+              "started_at": null,
+              "finished_at": "2025-01-02",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 3,
+            "title": "Book 3",
+            "slug": "book-3",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {
+              "Mood": [
+                {
+                  "tag": "dark",
+                  "category": "Mood"
+                }
+              ]
+            },
+            "cached_contributors": [],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 30,
+              "started_at": null,
+              "finished_at": "2025-01-03",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "genres": [
+          {
+            "tag": "Adventure",
+            "reads": 3
+          },
+          {
+            "tag": "Fantasy",
+            "reads": 2
+          },
+          {
+            "tag": "Mystery",
+            "reads": 1
+          }
+        ],
+        "genresMissing": 1,
+        "moods": [
+          {
+            "tag": "adventurous",
+            "reads": 2
+          },
+          {
+            "tag": "dark",
+            "reads": 1
+          }
+        ],
+        "moodsMissing": 1
+      }
+    },
+    {
+      "id": "stats/authors-primary-not-translators-one-book-each",
+      "$comment": "Primary credits count; a translator (even primary) and a non-primary illustrator don't; an author credited twice on a book counts it once; re-reads don't repeat a book. Sorted by books; ties keep first-seen order.",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": 4,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [
+              {
+                "author": {
+                  "id": 1,
+                  "slug": "ursula-k-le-guin",
+                  "name": "Ursula K. Le Guin"
+                },
+                "contribution": "Author",
+                "primary": true,
+                "contributor_role_id": 1,
+                "contributor_role_name": null,
+                "contributor_specialization_id": null
+              },
+              {
+                "author": {
+                  "id": 1,
+                  "slug": "ursula-k-le-guin",
+                  "name": "Ursula K. Le Guin"
+                },
+                "contribution": "Author",
+                "primary": true,
+                "contributor_role_id": 1,
+                "contributor_role_name": null,
+                "contributor_specialization_id": null
+              },
+              {
+                "author": {
+                  "id": 3,
+                  "slug": "a-translator",
+                  "name": "A Translator"
+                },
+                "contribution": "Translator",
+                "primary": true,
+                "contributor_role_id": 9,
+                "contributor_role_name": "Translator",
+                "contributor_specialization_id": null
+              },
+              {
+                "author": {
+                  "id": 4,
+                  "slug": "an-illustrator",
+                  "name": "An Illustrator"
+                },
+                "contribution": "Illustrator",
+                "primary": false,
+                "contributor_role_id": 4,
+                "contributor_role_name": null,
+                "contributor_specialization_id": null
+              }
+            ],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-01-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            },
+            {
+              "id": 11,
+              "started_at": null,
+              "finished_at": "2025-02-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": 5,
+          "edition": null,
+          "book": {
+            "id": 2,
+            "title": "Book 2",
+            "slug": "book-2",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [
+              {
+                "author": {
+                  "id": 2,
+                  "slug": "n-k-jemisin",
+                  "name": "N. K. Jemisin"
+                },
+                "contribution": "Author",
+                "primary": true,
+                "contributor_role_id": 1,
+                "contributor_role_name": null,
+                "contributor_specialization_id": null
+              }
+            ],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 20,
+              "started_at": null,
+              "finished_at": "2025-01-02",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 3,
+            "title": "Book 3",
+            "slug": "book-3",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [
+              {
+                "author": {
+                  "id": 2,
+                  "slug": "n-k-jemisin",
+                  "name": "N. K. Jemisin"
+                },
+                "contribution": "Author",
+                "primary": true,
+                "contributor_role_id": 1,
+                "contributor_role_name": null,
+                "contributor_specialization_id": null
+              },
+              {
+                "author": {
+                  "id": 8,
+                  "name": "No Slug"
+                },
+                "contribution": "Author",
+                "primary": true,
+                "contributor_role_id": 1,
+                "contributor_role_name": null,
+                "contributor_specialization_id": null
+              }
+            ],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 30,
+              "started_at": null,
+              "finished_at": "2025-01-03",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": 3,
+          "edition": null,
+          "book": {
+            "id": 4,
+            "title": "Book 4",
+            "slug": "book-4",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [
+              {
+                "author": {
+                  "id": 1,
+                  "slug": "ursula-k-le-guin",
+                  "name": "Ursula K. Le Guin"
+                },
+                "contribution": "Author",
+                "primary": true,
+                "contributor_role_id": 1,
+                "contributor_role_name": null,
+                "contributor_specialization_id": null
+              }
+            ],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 40,
+              "started_at": null,
+              "finished_at": "2025-01-04",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [],
+        "contributor_role_specializations": []
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "authors": [
+          {
+            "author": {
+              "id": 1,
+              "name": "Ursula K. Le Guin",
+              "slug": "ursula-k-le-guin"
+            },
+            "books": 2,
+            "averageRating": 3.5
+          },
+          {
+            "author": {
+              "id": 2,
+              "name": "N. K. Jemisin",
+              "slug": "n-k-jemisin"
+            },
+            "books": 2,
+            "averageRating": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "stats/authors-without-a-primary-flag-resolve-from-roles",
+      "$comment": "No `primary` key: a role id resolves through the roles table, with a specialization override winning; no role id falls back to the legacy text rule (Writer counts).",
+      "library": [
+        {
+          "id": 1,
+          "status_id": 3,
+          "read_count": 1,
+          "last_read_date": null,
+          "rating": null,
+          "edition": null,
+          "book": {
+            "id": 1,
+            "title": "Book 1",
+            "slug": "book-1",
+            "pages": 300,
+            "audio_seconds": null,
+            "cached_tags": {},
+            "cached_contributors": [
+              {
+                "author": {
+                  "id": 6,
+                  "slug": "role-only",
+                  "name": "Role Only"
+                },
+                "contribution": "Author",
+                "contributor_role_id": 1,
+                "contributor_role_name": null,
+                "contributor_specialization_id": null
+              },
+              {
+                "author": {
+                  "id": 7,
+                  "slug": "overridden",
+                  "name": "Overridden"
+                },
+                "contribution": "Author: Lead",
+                "contributor_role_id": 1,
+                "contributor_role_name": null,
+                "contributor_specialization_id": 50
+              },
+              {
+                "author": {
+                  "id": 5,
+                  "slug": "legacy-writer",
+                  "name": "Legacy Writer"
+                },
+                "contribution": "Writer",
+                "contributor_role_id": null,
+                "contributor_role_name": null,
+                "contributor_specialization_id": null
+              },
+              {
+                "author": {
+                  "id": 4,
+                  "slug": "an-illustrator",
+                  "name": "An Illustrator"
+                },
+                "contribution": "Illustrator",
+                "contributor_role_id": 4,
+                "contributor_role_name": null,
+                "contributor_specialization_id": null
+              }
+            ],
+            "cached_image": {}
+          },
+          "user_book_reads": [
+            {
+              "id": 10,
+              "started_at": null,
+              "finished_at": "2025-01-01",
+              "finished_at_precision": null,
+              "progress": null,
+              "edition": null
+            }
+          ]
+        }
+      ],
+      "contributorRoles": {
+        "contributor_roles": [
+          {
+            "id": 1,
+            "primary": true
+          },
+          {
+            "id": 4,
+            "primary": false
+          }
+        ],
+        "contributor_role_specializations": [
+          {
+            "contributor_role_id": 1,
+            "contributor_specialization_id": 50,
+            "primary": false
+          }
+        ]
+      },
+      "period": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      },
+      "expect": {
+        "authors": [
+          {
+            "author": {
+              "id": 6,
+              "name": "Role Only",
+              "slug": "role-only"
+            },
+            "books": 1,
+            "averageRating": null
+          },
+          {
+            "author": {
+              "id": 5,
+              "name": "Legacy Writer",
+              "slug": "legacy-writer"
+            },
+            "books": 1,
+            "averageRating": null
+          }
+        ]
+      }
+    }
+  ],
+  "periods": [
+    {
+      "name": "a year",
+      "call": {
+        "kind": "year",
+        "year": 2024
+      },
+      "out": {
+        "kind": "year",
+        "from": "2024-01-01",
+        "to": "2024-12-31"
+      }
+    },
+    {
+      "name": "February in a leap year",
+      "call": {
+        "kind": "month",
+        "year": 2024,
+        "month": 2
+      },
+      "out": {
+        "kind": "month",
+        "from": "2024-02-01",
+        "to": "2024-02-29"
+      }
+    },
+    {
+      "name": "February otherwise",
+      "call": {
+        "kind": "month",
+        "year": 2025,
+        "month": 2
+      },
+      "out": {
+        "kind": "month",
+        "from": "2025-02-01",
+        "to": "2025-02-28"
+      }
+    },
+    {
+      "name": "December",
+      "call": {
+        "kind": "month",
+        "year": 2025,
+        "month": 12
+      },
+      "out": {
+        "kind": "month",
+        "from": "2025-12-01",
+        "to": "2025-12-31"
+      }
+    },
+    {
+      "name": "month out of range",
+      "call": {
+        "kind": "month",
+        "year": 2025,
+        "month": 13
+      },
+      "out": {
+        "error": "invalidPeriod"
+      }
+    },
+    {
+      "name": "custom range",
+      "call": {
+        "kind": "custom",
+        "from": "2025-03-10",
+        "to": "2025-04-02"
+      },
+      "out": {
+        "kind": "custom",
+        "from": "2025-03-10",
+        "to": "2025-04-02"
+      }
+    },
+    {
+      "name": "custom range backwards",
+      "call": {
+        "kind": "custom",
+        "from": "2025-04-02",
+        "to": "2025-03-10"
+      },
+      "out": {
+        "error": "invalidPeriod"
+      }
+    },
+    {
+      "name": "custom range not a date",
+      "call": {
+        "kind": "custom",
+        "from": "2025-4-2",
+        "to": "2025-05-01"
+      },
+      "out": {
+        "error": "invalidPeriod"
+      }
+    },
+    {
+      "name": "this year, still New Year's Eve in Los Angeles",
+      "call": {
+        "kind": "thisYear",
+        "now": "2026-01-01T07:30:00Z",
+        "timeZone": "America/Los_Angeles"
+      },
+      "out": {
+        "kind": "year",
+        "from": "2025-01-01",
+        "to": "2025-12-31"
+      }
+    },
+    {
+      "name": "this year, already January in UTC",
+      "call": {
+        "kind": "thisYear",
+        "now": "2026-01-01T07:30:00Z",
+        "timeZone": "UTC"
+      },
+      "out": {
+        "kind": "year",
+        "from": "2026-01-01",
+        "to": "2026-12-31"
+      }
+    },
+    {
+      "name": "this month, already March in Tokyo",
+      "call": {
+        "kind": "thisMonth",
+        "now": "2025-02-28T16:00:00Z",
+        "timeZone": "Asia/Tokyo"
+      },
+      "out": {
+        "kind": "month",
+        "from": "2025-03-01",
+        "to": "2025-03-31"
+      }
+    }
+  ]
+}

@@ -373,15 +373,27 @@ returns entries changed after a cursor, oldest first, with the next cursor and
   writes (journal entries the server records). Incremental reads (below)
   cover the "only what changed" need; a pluggable cache can come later as an
   optional module.
-- **Stats** (decided 2026-10-07, not built): a limited, optional module. It
-  covers what every reading app's stats screen repeats: fetching a period's
-  finished reads with their books, tags and editions (paged and paced), and
-  the period itself (life, year, month or custom, in a timezone the app
-  passes: API tokens can't read the reader's profile timezone, see spec/02),
-  plus the basic totals and breakdowns (books, pages, time read, ratings,
-  formats, genres and moods, top authors). Anything more specific (pace
-  prediction, heatmaps, how a chart looks) is the app's. It ships as its own
-  entry point, `@hardcover/sdk/stats`, like `/oauth`.
+- **Stats** (decided 2026-10-07, built 2026-10-22): a limited, optional
+  module, `@hardcover/sdk/stats`. Rules in `shared/stats.json`, cases in
+  `shared/conformance/stats.json`.
+  - `period.life()`, `.year(y)`, `.month(y, m)`, `.custom(from, to)`, and
+    `.thisYear()` / `.thisMonth()` with the reader's time zone. Read dates
+    are calendar dates, so only "this" needs a zone (API tokens can't read
+    the profile time zone, see spec/02).
+  - `fetchStatsData(client)` pages through the reader's counted library
+    (`GetStatsLibrary`: the Read shelf or `read_count >= 1`, with reads,
+    editions, tags and contributors) plus the contributor-role tables.
+  - `computeStats(data, period)` is pure: books, reads (re-reads included),
+    pages, time listened, half-star ratings, formats, genres and moods,
+    authors, and reads per month. `readingStats(client, period)` does both.
+  - It follows the app's Stats page exactly (its counted-reads rule, edition
+    and format fallbacks, rating buckets, author rules), checked live on
+    2026-10-22 against `Stats::CountedReads` for life, two years and a
+    month. One difference: pages and time come from finished reads, the
+    app's fallback, because the API doesn't expose the daily progress
+    totals the app prefers (spec/06 #43).
+  - Anything more specific (pace prediction, heatmaps, chart buckets, how a
+    chart looks) is the app's; `byMonth` is the raw material for charts.
 - **API versions**: when the API adds a version header, the client sends the
   version it was generated against and passes deprecation notices to
   `onWarning`. The format and support window are the API side's call.

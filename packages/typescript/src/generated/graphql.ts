@@ -7297,6 +7297,8 @@ export type PromptAnswerFragment = { id: number, description: string | null, pro
 
 export type ActivityFragment = { id: number, event: string, data: unknown, objectType: string, bookId: number | null, userId: number, likesCount: number, privacySettingId: number, createdAt: string | null, user: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown } | null };
 
+export type StatsEditionFragment = { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number };
+
 export type UserProfileFragment = { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string };
 
 export type MeFragment = { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, accountPrivacySettingId: number, activityPrivacySettingsId: number, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string };
@@ -8098,6 +8100,20 @@ export type GetFollowingActivitiesQueryVariables = Exact<{
 
 export type GetFollowingActivitiesQuery = { activities: Array<{ id: number, event: string, data: unknown, objectType: string, bookId: number | null, userId: number, likesCount: number, privacySettingId: number, createdAt: string | null, user: { id: number, username: string | null, name: string | null, bio: string | null, flair: string | null, pro: boolean, cachedImage: unknown, booksCount: number, followersCount: number, followedUsersCount: number, createdAt: string }, book: { id: number, slug: string | null, title: string | null, subtitle: string | null, pages: number | null, rating: number | null, releaseYear: number | null, audioSeconds: number | null, ratingsCount: number, usersCount: number, cachedImage: unknown, cachedContributors: unknown, cachedFeaturedSeries: unknown } | null }> };
 
+export type GetStatsLibraryQueryVariables = Exact<{
+  userId: number;
+  limit?: number | null | undefined;
+  offset?: number | null | undefined;
+}>;
+
+
+export type GetStatsLibraryQuery = { user_books: Array<{ id: number, rating: number | null, statusId: number, readCount: number, lastReadDate: string | null, edition: { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number } | null, book: { id: number, title: string | null, slug: string | null, pages: number | null, audioSeconds: number | null, cachedTags: unknown, cachedContributors: unknown, cachedImage: unknown }, userBookReads: Array<{ id: number, progress: number | null, startedAt: string | null, finishedAt: string | null, finishedAtPrecision: number | null, edition: { id: number, pages: number | null, audioSeconds: number | null, readingFormatId: number } | null }> }> };
+
+export type GetContributorRolesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetContributorRolesQuery = { contributor_roles: Array<{ id: number, primary: boolean }>, contributor_role_specializations: Array<{ primary: boolean | null, contributorRoleId: number, contributorSpecializationId: number }> };
+
 export type GetVibesForUserQueryVariables = Exact<{
   userId: number;
   limit?: number | null | undefined;
@@ -8540,6 +8556,14 @@ fragment UserProfile on users {
   pro
   createdAt: created_at
 }`, {"fragmentName":"Activity"}) as unknown as TypedDocumentString<ActivityFragment, unknown>;
+export const StatsEditionFragmentDoc = new TypedDocumentString(`
+    fragment StatsEdition on editions {
+  id
+  pages
+  audioSeconds: audio_seconds
+  readingFormatId: reading_format_id
+}
+    `, {"fragmentName":"StatsEdition"}) as unknown as TypedDocumentString<StatsEditionFragment, unknown>;
 export const MeFragmentDoc = new TypedDocumentString(`
     fragment Me on users {
   ...UserProfile
@@ -11222,6 +11246,66 @@ fragment UserProfile on users {
   pro
   createdAt: created_at
 }`) as unknown as TypedDocumentString<GetFollowingActivitiesQuery, GetFollowingActivitiesQueryVariables>;
+export const GetStatsLibraryDocument = new TypedDocumentString(`
+    query GetStatsLibrary($userId: Int!, $limit: Int = 100, $offset: Int = 0) {
+  user_books(
+    where: {
+      user_id: { _eq: $userId }
+      _or: [{ status_id: { _eq: 3 } }, { read_count: { _gte: 1 } }]
+    }
+    order_by: [{ id: asc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    statusId: status_id
+    readCount: read_count
+    lastReadDate: last_read_date
+    rating
+    edition {
+      ...StatsEdition
+    }
+    book {
+      id
+      title
+      slug
+      pages
+      audioSeconds: audio_seconds
+      cachedTags: cached_tags
+      cachedContributors: cached_contributors
+      cachedImage: cached_image
+    }
+    userBookReads: user_book_reads(order_by: [{ id: asc }]) {
+      id
+      startedAt: started_at
+      finishedAt: finished_at
+      finishedAtPrecision: finished_at_precision
+      progress
+      edition {
+        ...StatsEdition
+      }
+    }
+  }
+}
+    fragment StatsEdition on editions {
+  id
+  pages
+  audioSeconds: audio_seconds
+  readingFormatId: reading_format_id
+}`) as unknown as TypedDocumentString<GetStatsLibraryQuery, GetStatsLibraryQueryVariables>;
+export const GetContributorRolesDocument = new TypedDocumentString(`
+    query GetContributorRoles {
+  contributor_roles {
+    id
+    primary
+  }
+  contributor_role_specializations(where: { primary: { _is_null: false } }) {
+    contributorRoleId: contributor_role_id
+    contributorSpecializationId: contributor_specialization_id
+    primary
+  }
+}
+    `) as unknown as TypedDocumentString<GetContributorRolesQuery, GetContributorRolesQueryVariables>;
 export const GetVibesForUserDocument = new TypedDocumentString(`
     query GetVibesForUser($userId: Int!, $limit: Int = 25, $offset: Int = 0) {
   vibes(

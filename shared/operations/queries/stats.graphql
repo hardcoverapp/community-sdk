@@ -1,0 +1,57 @@
+# The reader's counted library for the stats module: books on the Read shelf
+# (status 3) or finished at least once (read_count >= 1), with every read,
+# its edition, and the book's tags and contributors. DNF books are out: the
+# server keeps their read_count at 0. Same population as the app's Stats page
+# (Stats::CountedReads). Paged by id so a growing library pages stably.
+query GetStatsLibrary($userId: Int!, $limit: Int = 100, $offset: Int = 0) {
+  user_books(
+    where: { user_id: { _eq: $userId }, _or: [{ status_id: { _eq: 3 } }, { read_count: { _gte: 1 } }] }
+    order_by: [{ id: asc }]
+    limit: $limit
+    offset: $offset
+  ) {
+    id
+    status_id
+    read_count
+    last_read_date
+    rating
+    edition {
+      ...StatsEdition
+    }
+    book {
+      id
+      title
+      slug
+      pages
+      audio_seconds
+      cached_tags
+      cached_contributors
+      cached_image
+    }
+    user_book_reads(order_by: [{ id: asc }]) {
+      id
+      started_at
+      finished_at
+      finished_at_precision
+      progress
+      edition {
+        ...StatsEdition
+      }
+    }
+  }
+}
+
+# Which contributor roles count as authors. Most cached contributors carry a
+# `primary` flag; older ones only have a role id, resolved with these tables
+# (Contribution.primary_from_cached_snapshot).
+query GetContributorRoles {
+  contributor_roles {
+    id
+    primary
+  }
+  contributor_role_specializations(where: { primary: { _is_null: false } }) {
+    contributor_role_id
+    contributor_specialization_id
+    primary
+  }
+}

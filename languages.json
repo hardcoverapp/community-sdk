@@ -157,6 +157,11 @@
       "label": "`prompts`: write (ask, answer, follow)"
     },
     {
+      "id": "stats",
+      "group": "Resources",
+      "label": "`stats` (optional module): period totals and breakdowns"
+    },
+    {
       "id": "test-mock",
       "group": "Testing",
       "label": "Mock transport + shared fixtures"
@@ -242,7 +247,8 @@
         "res-series": "done",
         "res-users": "done",
         "res-social": "done",
-        "res-notifications": "done"
+        "res-notifications": "done",
+        "stats": "done"
       },
       "examples": {
         "res-me": "examples/quick-start.ts",
@@ -266,7 +272,8 @@
         "res-series": "examples/catalog.ts",
         "res-users": "examples/social.ts",
         "res-social": "examples/social.ts",
-        "res-notifications": "examples/notifications.ts"
+        "res-notifications": "examples/notifications.ts",
+        "stats": "examples/stats.ts"
       }
     },
     {

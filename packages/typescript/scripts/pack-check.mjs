@@ -23,7 +23,7 @@ try {
   const tarball = readdirSync(work).find((file) => file.endsWith(".tgz"));
   const files = run("tar", ["-tzf", tarball]).split("\n").filter(Boolean);
 
-  check("tarball has the code and its types", ["dist/index.js", "dist/index.d.ts", "dist/oauth/index.js", "dist/testing/index.js"].every((f) => files.includes(`package/${f}`)));
+  check("tarball has the code and its types", ["dist/index.js", "dist/index.d.ts", "dist/oauth/index.js", "dist/stats/index.js", "dist/testing/index.js"].every((f) => files.includes(`package/${f}`)));
   check("tarball has no source, tests or local files", files.every((f) => /^package\/(dist\/|package\.json$|README\.md$|LICENSE)/.test(f)));
 
   // Doc comments in the declarations are for people using the package: no
@@ -53,12 +53,13 @@ try {
     const sdk = await import("@hardcover/sdk");
     const oauth = await import("@hardcover/sdk/oauth");
     const testing = await import("@hardcover/sdk/testing");
+    const stats = await import("@hardcover/sdk/stats");
     console.log(JSON.stringify({
-      client: typeof sdk.HardcoverClient, session: typeof oauth.OAuthSession, mock: typeof testing.MockTransport,
+      client: typeof sdk.HardcoverClient, session: typeof oauth.OAuthSession, mock: typeof testing.MockTransport, stats: typeof stats.computeStats,
       sameError: sdk.SignedOutError === oauth.SignedOutError,
     }));`]);
   const e = JSON.parse(esm);
-  check("import: every entry point loads", e.client === "function" && e.session === "function" && e.mock === "function");
+  check("import: every entry point loads", e.client === "function" && e.session === "function" && e.mock === "function" && e.stats === "function");
   check("import: SignedOutError is one class across entry points", e.sameError);
 
   // 4. CommonJS apps on Node 22.12+ can require() the ES modules directly.
@@ -74,11 +75,13 @@ try {
     import { HardcoverClient, operations } from "@hardcover/sdk";
     import { OAuthSession, memoryStore, type TokenSet } from "@hardcover/sdk/oauth";
     import { MockTransport } from "@hardcover/sdk/testing";
+    import { computeStats, period, type ReadingStats } from "@hardcover/sdk/stats";
     const session = new OAuthSession({ clientId: "x", store: memoryStore() });
     const hc = new HardcoverClient({ auth: session, transport: new MockTransport([]) });
     export const typed: Promise<{ id: number }> = hc.me.get();
     export const op = operations.Me;
     export type T = TokenSet;
+    export const year: ReadingStats = computeStats({ library: [], contributorRoles: { contributor_roles: [], contributor_role_specializations: [] } }, period.year(2025));
   `;
   for (const [mode, resolution, ext] of [["nodenext", "nodenext", "mts"], ["nodenext", "nodenext", "cts"], ["esnext", "bundler", "ts"]]) {
     const file = `consumer-${resolution}.${ext}`;
