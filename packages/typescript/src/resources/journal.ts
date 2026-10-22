@@ -74,8 +74,8 @@ export class JournalResource {
 
   /**
    * Adds an entry (a note unless `event` says otherwise).
-   * Without `privacy`, it uses the reader's activity privacy setting, as the
-   * app does for new entries.
+   * Without `privacy`, it uses the reader's activity privacy setting, as
+   * Hardcover does for new entries (one extra request to read it).
    * Scopes: `write:library`, `read:me:content` (only when privacy isn't given).
    */
   async add(bookId: number, input: JournalEntryInput = {}): Promise<JournalEntry> {

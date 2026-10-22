@@ -1,20 +1,13 @@
 // Name-indexed registry over the generated documents. Every operation in
 // shared/operations becomes `operations.<Name>`, typed with its result and
 // variables. Regenerate with `pnpm codegen`.
-import * as generated from "./generated/graphql.ts";
+import { operations } from "./generated/operations.ts";
 
-type Generated = typeof generated;
-type OperationName = {
-  [K in keyof Generated]: K extends `${infer Name}Document` ? Name : never;
-}[keyof Generated];
+// Generated with a doc comment per operation (scopes, roles, protected
+// fields), so editors show what each one needs: scripts/gen-operation-docs.mjs.
+export { operations };
 
-export type Operations = { [Name in OperationName]: Generated[`${Name}Document`] };
-
-export const operations = Object.fromEntries(
-  Object.entries(generated)
-    .filter(([key]) => key.endsWith("Document"))
-    .map(([key, doc]) => [key.slice(0, -"Document".length), doc]),
-) as Operations;
+export type Operations = typeof operations;
 
 export type OperationKind = "query" | "mutation" | "subscription";
 
@@ -23,9 +16,10 @@ export interface OperationInfo {
   kind: OperationKind;
 }
 
+// The client uses this to decide retry safety and to set operationName.
 /**
- * Finds the first operation definition in a document. Anonymous `{ ... }`
- * shorthand is a query. Used to decide retry safety and to set operationName.
+ * The kind and name of the first operation in a GraphQL document. Anonymous
+ * `{ ... }` shorthand is a query.
  */
 export function operationInfo(document: unknown): OperationInfo {
   const source = String(document).replace(/#[^\n]*/g, "");

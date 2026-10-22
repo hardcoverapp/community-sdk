@@ -233,12 +233,27 @@ Requests to the OAuth endpoints are form-encoded POSTs over the same
 `OAuthError` (`code`, `description`); `authorization_pending` and `slow_down`
 stay inside the device poll loop.
 
-### Scope helpers (planned)
+### Requirements in the editor
 
-Generate `requiredScopes(operationName)` from
-`api-snapshot/capability-scopes.json` and show it in each method's doc
-comment. A `ScopeError` message names the missing scope and links to the PAT
-link builder.
+Developers see what a call needs before they make it, on hover and in the
+published type declarations:
+
+- **Every operation** (`operations.X`) has a generated doc comment
+  (`scripts/gen-operation-docs.mjs`, part of `pnpm codegen`): the leading
+  comment from its `.graphql` file, the scopes each root field accepts, a
+  role when every accepted scope needs one (the librarian `write:catalog:*`
+  scopes), extra scopes for protected columns (`email`,
+  `librarian_roles`) and for review fields a write can send
+  (`write:reviews`), and a note when tokens can't use it at all. All of it
+  comes from `api-snapshot`, so it can't drift from the server.
+- **Every resource method** has a hand-written `Scopes:` line, plus notes
+  such as "Supporter perk". `tests/scopes-docs.test.ts` checks each line
+  covers what the method's operations need, using the shared resource
+  cases (which operations it sends) and the snapshot (what each needs).
+- The built package keeps every doc comment in its `.d.ts` files and strips
+  them from the JavaScript.
+- A `ScopeError` still names the missing scopes at runtime; the server is
+  the authority, and the SDK never checks scopes before sending.
 
 ## Request pipeline
 
@@ -365,8 +380,8 @@ returns entries changed after a cursor, oldest first, with the next cursor and
   passes: API tokens can't read the reader's profile timezone, see spec/02),
   plus the basic totals and breakdowns (books, pages, time read, ratings,
   formats, genres and moods, top authors). Anything more specific (pace
-  prediction, heatmaps, how a chart looks) is the app's. Module boundary and
-  packaging (e.g. `@hardcover/sdk/stats`) come with packaging.
+  prediction, heatmaps, how a chart looks) is the app's. It ships as its own
+  entry point, `@hardcover/sdk/stats`, like `/oauth`.
 - **API versions**: when the API adds a version header, the client sends the
   version it was generated against and passes deprecation notices to
   `onWarning`. The format and support window are the API side's call.
@@ -563,12 +578,31 @@ the server's entry carries when the reading actually happened.
 - **TypeScript (first).**
   - Isomorphic: `fetch` only, no Node built-ins in core. It runs in Node 20+,
     Deno, Bun and browsers.
-  - ESM today; a CJS build comes with packaging.
+  - **Package.** `@hardcover/sdk`, ES modules only (decided 2026-10-22: a
+    CommonJS copy doubled the size and risked two copies of every class;
+    Node 22.12+ can `require()` ES modules, and Node 20 is past end of
+    life). Built by `scripts/build.mjs` with `tsc` into `dist/`: JavaScript
+    without comments, type declarations with every doc comment, and only
+    the declarations an entry point can reach. One file per module, not a
+    bundle, so every entry point shares one copy of the core: an error from
+    `/oauth` is `instanceof` the same class as one from the root. No runtime dependencies: the one type
+    the generated documents need (`DocumentTypeDecoration`) is declared in
+    `core/decoration.ts` rather than pulled from
+    `@graphql-typed-document-node/core`, which would bring `graphql` along as
+    a peer. `pnpm pack:check` installs the tarball in a fresh project and
+    checks import, `require()` on Node 22.12+, types (nodenext, CommonJS
+    and bundler), and that no doc comment in the declarations is a
+    maintainer note; CI runs it.
+  - **Working from source.** Each export has an `@hardcover/source`
+    condition pointing at `src/`. The repo's typecheck, tests and playground
+    set it, so they never need a build; a linked consumer can too (`node
+    --conditions=@hardcover/source`, or `customConditions` in its tsconfig).
+    Published installs never see it.
   - Codegen: `@graphql-codegen/cli` (`typescript-operations` and
     `typed-document-node`) over the `--case camel` rewrite of the shared
     operations.
-  - Entry points: `@x/sdk` (client), `@x/sdk/oauth`, `@x/sdk/testing` (mock
-    client and fixtures).
+  - Entry points: `@hardcover/sdk` (client), `@hardcover/sdk/oauth`,
+    `@hardcover/sdk/testing` (mock transport).
   - **Browser caution.** The docs contradict each other on browser use (see
     [06](06-open-questions.md)). Recommend PKCE for SPAs and never shipping a
     PAT in client code.

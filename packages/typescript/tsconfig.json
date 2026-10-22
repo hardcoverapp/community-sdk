@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "customConditions": ["@hardcover/source"],
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
     "strict": true,

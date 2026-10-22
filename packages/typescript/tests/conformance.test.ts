@@ -1,6 +1,6 @@
 // Runs the language-neutral cases in shared/conformance against this SDK.
 // These cases define parity across languages; see spec/04-testing.md.
-import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
+import type { DocumentTypeDecoration } from "../src/core/decoration.ts";
 import { describe, expect, it } from "vitest";
 import cases from "../../../shared/conformance/cases.json" with { type: "json" };
 import errorSpec from "../../../shared/errors.json" with { type: "json" };

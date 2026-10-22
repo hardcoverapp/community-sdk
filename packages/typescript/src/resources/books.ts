@@ -22,15 +22,15 @@ export type Edition = WithJsonColumns<EditionSummaryFragment>;
 export type EditionWithBook = WithJsonColumns<FindEditionsByIsbnQuery["editions"][number]>;
 
 /**
- * A book another service knows by `externalId`. `editionId` is the exact
- * edition when the mapping names one.
- */
-/**
  * A library entry of someone the signed-in user follows, with its reader and
  * any review. Private notes are never included.
  */
 export type FriendEntry = WithJsonColumns<NonNullable<GetFriendsForBookQuery["following_user_books"][number]["userBook"]>>;
 
+/**
+ * A book another service knows by `externalId`. `editionId` is the exact
+ * edition when the mapping names one.
+ */
 export type ExternalMatch = WithJsonColumns<FindBookMappingsQuery["book_mappings"][number]>;
 
 export interface ReleasedOptions extends PageOptions {

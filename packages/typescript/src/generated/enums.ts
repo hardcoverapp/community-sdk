@@ -37,7 +37,8 @@ export const ReadingFormat = {
 } as const;
 export type ReadingFormat = (typeof ReadingFormat)[keyof typeof ReadingFormat];
 
-/** Where an external id comes from, for books.findByExternalIds. The API stores mappings per platform. Source: platforms table (api.hardcover.app, 2026-10-20) */
+// Source: platforms table (api.hardcover.app, 2026-10-20)
+/** Where an external id comes from, for books.findByExternalIds. The API stores mappings per platform. */
 export const Platform = {
   /** Goodreads */
   Goodreads: 1,
@@ -125,7 +126,7 @@ export const DatePrecision = {
 } as const;
 export type DatePrecision = (typeof DatePrecision)[keyof typeof DatePrecision];
 
-/** Source: docs: src/content/docs/api/guides/Searching.mdx */
+// Source: docs: src/content/docs/api/guides/Searching.mdx
 export const SearchType = {
   Author: "author",
   Book: "book",
@@ -138,7 +139,7 @@ export const SearchType = {
 } as const;
 export type SearchType = (typeof SearchType)[keyof typeof SearchType];
 
-/** The API accepts any of these from journal.add. Only notes and quotes are normally written by apps; the rest are journaled by the server as a side effect of library, reads, lists and prompts calls (spec/03 'Journal entries are the server's job'). A manual progress_updated merges into that day's entry. */
+/** The API accepts any of these from journal.add. Only notes and quotes are normally written by apps; the rest are journaled by the server as a side effect of library, reads, lists and prompts calls, so apps don't add them. A manual progress_updated merges into that day's entry. */
 export const JournalEvent = {
   /** Notes */
   Note: "note",

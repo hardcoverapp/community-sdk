@@ -1,7 +1,7 @@
 // Runs the language-neutral client cases in shared/conformance/client.json:
 // pacing, batching (the request planner) and retries, over time and with
 // calls issued together. See shared/conformance/client.md for the format.
-import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
+import type { DocumentTypeDecoration } from "../src/core/decoration.ts";
 import { describe, expect, it } from "vitest";
 import cases from "../../../shared/conformance/client.json" with { type: "json" };
 import * as sdk from "../src/index.ts";

@@ -101,11 +101,12 @@ export class GoalsResource {
     return goals_by_pk ?? null;
   }
 
+  // Privacy ignored on create: spec/06.
   /**
    * Progress is calculated on creation.
-   * The API currently ignores privacy on create and uses the account default
-   * (spec/06); when you ask for a different privacy, the SDK applies it with
-   * one follow-up update.
+   * The API currently ignores privacy on create and uses the account default,
+   * so when you ask for a different privacy, it's applied with one follow-up
+   * update.
    * Scopes: `write:goals`.
    */
   async create(fields: GoalFields): Promise<Goal> {

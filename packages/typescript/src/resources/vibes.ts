@@ -62,9 +62,10 @@ export interface VibeCreate extends VibeFields {
   dynamicSignals?: DynamicSignal[];
 }
 
+// Open question: spec/06 #25.
 /**
- * The API can't list or remove a vibe's existing signals and exclusions yet
- * (spec/06 #25), so updates add them. `dynamicSignals` replaces the whole set.
+ * The API can't list or remove a vibe's existing signals and exclusions yet,
+ * so updates add them. `dynamicSignals` replaces the whole set.
  */
 export interface VibeUpdate extends VibeFields {
   addSignals?: VibeSignal[];
@@ -74,10 +75,11 @@ export interface VibeUpdate extends VibeFields {
 
 /** A page of a vibe's books, plus whether those results are current. */
 export interface VibeBooks extends Page<BookSummaryFragment> {
+  // Open question: spec/06 #26.
   /**
    * True when the site hasn't generated results for this vibe yet, or the vibe
-   * changed since. The API can't generate them (spec/06 #26); they appear once
-   * the vibe is opened on hardcover.app.
+   * changed since. The API can't generate them; they appear once the vibe is
+   * opened on hardcover.app.
    */
   resultsPending: boolean;
 

@@ -43,3 +43,6 @@ jobs:
       - run: pnpm test
       # Syntax check with the current Hermes compiler (runtime checks need HERMES_BIN).
       - run: pnpm hermes:smoke
+      # Build the package, install the tarball in a fresh project, and check
+      # import, require and types the way an app would.
+      - run: pnpm pack:check

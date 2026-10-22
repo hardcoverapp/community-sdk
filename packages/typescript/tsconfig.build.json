@@ -1,0 +1,17 @@
+{
+  // The published build: src/ only, ES modules plus type declarations.
+  // scripts/build.mjs runs it (JavaScript, then declarations).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
+    "outDir": "dist",
+
+    // The published code must not depend on Node's types (it runs in browsers
+    // and React Native too); tests/runtime-globals.test.ts checks the rest.
+    "types": []
+  },
+  "include": ["src"]
+}

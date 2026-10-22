@@ -18,10 +18,11 @@ export interface OAuthEndpoints {
   issuer: string;
 }
 
+// No default stands in for the app: spec/03 principle 8.
 /**
  * What identifies your app to Hardcover. Nothing here has a default that
- * stands in for your app (spec/03 principle 8): the consent screen shows the
- * name and image of the app registered under `clientId`.
+ * stands in for your app: the consent screen shows the name and image of the
+ * app registered under `clientId`.
  */
 export interface OAuthConfig {
   /** Your app's client id, from hardcover.app → Account → Developer apps. */
@@ -32,7 +33,7 @@ export interface OAuthConfig {
 
   environment?: Environment;
 
-  /** Overrides individual endpoints from `environment` (Conductor ports, proxies). */
+  /** Overrides individual endpoints from `environment`, e.g. for a local server or a proxy. */
   endpoints?: Partial<OAuthEndpoints>;
 
   transport?: Transport;

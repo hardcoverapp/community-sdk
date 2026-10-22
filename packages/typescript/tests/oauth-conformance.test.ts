@@ -1,7 +1,7 @@
 // Runs the language-neutral OAuth cases in shared/conformance/oauth.json.
 // Responses are queued per endpoint (graphql, token, revoke, device), so
 // cases don't depend on the order concurrent requests happen to go out.
-import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
+import type { DocumentTypeDecoration } from "../src/core/decoration.ts";
 import { describe, expect, it } from "vitest";
 import cases from "../../../shared/conformance/oauth.json" with { type: "json" };
 import * as sdk from "../src/index.ts";

@@ -232,9 +232,12 @@ read-only production token. The mobile apps come next and will likely hit the sa
 
 11. **Official or community?** Decided 2026-10-07: official, built for the
     community to use and contribute to. The repo is
-    `github.com/hardcoverapp/community-sdk` (private for now). Still open: the
-    package names (`@hardcover/…` on npm, PyPI, Maven group, gem) and the
-    license.
+    `github.com/hardcoverapp/community-sdk` (private for now). The npm org
+    `@hardcover` is claimed (2026-10-22, 2FA required) and the TypeScript
+    package builds as `@hardcover/sdk`; the first publish is a staged
+    package, not a live release. Still open: names on PyPI, Maven and
+    RubyGems, and **the license**. `package.json` has no `license` field
+    until it's decided, and npm will flag that at publish time.
 12. **JVM language.** Decided 2026-09-28: Kotlin with a Java-friendly API
     (see [03](03-sdk-design.md#language-notes)). Java apps load Kotlin
     libraries natively; the interop cost is API design, enforced by a Java

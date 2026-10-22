@@ -345,7 +345,7 @@
   "JournalEvent": {
     "type": "string",
     "field": "event",
-    "notes": "The API accepts any of these from journal.add. Only notes and quotes are normally written by apps; the rest are journaled by the server as a side effect of library, reads, lists and prompts calls (spec/03 'Journal entries are the server's job'). A manual progress_updated merges into that day's entry.",
+    "notes": "The API accepts any of these from journal.add. Only notes and quotes are normally written by apps; the rest are journaled by the server as a side effect of library, reads, lists and prompts calls, so apps don't add them. A manual progress_updated merges into that day's entry.",
     "values": [
       {
         "id": "note",

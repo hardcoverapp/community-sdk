@@ -34,8 +34,9 @@ and feeds, and notifications. A few niche areas come later, and some endpoints
 are left out on purpose (librarian-only catalog edits, operations the gateway
 blocks for tokens); [spec/03](spec/03-sdk-design.md#coverage) lists both. It
 runs in browsers, Node and React Native (Hermes), and signs in with OAuth
-(browser or device code) or a personal access token. Packaging comes next, and
-nothing is published to a package registry yet. The first consumers are the
+(browser or device code) or a personal access token. It builds as
+`@hardcover/sdk` (ES modules, no dependencies) and isn't
+published to a package registry yet. The first consumers are the
 Hardcover docs site (live examples) and a React Native app. Swift, Kotlin
 (Java-friendly), Python and Ruby follow once the shared layer has proven
 itself.

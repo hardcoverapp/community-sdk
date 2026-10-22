@@ -1,14 +1,12 @@
-/**
- * Types for JSON columns the schema only knows as `jsonb` (spec/03, Types for
- * JSON columns).
- *
- * The shapes are observed from the API, not guaranteed:
- * - keys stay exactly as stored (so some are snake_case, like `color_name`),
- * - an empty column arrives as `{}`, not `null`,
- * - the server can add or drop keys at any time.
- *
- * That's why every field is optional.
- */
+// Types for JSON columns the schema only knows as `jsonb` (spec/03, Types for
+// JSON columns).
+//
+// The shapes are observed from the API, not guaranteed:
+// - keys stay exactly as stored (so some are snake_case, like `color_name`),
+// - an empty column arrives as `{}`, not `null`,
+// - the server can add or drop keys at any time.
+//
+// That's why every field is optional.
 
 /** A cover, author photo or avatar. `{}` when there's no image. */
 export interface CachedImage {
@@ -102,11 +100,13 @@ interface JsonColumns {
   cachedFeaturedSeries: CachedFeaturedSeries;
 }
 
+// Codegen can only map the `jsonb` scalar as a whole (to `unknown`), so the
+// per-field types are applied on top of its output here.
 /**
- * A generated type with its JSON columns typed, at any depth.
- *
- * Codegen can only map the `jsonb` scalar as a whole (to `unknown`), so the
- * per-field types are applied on top of its output here.
+ * A generated result type with its JSON columns (`cachedImage`,
+ * `cachedContributors`, `cachedTags`, `cachedFeaturedSeries`) typed, at any
+ * depth. The shapes are observed, not guaranteed: every field is optional, an
+ * empty column arrives as `{}`, and keys stay as stored (some snake_case).
  */
 export type WithJsonColumns<T> =
   // A list: type each item.

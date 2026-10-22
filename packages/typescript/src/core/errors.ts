@@ -22,7 +22,14 @@ export class HardcoverError extends Error {
 
 export class AuthenticationError extends HardcoverError {}
 
-/** Why an OAuth session has no usable tokens (shared/auth.json). */
+// Reasons mirror shared/auth.json.
+/**
+ * Why an OAuth session has no usable tokens: `not-signed-in` (never signed
+ * in), `signed-out` (here or in another process sharing the store), `revoked`
+ * (the server refused the refresh token, e.g. the app was removed on
+ * hardcover.app), or `expired` (the access token ran out and there was no
+ * refresh token, as with an identity-only sign-in).
+ */
 export type SignedOutReason = "not-signed-in" | "signed-out" | "revoked" | "expired";
 
 /**
@@ -96,7 +103,7 @@ export interface GraphQLErrorDetail {
 
 export class GraphQLError extends HardcoverError {
   readonly errors: GraphQLErrorDetail[];
-  /** Partial data Hasura returned alongside the errors, if any. */
+  /** Partial data the API returned alongside the errors, if any. */
   readonly data: unknown;
 
   constructor(errors: GraphQLErrorDetail[], data: unknown, options?: HardcoverErrorOptions) {
@@ -106,7 +113,12 @@ export class GraphQLError extends HardcoverError {
   }
 }
 
-/** A Hasura action returned HTTP 200 with a failure inside `data`. */
+// A Hasura action that returned HTTP 200 with a failure inside `data`.
+/**
+ * A write the API accepted but refused, e.g. a Supporter perk on a free
+ * account. `messages` holds the server's reasons and `operation` the action
+ * that refused.
+ */
 export class ActionError extends HardcoverError {
   readonly operation: string;
   readonly messages: string[];

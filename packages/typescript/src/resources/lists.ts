@@ -210,9 +210,9 @@ export class ListsResource {
    * list (the `id` of each row in `listBooks`), first to last; they get
    * positions 0, 1, 2, … as the server numbers them. Positions are
    * unique on a list, so a partial order could collide; anything missing or
-   * extra throws before a change is made. Does what the app does: clears the
-   * positions, sets the new ones (5 per request), then touches the list so
-   * its public page refreshes. 4 requests plus one per 5 books.
+   * extra throws before a change is made. It clears the positions, sets the
+   * new ones (5 per request), then touches the list so its public page
+   * refreshes: 4 requests plus one per 5 books.
    * Scopes: `read:lists`, `write:lists`.
    */
   async reorder(listId: number, listBookIds: number[]): Promise<void> {

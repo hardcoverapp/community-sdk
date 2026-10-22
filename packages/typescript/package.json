@@ -2,22 +2,61 @@
   "name": "@hardcover/sdk",
   "version": "0.0.0",
   "private": true,
-  "description": "TypeScript SDK for the Hardcover GraphQL API",
+  "description": "The official TypeScript client for the Hardcover API: typed resources, rate-limit pacing, and OAuth sign-in that handles the tokens for you.",
+  "keywords": [
+    "hardcover",
+    "books",
+    "reading",
+    "graphql",
+    "sdk",
+    "oauth"
+  ],
+  "homepage": "https://github.com/hardcoverapp/community-sdk/tree/main/packages/typescript#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hardcoverapp/community-sdk.git",
+    "directory": "packages/typescript"
+  },
+  "bugs": "https://github.com/hardcoverapp/community-sdk/issues",
   "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./oauth": "./src/oauth/index.ts",
-    "./testing": "./src/testing/index.ts"
+    ".": {
+      "@hardcover/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./oauth": {
+      "@hardcover/source": "./src/oauth/index.ts",
+      "types": "./dist/oauth/index.d.ts",
+      "default": "./dist/oauth/index.js"
+    },
+    "./testing": {
+      "@hardcover/source": "./src/testing/index.ts",
+      "types": "./dist/testing/index.d.ts",
+      "default": "./dist/testing/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.12"
   },
   "scripts": {
-    "codegen": "node ../../scripts/case-operations.mjs --case camel --out .operations && node ../../scripts/validate-operations.mjs --dir .operations && graphql-codegen --config codegen.ts && node scripts/gen-shared.mjs",
+    "codegen": "node ../../scripts/case-operations.mjs --case camel --out .operations && node ../../scripts/validate-operations.mjs --dir .operations && graphql-codegen --config codegen.ts && node scripts/codegen-post.mjs && node scripts/gen-operation-docs.mjs && node scripts/gen-shared.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "test:live": "vitest run --config vitest.live.config.ts",
     "test:live:writes": "vitest run --config vitest.live.config.ts --mode writes",
     "codegen:check": "pnpm codegen && git diff --exit-code -- src/generated && test -z \"$(git ls-files --others --exclude-standard -- src/generated)\"",
-    "hermes:smoke": "node scripts/hermes-smoke.mjs"
+    "hermes:smoke": "node scripts/hermes-smoke.mjs",
+    "build": "node scripts/build.mjs",
+    "pack:check": "node scripts/build.mjs && node scripts/pack-check.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

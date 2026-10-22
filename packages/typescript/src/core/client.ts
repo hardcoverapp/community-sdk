@@ -1,4 +1,4 @@
-import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
+import type { DocumentTypeDecoration } from "./decoration.ts";
 import { client as constants } from "../generated/client.ts";
 import { environments, type Environment } from "../generated/environments.ts";
 import { version } from "../generated/version.ts";
@@ -96,12 +96,12 @@ export interface HardcoverClientOptions {
   /** Injectable random source (0 ≤ x < 1) for backoff jitter; defaults to Math.random. */
   random?: () => number;
 
+  // The request planner (spec/03, core/planner.ts).
   /**
-   * Request planner (spec/03): send concurrent reads from `request()` (and
-   * every resource method) as one HTTP request, sized to the burst allowance,
-   * with identical reads sent once. Mutations are barriers: they run alone, in
-   * the order issued, after everything before them. `graphql()` is never
-   * grouped. Default false.
+   * Send concurrent reads from `request()` and the resource methods as one
+   * HTTP request, sized to what the rate limit allows right now, with
+   * identical reads sent once. Mutations run alone, in the order issued, after
+   * everything before them. `graphql()` is never grouped. Default false.
    */
   batch?: boolean;
 }
@@ -207,9 +207,11 @@ export class HardcoverClient {
     return this.#allowance.state;
   }
 
+  // JSON column typing: core/json-columns.ts.
   /**
    * Runs a generated operation, e.g. `client.request(operations.Me)`. JSON
-   * columns such as `cachedImage` come back typed (core/json-columns.ts).
+   * columns such as `cachedImage` come back typed (see `CachedImage` and the
+   * other `Cached*` types).
    */
   request<TResult, TVariables>(
     document: DocumentTypeDecoration<TResult, TVariables>,
