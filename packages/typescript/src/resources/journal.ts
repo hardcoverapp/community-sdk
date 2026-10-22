@@ -58,7 +58,7 @@ export class JournalResource {
     this.client = client;
   }
 
-  /** The signed-in user's entries for a book, newest first. Scopes: `read:me`, `read:journal`. */
+  /** The signed-in user's entries for a book, newest first. Scopes: `read:me:content`, `read:journal`. */
   async forBook(bookId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<JournalEntry>> {
     const userId = await this.client.me.id();
 
@@ -76,7 +76,7 @@ export class JournalResource {
    * Adds an entry (a note unless `event` says otherwise).
    * Without `privacy`, it uses the reader's activity privacy setting, as the
    * app does for new entries.
-   * Scopes: `write:library`, `read:me` (only when privacy isn't given).
+   * Scopes: `write:library`, `read:me:content` (only when privacy isn't given).
    */
   async add(bookId: number, input: JournalEntryInput = {}): Promise<JournalEntry> {
     const privacy = input.privacy ?? (await this.#defaultPrivacy());

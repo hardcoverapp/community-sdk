@@ -109,7 +109,7 @@ export class PromptsResource {
     return toPage(prompts, limit, offset);
   }
 
-  /** Prompts the signed-in user asked, newest first. Scopes: `read:me`, `read:prompts`. */
+  /** Prompts the signed-in user asked, newest first. Scopes: `read:me:content`, `read:prompts`. */
   async mine(options: PageOptions = {}): Promise<Page<Prompt>> {
     return this.forUser(await this.client.me.id(), options);
   }
@@ -147,7 +147,7 @@ export class PromptsResource {
     return { ...toPage(prompts, limit, offset), hasMore: prompt_books_summary.length === limit };
   }
 
-  /** The signed-in user's answers to a prompt, newest first. Scopes: `read:me`, `read:prompts`. */
+  /** The signed-in user's answers to a prompt, newest first. Scopes: `read:me:content`, `read:prompts`. */
   async myAnswers(promptId: number): Promise<PromptAnswerWithBook[]> {
     const userId = await this.client.me.id();
     const { prompt_answers } = await this.client.request(operations.GetPromptAnswersForUser, { userId, promptId });
@@ -155,7 +155,7 @@ export class PromptsResource {
     return prompt_answers;
   }
 
-  /** Prompts the signed-in user follows, most recently followed first. Scopes: `read:me`, `read:prompts`. */
+  /** Prompts the signed-in user follows, most recently followed first. Scopes: `read:me:content`, `read:prompts`. */
   async following({ limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<FollowedPrompt>> {
     const userId = await this.client.me.id();
     const { followed_prompts } = await this.client.request(operations.GetFollowedPrompts, { userId, limit, offset });

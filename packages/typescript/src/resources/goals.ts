@@ -84,7 +84,7 @@ export class GoalsResource {
     this.client = client;
   }
 
-  /** The signed-in user's goals, newest end date first. Scopes: `read:me`, `read:goals`. */
+  /** The signed-in user's goals, newest end date first. Scopes: `read:me:content`, `read:goals`. */
   async list({ includeArchived = false }: { includeArchived?: boolean } = {}): Promise<Goal[]> {
     const userId = await this.client.me.id();
     const { goals } = await this.client.request(operations.GetGoals, { userId, includeArchived });

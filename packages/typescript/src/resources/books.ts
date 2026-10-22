@@ -110,7 +110,7 @@ export class BooksResource {
   /**
    * The library entries of people the signed-in user follows, for one book:
    * who has it, their status and rating, and any review.
-   * Scopes: `read:me`, `read:social`.
+   * Scopes: `read:me:content`, `read:social`.
    */
   async friends(bookId: number, { limit = DEFAULT_LIMIT }: { limit?: number } = {}): Promise<FriendEntry[]> {
     const userId = await this.client.me.id();

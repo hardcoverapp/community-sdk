@@ -196,7 +196,7 @@ export class ReadsResource {
    * The signed-in user's reads finished between `from` and `to` (inclusive),
    * newest first, each with its book: what a stats or year-in-review screen
    * needs, without walking the whole library.
-   * Scopes: `read:me`, `read:library`.
+   * Scopes: `read:me:content`, `read:library`.
    */
   async finished({ from, to, limit = DEFAULT_LIMIT, offset = 0 }: FinishedReadsOptions): Promise<Page<FinishedRead>> {
     const userId = await this.client.me.id();

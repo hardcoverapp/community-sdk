@@ -98,7 +98,7 @@ export class UsersResource {
   /**
    * Lifts every block on a reader. Returns false if they weren't blocked. The
    * API deletes blocks by id, so this looks them up first.
-   * Scopes: `read:me`, `read:social`, `write:social`.
+   * Scopes: `read:me:content`, `read:social`, `write:social`.
    */
   async unblock(userId: number): Promise<boolean> {
     const blocks = (await this.blocked()).filter((block) => block.blockedUser?.id === userId);
@@ -110,7 +110,7 @@ export class UsersResource {
     return blocks.length > 0;
   }
 
-  /** Readers the signed-in user blocked, most recent first. Scopes: `read:me`, `read:social`. */
+  /** Readers the signed-in user blocked, most recent first. Scopes: `read:me:content`, `read:social`. */
   async blocked(): Promise<BlockedUser[]> {
     const userId = await this.client.me.id();
     const { user_blocks } = await this.client.request(operations.GetBlockedUsers, { userId });

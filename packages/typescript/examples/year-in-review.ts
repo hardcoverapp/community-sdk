@@ -1,6 +1,6 @@
 /**
  * A reader's year, owned editions, and reads edited by hand.
- * Reading needs `read:me` and `read:library`; edits need `write:library`.
+ * Reading needs `read:me:content` and `read:library`; edits need `write:library`.
  */
 import { DatePrecision, HardcoverClient } from "@hardcover/sdk";
 

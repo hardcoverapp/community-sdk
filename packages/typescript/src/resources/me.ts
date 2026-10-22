@@ -25,7 +25,11 @@ export class MeResource {
     this.#userVersion = userVersion;
   }
 
-  /** Concurrent callers share one request. Scopes: `read:me`. */
+  /**
+   * Concurrent callers share one request. Leaves out `email` and
+   * `librarian_roles`, which need their own scopes. Scopes:
+   * `read:me:content` (any `read:me` scope works).
+   */
   get({ refresh = false }: { refresh?: boolean } = {}): Promise<Me> {
     // Someone else signed in, or nobody is: the cached user isn't theirs.
     if (this.#cachedFor !== this.#userVersion()) this.forget();
@@ -49,7 +53,7 @@ export class MeResource {
     this.#cached = undefined;
   }
 
-  /** Scopes: `read:me`. */
+  /** Scopes: `read:me:content`. */
   async id(): Promise<number> {
     return (await this.get()).id;
   }

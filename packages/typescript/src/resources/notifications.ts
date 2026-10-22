@@ -19,7 +19,7 @@ export class NotificationsResource {
     this.client = client;
   }
 
-  /** Newest first. Scopes: `read:me`, `read:notifications`. */
+  /** Newest first. Scopes: `read:me:content`, `read:notifications`. */
   async list({ limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Notification>> {
     const userId = await this.client.me.id();
     const { notification_deliveries } = await this.client.request(operations.GetNotifications, { userId, limit, offset });
@@ -27,7 +27,7 @@ export class NotificationsResource {
     return toPage(notification_deliveries, limit, offset);
   }
 
-  /** How many are unread: the number on the bell. Scopes: `read:me`, `read:notifications`. */
+  /** How many are unread: the number on the bell. Scopes: `read:me:content`, `read:notifications`. */
   async unreadCount(): Promise<number> {
     const userId = await this.client.me.id();
     const { notification_deliveries_aggregate } = await this.client.request(operations.CountUnreadNotifications, { userId });
@@ -38,7 +38,7 @@ export class NotificationsResource {
   /**
    * Marks notifications read: these (by the `id` from `list`), or every
    * unread one when no ids are given. Returns how many changed; ones already
-   * read don't count. Scopes: `read:me`, `write:notifications`.
+   * read don't count. Scopes: `read:me:content`, `write:notifications`.
    */
   async markRead(ids?: number[]): Promise<number> {
     const userId = await this.client.me.id();

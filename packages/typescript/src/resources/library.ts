@@ -179,7 +179,7 @@ export class LibraryResource {
     this.client = client;
   }
 
-  /** One request plus a cached `me` lookup. Scopes: `read:me`, `read:library`. */
+  /** One request plus a cached `me` lookup. Scopes: `read:me:content`, `read:library`. */
   async list({ status, limit = DEFAULT_LIMIT, offset = 0 }: LibraryListOptions = {}): Promise<Page<LibraryListItem>> {
     const userId = await this.client.me.id();
 
@@ -194,7 +194,7 @@ export class LibraryResource {
   }
 
   /**
-   * Scopes: `read:me`, `read:library`.
+   * Scopes: `read:me:content`, `read:library`.
    */
   async count({ status }: { status?: LibraryStatusFilter } = {}): Promise<number> {
     const userId = await this.client.me.id();
@@ -213,7 +213,7 @@ export class LibraryResource {
    * `removedIds`: that adds one ids-only read of the whole library, so pass it
    * once per sync, e.g. with the last page.
    *
-   * Scopes: `read:me`, `read:library`.
+   * Scopes: `read:me:content`, `read:library`.
    */
   async changes({ since, knownIds, limit = DEFAULT_LIMIT }: LibraryChangesOptions = {}): Promise<LibraryChanges> {
     const cursor = since ? decodeCursor(since) : {};
@@ -243,7 +243,7 @@ export class LibraryResource {
 
   /**
    * The entry for a book, or null if it isn't in the library.
-   * Scopes: `read:me`, `read:library`.
+   * Scopes: `read:me:content`, `read:library`.
    */
   async forBook(bookId: number): Promise<LibraryEntryForBook | null> {
     const userId = await this.client.me.id();
@@ -327,7 +327,7 @@ export class LibraryResource {
    * Takes a book off the Owned list. Returns false if it wasn't on it. The API
    * has no un-own action, so this finds the Owned list and removes the book
    * from it: up to three requests.
-   * Scopes: `read:me`, `read:lists`, `write:lists`.
+   * Scopes: `read:me:content`, `read:lists`, `write:lists`.
    */
   async unmarkOwned(bookId: number): Promise<boolean> {
     const listId = await this.#ownedListId();
@@ -336,7 +336,7 @@ export class LibraryResource {
     return this.client.lists.removeBook(listId, bookId);
   }
 
-  /** Books on the Owned list, most recently marked first. Scopes: `read:me`, `read:lists`. */
+  /** Books on the Owned list, most recently marked first. Scopes: `read:me:content`, `read:lists`. */
   async owned({ limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<OwnedBook>> {
     const userId = await this.client.me.id();
     const { lists } = await this.client.request(operations.GetOwnedBooks, { userId, limit, offset });

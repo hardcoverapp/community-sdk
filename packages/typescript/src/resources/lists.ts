@@ -104,7 +104,7 @@ export class ListsResource {
     this.client = client;
   }
 
-  /** The signed-in user's lists. Scopes: `read:me`, `read:lists`. */
+  /** The signed-in user's lists. Scopes: `read:me:content`, `read:lists`. */
   async mine(options: PageOptions = {}): Promise<Page<List>> {
     return this.forUser(await this.client.me.id(), options);
   }
@@ -268,7 +268,7 @@ export class ListsResource {
     return delete_followed_list?.success ?? false;
   }
 
-  /** Lists the signed-in user follows, most recently followed first. Scopes: `read:me`, `read:lists`. */
+  /** Lists the signed-in user follows, most recently followed first. Scopes: `read:me:content`, `read:lists`. */
   async followed({ limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<FollowedList>> {
     const userId = await this.client.me.id();
     const { followed_lists } = await this.client.request(operations.GetFollowedLists, { userId, limit, offset });
@@ -285,7 +285,7 @@ export class ListsResource {
     return list_members;
   }
 
-  /** The signed-in user's invites and memberships, newest first. Scopes: `read:me`, `read:lists`. */
+  /** The signed-in user's invites and memberships, newest first. Scopes: `read:me:content`, `read:lists`. */
   async memberships(): Promise<ListMembership[]> {
     const userId = await this.client.me.id();
     const { list_members } = await this.client.request(operations.GetListMemberships, { userId });

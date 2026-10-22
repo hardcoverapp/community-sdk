@@ -147,7 +147,7 @@ export class VibesResource {
     this.client = client;
   }
 
-  /** Your vibes, most recently changed first. Scopes: `read:me`, `read:vibes`. */
+  /** Your vibes, most recently changed first. Scopes: `read:me:content`, `read:vibes`. */
   async mine(options: PageOptions = {}): Promise<Page<Vibe>> {
     return this.forUser(await this.client.me.id(), options);
   }

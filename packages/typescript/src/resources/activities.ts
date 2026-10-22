@@ -34,7 +34,7 @@ export class ActivitiesResource {
     return toPage(activities, limit, offset);
   }
 
-  /** Activity from the people the signed-in user follows, newest first. Scopes: `read:me`, `read:social`. */
+  /** Activity from the people the signed-in user follows, newest first. Scopes: `read:me:content`, `read:social`. */
   async following({ limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Activity>> {
     const userId = await this.client.me.id();
     const { activities } = await this.client.request(operations.GetFollowingActivities, { userId, limit, offset });
