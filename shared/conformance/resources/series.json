@@ -89,5 +89,15 @@
         "hasMore": false
       }
     }
+  },
+  {
+    "id": "series/books-caps-limit-at-997",
+    "method": "series.books",
+    "args": [1033, { "limit": 2000 }],
+    "responses": [{ "status": 200, "body": { "data": { "book_series": [] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetSeriesBooks", "variables": { "seriesId": 1033, "limit": 997, "offset": 0 } }],
+      "result": { "items": [], "limit": 997, "offset": 0, "hasMore": false }
+    }
   }
 ]

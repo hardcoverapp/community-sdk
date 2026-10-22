@@ -3,7 +3,7 @@ import type { WithJsonColumns } from "../core/json-columns.ts";
 import { JournalEvent, type PrivacySetting } from "../generated/enums.ts";
 import type { JournalEntryFragment, ReadingJournalCreateType } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { nonNull, pickDefined, required } from "./shared.ts";
 
 export type JournalEntry = WithJsonColumns<JournalEntryFragment>;
@@ -59,7 +59,8 @@ export class JournalResource {
   }
 
   /** The signed-in user's entries for a book, newest first. Scopes: `read:me:content`, `read:journal`. */
-  async forBook(bookId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<JournalEntry>> {
+  async forBook(bookId: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<JournalEntry>> {
+    const limit = capped("reading_journals", requested);
     const userId = await this.client.me.id();
 
     const { reading_journals } = await this.client.request(operations.GetJournalForBook, {

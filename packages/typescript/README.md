@@ -70,6 +70,23 @@ TVs and command-line tools can use `session.signInWithDevice(...)` instead.
 On React Native, install `react-native-get-random-values` (or pass
 `expo-crypto` as `random`) so sign-in has a secure random source.
 
+## Paging
+
+List methods return one page at a time: `{ items, limit, offset, hasMore }`.
+To go through every page, hand any list method to `allPages`:
+
+```ts
+import { allPages } from "@hardcover/sdk";
+
+for await (const book of allPages((page) => hc.authors.books(authorId, page))) {
+  console.log(book.title);
+}
+```
+
+Each list has a most it returns per request (100 for lists and activities, 1,000
+for books). Asking for more is safe: the client sends that list's most, and
+`hasMore` still tells you whether there's another page.
+
 ## Reading stats
 
 `@hardcover/sdk/stats` computes a reader's stats for a year, a month or

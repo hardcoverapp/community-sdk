@@ -2,7 +2,7 @@ import type { HardcoverClient } from "../core/client.ts";
 import type { WithJsonColumns } from "../core/json-columns.ts";
 import type { GetSeriesBooksQuery, SeriesDetailFragment } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, toPage, type Page, type PageOptions } from "./page.ts";
 
 /**
  * A series. `canonicalId` is set when this series was merged into another:
@@ -53,7 +53,8 @@ export class SeriesResource {
    * Pages hold 50 by default, so most series fit on one.
    * Scopes: `read:catalog`.
    */
-  async books(seriesId: number, { limit = 50, offset = 0 }: PageOptions = {}): Promise<Page<SeriesEntry>> {
+  async books(seriesId: number, { limit: requested = 50, offset = 0 }: PageOptions = {}): Promise<Page<SeriesEntry>> {
+    const limit = capped("book_series", requested);
     const { book_series } = await this.client.request(operations.GetSeriesBooks, { seriesId, limit, offset });
 
     return toPage(book_series, limit, offset);

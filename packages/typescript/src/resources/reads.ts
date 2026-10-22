@@ -5,7 +5,7 @@ import type { WithJsonColumns } from "../core/json-columns.ts";
 import { ReadingFormat, type DatePrecision } from "../generated/enums.ts";
 import type { GetFinishedReadsQuery, UpdateUserBookReadMutation, UserBookReadFragment } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { pickDefined, required, type ActionRecord } from "./shared.ts";
 
 export type Read = WithJsonColumns<UserBookReadFragment>;
@@ -198,7 +198,8 @@ export class ReadsResource {
    * needs, without walking the whole library.
    * Scopes: `read:me:content`, `read:library`.
    */
-  async finished({ from, to, limit = DEFAULT_LIMIT, offset = 0 }: FinishedReadsOptions): Promise<Page<FinishedRead>> {
+  async finished({ from, to, limit: requested = DEFAULT_LIMIT, offset = 0 }: FinishedReadsOptions): Promise<Page<FinishedRead>> {
+    const limit = capped("user_book_reads", requested);
     const userId = await this.client.me.id();
     const { user_book_reads } = await this.client.request(operations.GetFinishedReads, { userId, from, to, limit, offset });
 

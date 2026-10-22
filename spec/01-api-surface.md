@@ -227,10 +227,11 @@ A few table-level writes are exposed directly:
   expanded, with a minimum of 1 per request. Introspection and
   `insert_reading_journal` fields add nothing, so a request of only those
   costs 1.
-- **Oversized requests.** A request with more top-level fields than the burst
-  capacity is refused with 403. The docs state a flat limit of 5 top-level
-  fields and 1 `search` per request, so **the SDK chunks at 5**, which is safe
-  under both.
+- **Oversized requests.** A request with more top-level fields than the
+  token's burst capacity is refused with 403 `request_exceeds_capacity`. That
+  is the only per-request limit: app PR #3744 removed the earlier flat limits
+  (5 top-level fields, 1 `search`). The smallest burst capacity is 5 (the free
+  plan, halved for legacy JWTs), so **the SDK chunks writes at 5**.
 - **Timeouts.** Queries time out at 30s and search at 2s. Gateway read timeout
   is 30s and Rack is 45s.
 - **Banned filter operators:** `_like`, `_ilike`, `_regex`, `_similar` and

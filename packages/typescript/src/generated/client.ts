@@ -33,7 +33,22 @@ export const client = {
   },
   "limits": {
     "maxTopLevelFields": 5,
-    "trendingMax": 100
+    "rowCaps": {
+      "activities": 100,
+      "book_series": 997,
+      "books": 1000,
+      "books_trending": 100,
+      "editions": 5000,
+      "following_user_books": 1000,
+      "list_books": 1000,
+      "lists": 100,
+      "notification_deliveries": 100,
+      "prompt_books_summary": 100,
+      "prompts": 100,
+      "reading_journals": 100,
+      "user_book_reads": 1000,
+      "vibes": 100
+    }
   },
   "userAgent": {
     "sdkFormat": "hardcover-sdk-{language}/{version}",

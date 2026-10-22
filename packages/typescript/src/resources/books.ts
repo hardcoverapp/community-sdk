@@ -11,9 +11,8 @@ import type {
   TrendingDuration,
 } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { client as constants } from "../generated/client.ts";
 import type { Platform } from "../generated/enums.ts";
-import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { nonNull, required } from "./shared.ts";
 
 export type Book = WithJsonColumns<BookDetailFragment>;
@@ -45,9 +44,6 @@ export interface TrendingOptions extends PageOptions {
   /** The window readers are counted over. Defaults to "month". */
   duration?: TrendingDuration;
 }
-
-/** The most ids `books_trending` returns per call (spec/01 row caps). */
-const TRENDING_MAX = constants.limits.trendingMax;
 
 /** Catalog reads. */
 export class BooksResource {
@@ -88,7 +84,8 @@ export class BooksResource {
   }
 
   /** A book's editions, most-read first. Scopes: `read:catalog`. */
-  async editions(bookId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Edition>> {
+  async editions(bookId: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Edition>> {
+    const limit = capped("editions", requested);
     const { editions } = await this.client.request(operations.GetEditionsForBook, { bookId, limit, offset });
 
     return toPage(editions, limit, offset);
@@ -113,7 +110,8 @@ export class BooksResource {
    * who has it, their status and rating, and any review.
    * Scopes: `read:me:content`, `read:social`.
    */
-  async friends(bookId: number, { limit = DEFAULT_LIMIT }: { limit?: number } = {}): Promise<FriendEntry[]> {
+  async friends(bookId: number, { limit: requested = DEFAULT_LIMIT }: { limit?: number } = {}): Promise<FriendEntry[]> {
+    const limit = capped("following_user_books", requested);
     const userId = await this.client.me.id();
     const { following_user_books } = await this.client.request(operations.GetFriendsForBook, { userId, bookId, limit });
 
@@ -154,7 +152,8 @@ export class BooksResource {
    * translation of an older book isn't included.
    * Scopes: `read:catalog`.
    */
-  async released({ from, to, limit = DEFAULT_LIMIT, offset = 0 }: ReleasedOptions): Promise<Page<BookSummary>> {
+  async released({ from, to, limit: requested = DEFAULT_LIMIT, offset = 0 }: ReleasedOptions): Promise<Page<BookSummary>> {
+    const limit = capped("books", requested);
     const { books } = await this.client.request(operations.ReleasedBooks, { from, to, limit, offset });
 
     return toPage(books, limit, offset);
@@ -167,8 +166,7 @@ export class BooksResource {
    * Scopes: `read:catalog`.
    */
   async trending({ duration = "month", limit: requested = DEFAULT_LIMIT, offset = 0 }: TrendingOptions = {}): Promise<Page<BookSummary>> {
-    // Asking for more than the cap would return 100 ids and wrongly report hasMore: false.
-    const limit = Math.min(requested, TRENDING_MAX);
+    const limit = capped("books_trending", requested);
 
     const { books_trending } = await this.client.request(operations.TrendingBookIds, { duration, limit, offset });
     const ids = nonNull(required(books_trending, "books_trending", "result").ids);

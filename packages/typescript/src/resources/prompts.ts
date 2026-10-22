@@ -12,7 +12,7 @@ import type {
 } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
 import type { BookSummary } from "./books.ts";
-import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { required } from "./shared.ts";
 
 export type Prompt = WithJsonColumns<PromptSummaryFragment>;
@@ -96,7 +96,8 @@ export class PromptsResource {
   }
 
   /** Browse prompts, most answered first unless `sort` says otherwise. Scopes: `read:prompts`. */
-  async list({ sort = "popular", featured, limit = DEFAULT_LIMIT, offset = 0 }: PromptListOptions = {}): Promise<Page<Prompt>> {
+  async list({ sort = "popular", featured, limit: requested = DEFAULT_LIMIT, offset = 0 }: PromptListOptions = {}): Promise<Page<Prompt>> {
+    const limit = capped("prompts", requested);
     const where: Prompts_Bool_Exp = featured === undefined ? {} : { featured: { _eq: featured } };
 
     const { prompts } = await this.client.request(operations.GetPrompts, {
@@ -115,14 +116,16 @@ export class PromptsResource {
   }
 
   /** Prompts someone asked, newest first. Scopes: `read:prompts`. */
-  async forUser(userId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Prompt>> {
+  async forUser(userId: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Prompt>> {
+    const limit = capped("prompts", requested);
     const { prompts } = await this.client.request(operations.GetPromptsForUser, { userId, limit, offset });
 
     return toPage(prompts, limit, offset);
   }
 
   /** A prompt's books, most picked first: the ranking the site shows. Scopes: `read:prompts`. */
-  async books(promptId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<PromptBook>> {
+  async books(promptId: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<PromptBook>> {
+    const limit = capped("prompt_books_summary", requested);
     const { prompt_books_summary } = await this.client.request(operations.GetPromptBooks, { promptId, limit, offset });
 
     // A row can lose its book (merged or removed); skip those.
@@ -136,7 +139,8 @@ export class PromptsResource {
   }
 
   /** The prompts a book was given as an answer to, where it was picked most first. Scopes: `read:prompts`. */
-  async forBook(bookId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<PromptForBook>> {
+  async forBook(bookId: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<PromptForBook>> {
+    const limit = capped("prompt_books_summary", requested);
     const { prompt_books_summary } = await this.client.request(operations.GetPromptsForBook, { bookId, limit, offset });
 
     const prompts: PromptForBook[] = [];

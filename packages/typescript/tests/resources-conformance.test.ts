@@ -239,6 +239,12 @@ async function run(client: sdk.HardcoverClient, c: Case): Promise<unknown> {
 
 // ---- The runner ----
 
+// Every case id is unique, so a failure names exactly one case.
+it("case ids are unique", () => {
+  const ids = files.flatMap((file) => (JSON.parse(readFileSync(join(dir, file), "utf8")) as Case[]).map((c) => c.id));
+  expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([]);
+});
+
 for (const file of files) {
   const cases = JSON.parse(readFileSync(join(dir, file), "utf8")) as Case[];
 

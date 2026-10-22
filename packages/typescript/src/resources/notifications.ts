@@ -2,7 +2,7 @@ import type { HardcoverClient } from "../core/client.ts";
 import type { WithJsonColumns } from "../core/json-columns.ts";
 import type { GetNotificationsQuery } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 
 /**
  * One in-app notification for the signed-in user: whether it's been `read`,
@@ -20,7 +20,8 @@ export class NotificationsResource {
   }
 
   /** Newest first. Scopes: `read:me:content`, `read:notifications`. */
-  async list({ limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Notification>> {
+  async list({ limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Notification>> {
+    const limit = capped("notification_deliveries", requested);
     const userId = await this.client.me.id();
     const { notification_deliveries } = await this.client.request(operations.GetNotifications, { userId, limit, offset });
 

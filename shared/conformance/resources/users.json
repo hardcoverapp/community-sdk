@@ -57,6 +57,16 @@
     }
   },
   {
+    "id": "users/followers-uncapped-sends-the-limit-asked",
+    "method": "users.followers",
+    "args": [7, { "limit": 500 }],
+    "responses": [{ "status": 200, "body": { "data": { "followed_users": [] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetFollowers", "variables": { "userId": 7, "limit": 500, "offset": 0 } }],
+      "result": { "items": [], "limit": 500, "offset": 0, "hasMore": false }
+    }
+  },
+  {
     "id": "users/following",
     "method": "users.following",
     "args": [7, { "limit": 1 }],

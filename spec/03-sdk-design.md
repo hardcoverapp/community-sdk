@@ -570,8 +570,8 @@ the server's entry carries when the reading actually happened.
   `isbn_13`/`isbn_10`. Search is only a fallback the app offers when there's
   no exact match. (The web app's scanner currently feeds search; switching it
   is an app-side change.)
-- Every call is 1 request, which counts as 1 of the 5 allowed top-level fields
-  and is the only `search` allowed in that request.
+- Every call is 1 request with one top-level field, so it costs 1 against the
+  rate limit.
 
 ## Versioning and releases
 

@@ -13,7 +13,7 @@ import type {
   ListSummaryFragment,
 } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { pickDefined, required, type ActionRecord } from "./shared.ts";
 
 export type List = WithJsonColumns<ListSummaryFragment>;
@@ -114,14 +114,16 @@ export class ListsResource {
   /**
    * Scopes: `read:lists`.
    */
-  async forUser(userId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<List>> {
+  async forUser(userId: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<List>> {
+    const limit = capped("lists", requested);
     const { lists } = await this.client.request(operations.GetListsForUser, { userId, limit, offset });
 
     return toPage(lists, limit, offset);
   }
 
   /** A list with a page of its books, or null. Scopes: `read:lists`. */
-  async get(id: number, { limit = 50, offset = 0 }: PageOptions = {}): Promise<ListWithBooks | null> {
+  async get(id: number, { limit: requested = 50, offset = 0 }: PageOptions = {}): Promise<ListWithBooks | null> {
+    const limit = capped("list_books", requested);
     const { lists_by_pk } = await this.client.request(operations.GetList, { id, limit, offset });
 
     return lists_by_pk ?? null;

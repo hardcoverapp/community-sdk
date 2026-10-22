@@ -35,9 +35,24 @@
   },
 
   "limits": {
-    "$comment": "Server limits the resources work within. maxTopLevelFields is the API's cap on top-level fields per request (spec/01 Limits); resources that write many rows split them into requests this size. trendingMax is the most ids books_trending returns per call (spec/01 Row caps); a larger limit is cut to it.",
+    "$comment": "Server limits the resources work within. maxTopLevelFields: the most top-level fields one request may have is the token's burst capacity (a request with more is refused with request_exceeds_capacity, spec/01 Limits); this is the smallest one (the free plan, halved for legacy JWTs), and resources that write many rows split them into requests this size. rowCaps: the most rows each paged query returns per request (spec/01 Row caps), from the API's permissions; the docs site's row-limits.json has every query. The API cuts a larger limit to the cap without an error, so a short page would look like the last one: a list method sends at most the cap of the query it pages, and its page's limit is what it sent. A query not listed has no cap.",
     "maxTopLevelFields": 5,
-    "trendingMax": 100
+    "rowCaps": {
+      "activities": 100,
+      "book_series": 997,
+      "books": 1000,
+      "books_trending": 100,
+      "editions": 5000,
+      "following_user_books": 1000,
+      "list_books": 1000,
+      "lists": 100,
+      "notification_deliveries": 100,
+      "prompt_books_summary": 100,
+      "prompts": 100,
+      "reading_journals": 100,
+      "user_book_reads": 1000,
+      "vibes": 100
+    }
   },
 
   "userAgent": {

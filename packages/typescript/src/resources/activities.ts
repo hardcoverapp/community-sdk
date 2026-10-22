@@ -3,7 +3,7 @@ import { NotFoundError } from "../core/errors.ts";
 import type { WithJsonColumns } from "../core/json-columns.ts";
 import type { ActivityFragment } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 
 /**
  * An entry in an activity feed. `event` says what happened (e.g. a status
@@ -21,21 +21,24 @@ export class ActivitiesResource {
   }
 
   /** A reader's activity, newest first. Scopes: `read:social`. */
-  async forUser(userId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Activity>> {
+  async forUser(userId: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Activity>> {
+    const limit = capped("activities", requested);
     const { activities } = await this.client.request(operations.GetActivitiesForUser, { userId, limit, offset });
 
     return toPage(activities, limit, offset);
   }
 
   /** Activity about a book, newest first. Scopes: `read:social`. */
-  async forBook(bookId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Activity>> {
+  async forBook(bookId: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Activity>> {
+    const limit = capped("activities", requested);
     const { activities } = await this.client.request(operations.GetActivitiesForBook, { bookId, limit, offset });
 
     return toPage(activities, limit, offset);
   }
 
   /** Activity from the people the signed-in user follows, newest first. Scopes: `read:me:content`, `read:social`. */
-  async following({ limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Activity>> {
+  async following({ limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Activity>> {
+    const limit = capped("activities", requested);
     const userId = await this.client.me.id();
     const { activities } = await this.client.request(operations.GetFollowingActivities, { userId, limit, offset });
 

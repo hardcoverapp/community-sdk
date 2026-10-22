@@ -8,7 +8,7 @@ a decision before the SDK depends on it.
 | # | Topic | Docs say | Code does | Impact on SDK |
 |---|---|---|---|---|
 | 1 | OAuth access token lifetime | `expires_in: 3600` (1h) | `ACCESS_TOKEN_TTL = 1.week` | SDK trusts `expires_in` from the response, so it's safe either way. Docs need fixing |
-| 2 | Top-level field limit | Flat max of 5 (1 for `search`), 403 `top_level_limit_exceeded` | Refuses when fields exceed the tier's burst capacity, 403 `request_exceeds_capacity` | SDK chunks at 5 and maps both codes. Which is intended? |
+| 2 | Top-level field limit | Flat max of 5 (1 for `search`), 403 `top_level_limit_exceeded` | Refuses when fields exceed the tier's burst capacity, 403 `request_exceeds_capacity` | **Resolved:** burst capacity is the only per-request limit (app PR #3744), and the docs say so. SDK chunks writes at 5, the smallest burst capacity |
 | 3 | Browser use | "Limitations" says queries can't run in the browser; "Important notes" says CORS is open | CORS open; SPA OAuth client type exists | TS SDK is isomorphic. Docs should say "browser OK with PKCE, never with a PAT" |
 | 4 | Depth limit | Roadmap item (max 3) | None (`api_limits.yaml` is `{}`) | If it ships, `GetList` (list → list_books → book) and `GetLibrary` sit at depth 3. Keep all shared operations at depth ≤ 3 |
 | 5 | Rate-limit error body | One documented shape | Three shapes (`{error,message}`, `{errors:[..],message}`, OAuth `{error,error_description}`) | SDK normalizes. Worth unifying server-side |

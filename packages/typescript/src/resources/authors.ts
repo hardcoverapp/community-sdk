@@ -3,7 +3,7 @@ import type { WithJsonColumns } from "../core/json-columns.ts";
 import type { AuthorDetailFragment, SeriesSummaryFragment } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
 import type { BookSummary } from "./books.ts";
-import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 
 /**
  * An author. `canonicalId` is set when this author was merged into another:
@@ -41,7 +41,8 @@ export class AuthorsResource {
    * most readers first. Each book appears once.
    * Scopes: `read:catalog`.
    */
-  async books(authorId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<BookSummary>> {
+  async books(authorId: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<BookSummary>> {
+    const limit = capped("books", requested);
     const { books } = await this.client.request(operations.GetAuthorBooks, { authorId, limit, offset });
 
     return toPage(books, limit, offset);

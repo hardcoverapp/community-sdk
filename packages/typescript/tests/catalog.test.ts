@@ -23,6 +23,8 @@ interface Field {
   /** A read-only lookup that finds an example in the reader's own account. */
   exampleFrom?: { method: string; args: unknown[]; pick: string };
   hint?: string;
+  /** The most the API returns per page; a larger limit is sent as this. */
+  max?: number;
   enum?: string;
   values?: string[];
   itemKind?: string;
@@ -569,3 +571,32 @@ function compareFields(catalogFields: Field[], type: string, types: Map<string, 
 
   return problems;
 }
+
+// A limit field's `max` is the cap the method's code applies (capped("query", …)),
+// so the docs never promise a page size the SDK doesn't send.
+describe("limit caps", () => {
+  const rowCaps = JSON.parse(readFileSync(join(root, "shared/client.json"), "utf8")).limits.rowCaps as Record<string, number>;
+
+  // The query a method caps its page at, following mine() → forUser() delegation.
+  function cappedQuery(resource: string, method: string): string | undefined {
+    const source = readFileSync(join(src, "resources", `${resource}.ts`), "utf8");
+    const start = source.indexOf(`  async ${method}(`);
+    if (start === -1) return undefined;
+
+    const body = source.slice(start, source.indexOf("\n  }\n", start));
+    const delegate = body.match(/return this\.(\w+)\(/)?.[1];
+    if (delegate && delegate !== method) return cappedQuery(resource, delegate);
+
+    return body.match(/capped\("(\w+)"/)?.[1];
+  }
+
+  for (const { resource, method } of entries) {
+    const limit = method.params.flatMap((param) => param.fields ?? []).find((field) => field.name === "limit");
+    if (!limit) continue;
+
+    it(`${resource.name}.${method.name}: the catalog's limit cap matches the code`, () => {
+      const query = cappedQuery(resource.name, method.name);
+      expect(limit.max).toBe(query ? rowCaps[query] : undefined);
+    });
+  }
+});

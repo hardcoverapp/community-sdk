@@ -13,7 +13,7 @@ import type {
   MarkOwnedMutation,
 } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { pickDefined, required, type ActionRecord } from "./shared.ts";
 
 export type LibraryEntry = WithJsonColumns<ActionRecord<AddUserBookMutation, "insert_user_book", "userBook">>;
@@ -338,7 +338,8 @@ export class LibraryResource {
   }
 
   /** Books on the Owned list, most recently marked first. Scopes: `read:me:content`, `read:lists`. */
-  async owned({ limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<OwnedBook>> {
+  async owned({ limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<OwnedBook>> {
+    const limit = capped("list_books", requested);
     const userId = await this.client.me.id();
     const { lists } = await this.client.request(operations.GetOwnedBooks, { userId, limit, offset });
 

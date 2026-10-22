@@ -1,5 +1,5 @@
 export { HardcoverClient, type Environment, type HardcoverClientOptions, type TokenSource } from "./core/client.ts";
-export { DEFAULT_LIMIT } from "./resources/page.ts";
+export { allPages, DEFAULT_LIMIT } from "./resources/page.ts";
 export * from "./core/errors.ts";
 export type { RateLimitState } from "./core/rate-limit.ts";
 export type {

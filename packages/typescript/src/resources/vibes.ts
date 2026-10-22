@@ -12,7 +12,7 @@ import type {
 } from "../generated/enums.ts";
 import type { BookSummaryFragment, VibeInput, VibeSummaryFragment } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
-import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
+import { capped, DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { nonNull, pickDefined, required } from "./shared.ts";
 
 export type Vibe = WithJsonColumns<VibeSummaryFragment>;
@@ -155,7 +155,8 @@ export class VibesResource {
   }
 
   /** Someone's vibes that you can see. Scopes: `read:vibes`. */
-  async forUser(userId: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Vibe>> {
+  async forUser(userId: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<Page<Vibe>> {
+    const limit = capped("vibes", requested);
     const { vibes } = await this.client.request(operations.GetVibesForUser, { userId, limit, offset });
 
     return toPage(vibes, limit, offset);
@@ -174,7 +175,8 @@ export class VibesResource {
    * "no matches". Two requests when there are books to show.
    * Scopes: `read:vibes`, `read:catalog`.
    */
-  async books(id: number, { limit = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<VibeBooks> {
+  async books(id: number, { limit: requested = DEFAULT_LIMIT, offset = 0 }: PageOptions = {}): Promise<VibeBooks> {
+    const limit = capped("books", requested);
     // The vibe holds its ranked book ids; the books themselves are a second read.
     const { vibes_by_pk: vibe } = await this.client.request(operations.GetVibeBookIds, { id });
     if (!vibe) throw new NotFoundError("vibe", id);
