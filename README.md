@@ -194,3 +194,6 @@ adding a language. The shared tooling needs Node 24 and pnpm whatever
 language you work in. Live tests are opt-in and only act the way a real reader
 would; they never probe limits or access rules.
 
+## License
+
+[MIT](LICENSE)

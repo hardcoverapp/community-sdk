@@ -5,8 +5,10 @@ built by the Hardcover team for the community. It runs in Node 22.12+,
 browsers, Deno, Bun and React Native (Hermes), with no runtime dependencies.
 It's ES modules only; CommonJS code on Node 22.12+ can still `require()` it.
 
-> **Pre-release.** The API it wraps is stable, but names may still change
-> before 1.0.
+> **0.x: early release.** Everything works against the live API. Names may
+> still change before 1.0 based on what people building with it tell us;
+> [open an issue](https://github.com/hardcoverapp/community-sdk/issues) with
+> anything that gets in your way.
 
 ```sh
 npm install @hardcover/sdk
@@ -101,4 +103,5 @@ To compare periods without fetching again, call `fetchStatsData(hc)` once and
 - [Examples](https://github.com/hardcoverapp/community-sdk/tree/main/packages/typescript/examples),
   each one type-checked against the SDK
 - [The design and the API it wraps](https://github.com/hardcoverapp/community-sdk/tree/main/spec)
+- [Changelog](https://github.com/hardcoverapp/community-sdk/blob/main/packages/typescript/CHANGELOG.md)
 - [Issues](https://github.com/hardcoverapp/community-sdk/issues)

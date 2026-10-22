@@ -1,8 +1,8 @@
 {
   "name": "@hardcover/sdk",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "The official TypeScript client for the Hardcover API: typed resources, rate-limit pacing, and OAuth sign-in that handles the tokens for you.",
+  "license": "MIT",
   "keywords": [
     "hardcover",
     "books",
@@ -45,11 +45,16 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "sideEffects": false,
   "engines": {
     "node": ">=22.12"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "codegen": "node ../../scripts/case-operations.mjs --case camel --out .operations && node ../../scripts/validate-operations.mjs --dir .operations && graphql-codegen --config codegen.ts && node scripts/codegen-post.mjs && node scripts/gen-operation-docs.mjs && node scripts/gen-shared.mjs",
@@ -61,7 +66,8 @@
     "codegen:check": "pnpm codegen && git diff --exit-code -- src/generated && test -z \"$(git ls-files --others --exclude-standard -- src/generated)\"",
     "hermes:smoke": "node scripts/hermes-smoke.mjs",
     "build": "node scripts/build.mjs",
-    "pack:check": "node scripts/build.mjs && node scripts/pack-check.mjs"
+    "pack:check": "node scripts/pack-check.mjs",
+    "prepack": "node scripts/build.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

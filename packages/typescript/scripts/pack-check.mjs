@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Checks the package the way an app would see it: packs the tarball, installs
 // it into a throwaway project, then imports, requires and type-checks it.
-// Run after `pnpm build` (or use `pnpm pack:check`, which builds first).
+// `npm pack` runs the prepack build, so this always checks a fresh build.
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -24,7 +24,7 @@ try {
   const files = run("tar", ["-tzf", tarball]).split("\n").filter(Boolean);
 
   check("tarball has the code and its types", ["dist/index.js", "dist/index.d.ts", "dist/oauth/index.js", "dist/stats/index.js", "dist/testing/index.js"].every((f) => files.includes(`package/${f}`)));
-  check("tarball has no source, tests or local files", files.every((f) => /^package\/(dist\/|package\.json$|README\.md$|LICENSE)/.test(f)));
+  check("tarball has no source, tests or local files", files.every((f) => /^package\/(dist\/|package\.json$|README\.md$|CHANGELOG\.md$|LICENSE)/.test(f)));
 
   // Doc comments in the declarations are for people using the package: no
   // spec references, repo paths or build internals. (The schema's own field

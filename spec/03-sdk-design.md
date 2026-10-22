@@ -580,8 +580,15 @@ the server's entry carries when the reading actually happened.
   config can be reused.
 - **Semver is per language.** A breaking API snapshot change is a major bump in
   every language that exposes the affected surface.
-- **Pre-1.0 while the API is beta-gated.** 1.0 waits until tokens and OAuth
-  are generally available.
+- **1.0 is no longer gated on the API.** Tokens and OAuth were beta-gated
+  when this was written; both shipped to everyone by 2026-10-10 (the
+  `oauth_apps` flag is gone). What 1.0 commits to now is the SDK's own
+  public API: after 1.0, renaming or removing a method, option or type
+  needs a major version. Decided 2026-10-22: start at 0.1.0 and reach 1.0
+  once people building with it have tried it and suggested changes.
+- **A changelog per package** (`packages/<lang>/CHANGELOG.md`, Keep a
+  Changelog format, shipped in the package): written for people using the
+  SDK, with what to change for anything renamed or removed.
 - Planned: every package records the `api-snapshot` commit it was generated
   against, exposed as `SDK.apiSnapshot`.
 
