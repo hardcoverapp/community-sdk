@@ -8,7 +8,17 @@ import {
   type RateLimitState,
   type Transport,
 } from "@hardcover/sdk";
-import { catalog, type Field, type Method, type Values } from "./catalog.ts";
+import {
+  buildArgs,
+  callMethod,
+  catalog,
+  enumKeys,
+  exampleText,
+  type Field,
+  type Method,
+  type Reader,
+  type Resource,
+} from "./catalog.ts";
 
 // ---------- storage (every access can throw in private windows) ----------
 const KEY = "hardcover-sdk-playground";
@@ -121,6 +131,9 @@ function getClient(): HardcoverClient {
 }
 
 // ---------- method picker and form ----------
+// The form is built from the catalog's params. Each input's id is
+// `field-` plus its path, e.g. `field-options.status`, which is how the
+// values are read back when the method runs.
 const resourceSelect = $<HTMLSelectElement>("resource");
 const methodSelect = $<HTMLSelectElement>("method");
 const inputs = $<HTMLFieldSetElement>("inputs");
@@ -129,55 +142,142 @@ const runButton = $<HTMLButtonElement>("run");
 for (const resource of catalog) resourceSelect.add(new Option(resource.name, resource.name));
 resourceSelect.value = store.get("resource") ?? "books";
 
+function currentResource(): Resource {
+  return catalog.find((r) => r.name === resourceSelect.value) ?? catalog[0]!;
+}
+
 function currentMethod(): Method {
-  const resource = catalog.find((r) => r.name === resourceSelect.value) ?? catalog[0]!;
+  const resource = currentResource();
   return resource.methods.find((m) => m.name === methodSelect.value) ?? resource.methods[0]!;
 }
 
 function fillMethods(preferred?: string | null) {
-  const resource = catalog.find((r) => r.name === resourceSelect.value) ?? catalog[0]!;
+  const resource = currentResource();
   methodSelect.replaceChildren(...resource.methods.map((m) => new Option(m.name, m.name)));
+
   if (preferred && resource.methods.some((m) => m.name === preferred)) methodSelect.value = preferred;
   renderMethod();
 }
 
-function fieldElement(field: Field): HTMLElement {
-  const wrap = document.createElement("div");
-  const id = `field-${field.name}`;
-  const hintId = `${id}-hint`;
-  let control: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+// Readable labels from enum keys and literal values: "WantToRead" → "Want To Read".
+const readable = (key: string) => key.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
 
-  if (field.kind === "checkbox") {
-    const label = document.createElement("label");
-    label.className = "check";
-    const box = Object.assign(document.createElement("input"), { type: "checkbox", id, name: field.name, checked: Boolean(field.value) });
-    label.append(box, field.label);
-    wrap.append(label);
-    control = box;
-  } else {
-    const label = Object.assign(document.createElement("label"), { htmlFor: id, textContent: field.label });
-    if ("required" in field && field.required) label.append(Object.assign(document.createElement("span"), { className: "required", textContent: " (required)" }));
-    if (field.kind === "select") {
-      const select = document.createElement("select");
-      for (const option of field.options) select.add(new Option(option.label, String(option.value)));
-      if (field.value !== undefined) select.value = String(field.value);
-      control = select;
-    } else if (field.kind === "lines") {
-      control = Object.assign(document.createElement("textarea"), { value: field.value ?? "" });
-    } else {
-      const type = { number: "number", text: "text", date: "date", datetime: "datetime-local" }[field.kind];
-      control = Object.assign(document.createElement("input"), { type, value: "value" in field && field.value !== undefined ? String(field.value) : "" });
-      if (field.kind === "number") control.setAttribute("step", "any");
+function labelFor(field: Field, id: string): HTMLLabelElement {
+  const label = Object.assign(document.createElement("label"), { htmlFor: id, textContent: field.label ?? field.name });
+
+  if (field.required) {
+    label.append(Object.assign(document.createElement("span"), { className: "required", textContent: " (required)" }));
+  }
+
+  return label;
+}
+
+function selectOf(choices: { label: string; value: string }[], initial: string): HTMLSelectElement {
+  const select = document.createElement("select");
+  for (const choice of choices) select.add(new Option(choice.label, choice.value));
+
+  select.value = initial;
+  return select;
+}
+
+// The input for one field. Optional selects start with "(not set)", so only
+// what you pick is sent.
+function controlFor(field: Field): HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
+  const initial = exampleText(field);
+  const notSet = field.required ? [] : [{ label: "(not set)", value: "" }];
+
+  switch (field.kind) {
+    case "enum":
+      return selectOf([...notSet, ...enumKeys(field).map((key) => ({ label: readable(key), value: key }))], initial);
+
+    case "literal":
+      return selectOf([...notSet, ...(field.values ?? []).map((value) => ({ label: readable(value), value }))], initial);
+
+    // A select rather than a checkbox, so "false" and "not set" are different.
+    case "boolean":
+      return selectOf([...notSet, { label: "Yes", value: "true" }, { label: "No", value: "false" }], initial);
+
+    case "lines":
+    case "longText":
+    case "json":
+      return Object.assign(document.createElement("textarea"), { value: initial });
+
+    default: {
+      const type = { number: "number", date: "date", datetime: "datetime-local" }[field.kind as string] ?? "text";
+      const input = Object.assign(document.createElement("input"), { type, value: initial });
+
+      if (field.kind === "number") input.step = "any";
+      return input;
     }
-    Object.assign(control, { id, name: field.name });
-    if ("required" in field && field.required) control.required = true;
-    wrap.append(label, control);
+  }
+}
+
+function hintFor(field: Field, id: string, control: HTMLElement): HTMLElement[] {
+  // Say what a textarea expects when the catalog doesn't.
+  const extra = field.kind === "lines" ? "One per line." : field.kind === "json" ? "JSON." : "";
+  const sentence = field.hint && (/[.!?]$/.test(field.hint) ? field.hint : `${field.hint}.`);
+  const text = [sentence, extra].filter(Boolean).join(" ");
+  if (!text) return [];
+
+  const hintId = `${id}-hint`;
+  control.setAttribute("aria-describedby", hintId);
+
+  return [Object.assign(document.createElement("span"), { id: hintId, className: "field-hint", textContent: text })];
+}
+
+// A group of inputs under a legend: an options object, or a stats period.
+function groupOf(legendText: string, children: HTMLElement[]): HTMLFieldSetElement {
+  const group = Object.assign(document.createElement("fieldset"), { className: "group" });
+  group.append(Object.assign(document.createElement("legend"), { textContent: legendText }), ...children);
+
+  return group;
+}
+
+// The stats period: a kind, and the inputs that kind needs.
+function periodElement(field: Field, path: string): HTMLElement {
+  const example = (field.example ?? {}) as Record<string, string | number>;
+
+  const parts: Field[] = [
+    { name: "year", kind: "number", label: "Year", example: example.year ?? new Date().getFullYear() },
+    { name: "month", kind: "number", label: "Month", hint: "1 for January through 12", example: example.month },
+    { name: "from", kind: "date", label: "From", example: example.from },
+    { name: "to", kind: "date", label: "To", example: example.to },
+  ];
+
+  // Which inputs each kind uses.
+  const uses: Record<string, string[]> = { life: [], year: ["year"], month: ["year", "month"], custom: ["from", "to"] };
+
+  const kind: Field = { name: "kind", kind: "literal", label: "Kind", required: true, values: Object.keys(uses), example: example.kind ?? "life" };
+  const kindElement = fieldElement(kind, `${path}.kind`);
+  const partElements = parts.map((part) => fieldElement(part, `${path}.${part.name}`));
+
+  const showParts = () => {
+    const chosen = uses[(kindElement.querySelector("select") as HTMLSelectElement).value] ?? [];
+    parts.forEach((part, i) => (partElements[i]!.hidden = !chosen.includes(part.name)));
+  };
+
+  kindElement.addEventListener("change", showParts);
+  showParts();
+
+  return groupOf(field.label ?? "Period", [kindElement, ...partElements]);
+}
+
+function fieldElement(field: Field, path: string): HTMLElement {
+  if (field.kind === "options") {
+    const children = (field.fields ?? []).map((inner) => fieldElement(inner, `${path}.${inner.name}`));
+    return groupOf(field.label ?? "Options", children);
   }
 
-  if (field.hint) {
-    wrap.append(Object.assign(document.createElement("span"), { id: hintId, className: "field-hint", textContent: field.hint }));
-    control.setAttribute("aria-describedby", hintId);
-  }
+  if (field.kind === "period") return periodElement(field, path);
+
+  const id = `field-${path}`;
+  const control = controlFor(field);
+  Object.assign(control, { id, name: path });
+  if (field.required && !field.nullable) control.required = true;
+
+  const wrap = document.createElement("div");
+  wrap.append(labelFor(field, id), control, ...hintFor(field, id, control));
+
   return wrap;
 }
 
@@ -194,8 +294,9 @@ function renderMethod() {
   if (method.destructive) badges.append(Object.assign(document.createElement("span"), { className: "badge destructive", textContent: "Deletes" }));
 
   const legend = inputs.querySelector("legend")!;
-  inputs.replaceChildren(legend, ...method.fields.map(fieldElement));
-  inputs.hidden = method.fields.length === 0;
+  inputs.replaceChildren(legend, ...method.params.map((param) => fieldElement(param, param.name)));
+  inputs.hidden = method.params.length === 0;
+
   runButton.textContent = `Run ${resourceSelect.value}.${method.name}`;
 }
 
@@ -203,16 +304,11 @@ resourceSelect.addEventListener("change", () => fillMethods());
 methodSelect.addEventListener("change", renderMethod);
 fillMethods(store.get("method"));
 
-function readValues(method: Method): Values {
-  const values: Values = {};
-  for (const field of method.fields) {
-    const control = document.getElementById(`field-${field.name}`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-    if (field.kind === "checkbox") values[field.name] = (control as HTMLInputElement).checked;
-    else if (field.kind === "lines") values[field.name] = control.value.split("\n").map((l) => l.trim()).filter(Boolean);
-    else values[field.name] = control.value.trim();
-  }
-  return values;
-}
+// What the form holds at a path; "" when there's no such input.
+const readInput: Reader = (path) => {
+  const control = document.getElementById(`field-${path}`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+  return control?.value ?? "";
+};
 
 // ---------- results ----------
 const statusLine = $<HTMLParagraphElement>("status");
@@ -319,7 +415,10 @@ $<HTMLFormElement>("call").addEventListener("submit", async (event) => {
   const started = performance.now();
 
   try {
-    const result = await method.run(getClient(), readValues(method));
+    // Positional args from the form, then the call itself, as an app would write it.
+    const args = buildArgs(method.params, readInput);
+    const result = await callMethod(getClient(), currentResource(), method, args);
+
     const ms = Math.round(performance.now() - started);
     output.textContent = result === undefined ? "(no value: the call succeeded and returns nothing)" : JSON.stringify(result, null, 2);
     output.hidden = false;

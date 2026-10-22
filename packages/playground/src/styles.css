@@ -195,3 +195,7 @@ button[type="submit"], .run { background: var(--cloth); color: var(--cloth-ink);
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
+
+/* An options object or a stats period: its inputs, grouped under a legend. */
+.group { border: 1px solid var(--rule); border-radius: var(--radius-control); padding: 0.5rem 0.85rem 0.85rem; margin: 0; display: grid; gap: 0.75rem; min-width: 0; }
+.group legend { font-weight: 600; padding: 0 0.35rem; }
