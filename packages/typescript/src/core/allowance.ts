@@ -2,13 +2,14 @@
 // Contention backoff). It decides how long a request waits before going out,
 // how big a batch can be, and how much jitter a 429 earns. It never sends
 // anything itself: the client asks it before and after each request.
+import { client as constants } from "../generated/client.ts";
 import { parseRateLimit, type RateLimitState } from "./rate-limit.ts";
 
 /**
  * Burst capacity of the smallest tier (free, halved for legacy JWTs). Until
  * the first response brings real numbers, pacing and batching assume this.
  */
-export const SMALLEST_BURST_CAPACITY = 5;
+export const SMALLEST_BURST_CAPACITY = constants.pacing.smallestBurstCapacity;
 
 export interface AllowanceOptions {
   /** Wait for the allowance before sending (the client's `pace` option). */
@@ -148,7 +149,9 @@ export class Allowance {
     if (!contended) return 0;
 
     this.#contended429++;
-    return this.#options.random() * Math.min(30_000, 1_000 * 2 ** this.#contended429);
+    const { baseMs, capMs } = constants.pacing.contentionJitter;
+
+    return this.#options.random() * Math.min(capMs, baseMs * 2 ** this.#contended429);
   }
 
   /** A 429 was waited out: that wait covered the refill, so don't wait again until new headers. */

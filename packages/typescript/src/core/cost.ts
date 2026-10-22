@@ -3,7 +3,9 @@
 // Introspection and the allowlisted insert_reading_journal add nothing, but a
 // request made only of them still costs 1. Used only to pace requests,
 // so a small scanner is enough; no GraphQL parser ships in the SDK.
-const FREE = new Set(["__schema", "__type", "__typename", "insert_reading_journal"]);
+import { client as constants } from "../generated/client.ts";
+
+const FREE: ReadonlySet<string> = new Set(constants.cost.freeFields);
 
 // Blank out comments and string literals so their contents can't be mistaken for syntax.
 function stripNoise(query: string): string {
@@ -14,7 +16,7 @@ function stripNoise(query: string): string {
 }
 
 export function requestCost(query: string): number {
-  return Math.max(fieldCount(query), 1);
+  return Math.max(fieldCount(query), constants.cost.minimum);
 }
 
 /** Counted top-level fields, without the per-request minimum. A batch costs max(sum, 1). */

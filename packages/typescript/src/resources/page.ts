@@ -1,3 +1,5 @@
+import { client as constants } from "../generated/client.ts";
+
 /** One page of a limit/offset list. `hasMore` is a heuristic: a full page means there may be more. */
 export interface Page<T> {
   items: T[];
@@ -7,7 +9,7 @@ export interface Page<T> {
 }
 
 /** Page size when none is given. */
-export const DEFAULT_LIMIT = 25;
+export const DEFAULT_LIMIT = constants.pages.defaultLimit;
 
 export interface PageOptions {
   limit?: number;

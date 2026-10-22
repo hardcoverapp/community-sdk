@@ -1,5 +1,6 @@
 // Talking to the OAuth endpoints: form-encoded POSTs over the same Transport
 // the GraphQL client uses, so the mock transport covers them in tests.
+import { client as constants } from "../generated/client.ts";
 import { environments, type Environment } from "../generated/environments.ts";
 import { version } from "../generated/version.ts";
 import { HardcoverError, NetworkError, OAuthError, RateLimitError, ServerError, TimeoutError } from "../core/errors.ts";
@@ -59,7 +60,7 @@ export interface ResolvedOAuthConfig {
   sleep: (ms: number) => Promise<void>;
 }
 
-const SDK_USER_AGENT = `hardcover-sdk-typescript/${version}`;
+const SDK_USER_AGENT = constants.userAgent.sdkFormat.replace("{language}", "typescript").replace("{version}", version);
 
 export function resolveConfig(config: OAuthConfig): ResolvedOAuthConfig {
   const clientId = typeof config.clientId === "string" ? config.clientId.trim() : "";

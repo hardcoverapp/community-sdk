@@ -2,6 +2,7 @@ import type { HardcoverClient } from "../core/client.ts";
 import { HardcoverError, NotFoundError } from "../core/errors.ts";
 import { cleanIsbn } from "../core/isbn.ts";
 import type { WithJsonColumns } from "../core/json-columns.ts";
+import { client as constants } from "../generated/client.ts";
 import { ListMemberStatus, type PrivacySetting } from "../generated/enums.ts";
 import type {
   AddBookToListMutation,
@@ -89,7 +90,7 @@ const RESPONSE_NAMES: Record<InviteResponse, string> = {
 };
 
 /** The API allows 5 top-level fields per request (spec/01 Limits). */
-const BATCH_SIZE = 5;
+const BATCH_SIZE = constants.limits.maxTopLevelFields;
 
 /** A cleaned code with the edition it matched, waiting to be added. */
 type Match = { key: string; bookId: number; editionId: number };

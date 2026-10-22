@@ -110,6 +110,7 @@ shared/
   enums.json      status, privacy, reading format, date precision, search types
   errors.json     error taxonomy + how to recognize each raw failure
   auth.json       token prefixes and the OAuth session's rules and timings
+  client.json     retries, timeouts, pacing, request cost, page sizes, limits
   environments.json  prod / staging / local endpoints
   conformance/    language-neutral behavior tests every SDK must pass
   fixtures/       recorded, scrubbed API responses for mock clients

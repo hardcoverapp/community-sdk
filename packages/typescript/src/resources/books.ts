@@ -11,6 +11,7 @@ import type {
   TrendingDuration,
 } from "../generated/graphql.ts";
 import { operations } from "../operations.ts";
+import { client as constants } from "../generated/client.ts";
 import type { Platform } from "../generated/enums.ts";
 import { DEFAULT_LIMIT, toPage, type Page, type PageOptions } from "./page.ts";
 import { nonNull, required } from "./shared.ts";
@@ -46,7 +47,7 @@ export interface TrendingOptions extends PageOptions {
 }
 
 /** The most ids `books_trending` returns per call (spec/01 row caps). */
-const TRENDING_MAX = 100;
+const TRENDING_MAX = constants.limits.trendingMax;
 
 /** Catalog reads. */
 export class BooksResource {

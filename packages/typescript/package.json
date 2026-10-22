@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "test:live": "vitest run --config vitest.live.config.ts",
     "test:live:writes": "vitest run --config vitest.live.config.ts --mode writes",
-    "codegen:check": "pnpm codegen && git diff --exit-code -- src/generated",
+    "codegen:check": "pnpm codegen && git diff --exit-code -- src/generated && test -z \"$(git ls-files --others --exclude-standard -- src/generated)\"",
     "hermes:smoke": "node scripts/hermes-smoke.mjs"
   },
   "devDependencies": {

@@ -1,4 +1,5 @@
 import type { DocumentTypeDecoration } from "@graphql-typed-document-node/core";
+import { client as constants } from "../generated/client.ts";
 import { environments, type Environment } from "../generated/environments.ts";
 import { version } from "../generated/version.ts";
 import { operationInfo, type OperationInfo } from "../operations.ts";
@@ -106,9 +107,9 @@ export interface HardcoverClientOptions {
 }
 
 /** Waits between retries of a network, timeout or 5xx failure. */
-const NETWORK_BACKOFF_MS = [250, 1_000, 4_000];
+const NETWORK_BACKOFF_MS = constants.retry.networkBackoffMs;
 
-const SDK_USER_AGENT = `hardcover-sdk-typescript/${version}`;
+const SDK_USER_AGENT = constants.userAgent.sdkFormat.replace("{language}", "typescript").replace("{version}", version);
 
 function networkBackoffMs(attempt: number): number {
   return NETWORK_BACKOFF_MS[Math.min(attempt, NETWORK_BACKOFF_MS.length - 1)]!;
@@ -163,7 +164,7 @@ export class HardcoverClient {
       ? undefined
       : normalizeToken(options.token, options.onWarning ?? ((message) => console.warn(message)));
     this.#transport = options.transport ?? fetchTransport({ timeoutMs: options.timeoutMs });
-    this.#maxRetries = options.maxRetries ?? 3;
+    this.#maxRetries = options.maxRetries ?? constants.defaults.maxRetries;
     this.#userAgent = options.userAgent ? `${options.userAgent} ${SDK_USER_AGENT}` : SDK_USER_AGENT;
     this.#sleep = options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
 

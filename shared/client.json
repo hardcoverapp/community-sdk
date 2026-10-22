@@ -1,0 +1,48 @@
+{
+  "$comment": "Numbers and formats every SDK client shares: defaults, retry waits, pacing, request cost and page sizes. Source of truth for spec/03 Client configuration, Request pipeline and Pacing. Server limits behind them are in spec/01 (Limits, Row caps).",
+
+  "defaults": {
+    "$comment": "Client options when the app passes none. maxRetries counts retries after the first attempt, for 429s and for queries that hit network, timeout or 5xx failures. timeoutMs sits just above the server's own 30 second timeout, so the server's answer arrives before the client gives up.",
+    "maxRetries": 3,
+    "timeoutMs": 35000
+  },
+
+  "retry": {
+    "$comment": "Waits before retrying a network, timeout or 5xx failure, indexed by attempt. Attempts past the end reuse the last value. 429s wait for Retry-After instead.",
+    "networkBackoffMs": [250, 1000, 4000]
+  },
+
+  "pacing": {
+    "$comment": "Burst capacity of the smallest tier (free, halved for legacy JWTs). Until the first response brings real rate-limit headers, pacing and batching assume this.",
+    "smallestBurstCapacity": 5,
+
+    "contentionJitter": {
+      "$comment": "Extra wait on top of Retry-After when a 429 looks like another client spending the same user's budget. Full jitter: random() times min(capMs, baseMs * 2^n), where n counts contended 429s in a row. Ordinary 429s add nothing.",
+      "baseMs": 1000,
+      "capMs": 30000
+    }
+  },
+
+  "cost": {
+    "$comment": "Mirrors the gateway's request weighting, used only for pacing. Each top-level field costs one unit, except the free fields below (introspection and the allowlisted insert_reading_journal). A request never costs less than minimum, even when it is made only of free fields. A field reached through a fragment spread still counts.",
+    "freeFields": ["__schema", "__type", "__typename", "insert_reading_journal"],
+    "minimum": 1
+  },
+
+  "pages": {
+    "$comment": "Page size when a list method gets no limit.",
+    "defaultLimit": 25
+  },
+
+  "limits": {
+    "$comment": "Server limits the resources work within. maxTopLevelFields is the API's cap on top-level fields per request (spec/01 Limits); resources that write many rows split them into requests this size. trendingMax is the most ids books_trending returns per call (spec/01 Row caps); a larger limit is cut to it.",
+    "maxTopLevelFields": 5,
+    "trendingMax": 100
+  },
+
+  "userAgent": {
+    "$comment": "Sent on every request. {language} is the SDK's language in lowercase (typescript, swift, kotlin, python, ruby) and {version} its package version. When the app gives its own name, that goes first, separated by one space, so the server sees which app made the call. Browsers don't let fetch set User-Agent, so from a browser it never reaches the server.",
+    "sdkFormat": "hardcover-sdk-{language}/{version}",
+    "withApp": "{app} {sdk}"
+  }
+}

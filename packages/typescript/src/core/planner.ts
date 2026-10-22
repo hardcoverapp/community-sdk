@@ -2,6 +2,7 @@
 // Concurrent reads share one HTTP request as a JSON array, identical reads are
 // sent once, and mutations are barriers: nothing is grouped, reordered or
 // de-duplicated across them.
+import { client as constants } from "../generated/client.ts";
 import type { OperationInfo } from "../operations.ts";
 import { fieldCount } from "./cost.ts";
 import {
@@ -143,7 +144,7 @@ export class RequestPlanner {
 
     const operationName = chunk.map((item) => item.info.name ?? "anonymous").join(", ");
     const body = JSON.stringify(chunk.map(({ query, variables, info }) => ({ query, variables, operationName: info.name })));
-    const cost = Math.max(chunk.reduce((sum, item) => sum + item.cost, 0), 1);
+    const cost = Math.max(chunk.reduce((sum, item) => sum + item.cost, 0), constants.cost.minimum);
 
     let response: SendResult;
     try {

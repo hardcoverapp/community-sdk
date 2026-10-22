@@ -1,3 +1,5 @@
+import { client as constants } from "../generated/client.ts";
+
 export interface HttpRequest {
   url: string;
   headers: Record<string, string>;
@@ -28,7 +30,7 @@ export class TransportFailure extends Error {
 
 // AbortController + setTimeout instead of AbortSignal.timeout(), which some
 // React Native (Hermes) versions lack. The timer covers reading the body too.
-export function fetchTransport({ timeoutMs = 35_000 }: { timeoutMs?: number } = {}): Transport {
+export function fetchTransport({ timeoutMs = constants.defaults.timeoutMs }: { timeoutMs?: number } = {}): Transport {
   return {
     async send(request) {
       const controller = new AbortController();
