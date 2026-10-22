@@ -1,0 +1,87 @@
+[
+  {
+    "id": "authors/get",
+    "method": "authors.get",
+    "args": [232665],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "authors_by_pk": { "id": 232665, "slug": "pierce-brown", "name": "Pierce Brown", "canonical_id": null }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetAuthor", "variables": { "id": 232665 } }],
+      "result": { "id": 232665, "slug": "pierce-brown", "name": "Pierce Brown", "canonical_id": null }
+    }
+  },
+  {
+    "id": "authors/get-missing",
+    "method": "authors.get",
+    "args": [1],
+    "responses": [{ "status": 200, "body": { "data": { "authors_by_pk": null } } }],
+    "expect": { "requests": [{ "operationName": "GetAuthor", "variables": { "id": 1 } }], "result": null }
+  },
+  {
+    "id": "authors/get-by-slug",
+    "method": "authors.getBySlug",
+    "args": ["pierce-brown"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "authors": [{ "id": 232665, "slug": "pierce-brown", "name": "Pierce Brown", "canonical_id": null }]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetAuthorBySlug", "variables": { "slug": "pierce-brown" } }],
+      "result": { "id": 232665, "slug": "pierce-brown", "name": "Pierce Brown", "canonical_id": null }
+    }
+  },
+  {
+    "id": "authors/get-by-slug-missing",
+    "method": "authors.getBySlug",
+    "args": ["nobody"],
+    "responses": [{ "status": 200, "body": { "data": { "authors": [] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetAuthorBySlug", "variables": { "slug": "nobody" } }],
+      "result": null
+    }
+  },
+  {
+    "id": "authors/books",
+    "method": "authors.books",
+    "args": [232665, { "limit": 2 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "books": [{ "id": 1, "title": "Book 1" }, { "id": 2, "title": "Book 2" }] } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetAuthorBooks", "variables": { "authorId": 232665, "limit": 2, "offset": 0 } }],
+      "result": {
+        "items": [{ "id": 1, "title": "Book 1" }, { "id": 2, "title": "Book 2" }],
+        "limit": 2,
+        "offset": 0,
+        "hasMore": true
+      }
+    }
+  },
+  {
+    "id": "authors/series",
+    "method": "authors.series",
+    "args": [232665],
+    "responses": [{ "status": 200, "body": { "data": { "series": [{ "id": 1033, "name": "Red Rising Saga" }] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetAuthorSeries", "variables": { "authorId": 232665 } }],
+      "result": [{ "id": 1033, "name": "Red Rising Saga" }]
+    }
+  }
+]

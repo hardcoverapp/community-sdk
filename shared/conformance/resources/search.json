@@ -1,0 +1,492 @@
+[
+  {
+    "id": "search/books-passes-the-query-through",
+    "method": "search.books",
+    "args": ["978-0-593-13520-4"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "book",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "978-0-593-13520-4", "queryType": "book" } }],
+      "result": { "hits": [], "ids": [], "found": 0, "page": 1, "perPage": 25 }
+    }
+  },
+  {
+    "id": "search/books-hits-with-numeric-ids-and-idiomatic-keys",
+    "method": "search.books",
+    "args": ["hail mary"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [427578],
+              "results": {
+                "found": 12,
+                "hits": [
+                  {
+                    "document": {
+                      "id": "427578",
+                      "title": "Project Hail Mary",
+                      "release_year": 2021,
+                      "users_count": 17048,
+                      "image": { "url": "https://assets.hardcover.app/x.jpg", "color_name": "Brown", "width": 994 },
+                      "contributions": [{ "author": { "id": 123645, "name": "Andy Weir" }, "contributor_role_name": "Author" }],
+                      "series_ids": []
+                    },
+                    "highlight": {},
+                    "text_match": 123
+                  }
+                ],
+                "page": 1,
+                "out_of": 99,
+                "search_time_ms": 3
+              },
+              "query": "q",
+              "query_type": "book",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "hail mary", "queryType": "book" } }],
+      "result": {
+        "hits": [
+          {
+            "id": 427578,
+            "title": "Project Hail Mary",
+            "release_year": 2021,
+            "users_count": 17048,
+            "image": { "url": "https://assets.hardcover.app/x.jpg", "color_name": "Brown", "width": 994 },
+            "contributions": [{ "author": { "id": 123645, "name": "Andy Weir" }, "contributor_role_name": "Author" }],
+            "series_ids": []
+          }
+        ],
+        "ids": [427578],
+        "found": 12,
+        "page": 1,
+        "perPage": 25
+      }
+    }
+  },
+  {
+    "id": "search/options-join-lists",
+    "method": "search.authors",
+    "args": [
+      "weir",
+      {
+        "page": 2,
+        "perPage": 5,
+        "fields": ["name", "name_personal"],
+        "weights": [3, 1],
+        "typos": [1, 0],
+        "sort": "books_count:desc",
+        "filterBy": "books_count:>5"
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "author",
+              "page": 2,
+              "per_page": 5,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "Search",
+          "variables": {
+            "query": "weir",
+            "queryType": "author",
+            "page": 2,
+            "perPage": 5,
+            "fields": "name,name_personal",
+            "weights": "3,1",
+            "typos": "1,0",
+            "sort": "books_count:desc",
+            "filterBy": "books_count:>5"
+          }
+        }
+      ],
+      "result": { "hits": [], "ids": [], "found": 0, "page": 2, "perPage": 5 }
+    }
+  },
+  {
+    "id": "search/options-as-strings",
+    "method": "search.books",
+    "args": ["x", { "fields": "title", "weights": "2", "typos": "1" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "book",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "Search",
+          "variables": { "query": "x", "queryType": "book", "fields": "title", "weights": "2", "typos": "1" }
+        }
+      ],
+      "result": { "hits": [], "ids": [], "found": 0, "page": 1, "perPage": 25 }
+    }
+  },
+  {
+    "id": "search/authors",
+    "method": "search.authors",
+    "args": ["x"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "author",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "x", "queryType": "author" } }],
+      "result": { "hits": [], "ids": [], "found": 0, "page": 1, "perPage": 25 }
+    }
+  },
+  {
+    "id": "search/characters",
+    "method": "search.characters",
+    "args": ["x"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "character",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "x", "queryType": "character" } }],
+      "result": { "hits": [], "ids": [], "found": 0, "page": 1, "perPage": 25 }
+    }
+  },
+  {
+    "id": "search/lists",
+    "method": "search.lists",
+    "args": ["x"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "list",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "x", "queryType": "list" } }],
+      "result": { "hits": [], "ids": [], "found": 0, "page": 1, "perPage": 25 }
+    }
+  },
+  {
+    "id": "search/prompts",
+    "method": "search.prompts",
+    "args": ["x"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "prompt",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "x", "queryType": "prompt" } }],
+      "result": { "hits": [], "ids": [], "found": 0, "page": 1, "perPage": 25 }
+    }
+  },
+  {
+    "id": "search/publishers",
+    "method": "search.publishers",
+    "args": ["x"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "publisher",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "x", "queryType": "publisher" } }],
+      "result": { "hits": [], "ids": [], "found": 0, "page": 1, "perPage": 25 }
+    }
+  },
+  {
+    "id": "search/series",
+    "method": "search.series",
+    "args": ["x"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "series",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "x", "queryType": "series" } }],
+      "result": { "hits": [], "ids": [], "found": 0, "page": 1, "perPage": 25 }
+    }
+  },
+  {
+    "id": "search/users",
+    "method": "search.users",
+    "args": ["x"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "user",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "x", "queryType": "user" } }],
+      "result": { "hits": [], "ids": [], "found": 0, "page": 1, "perPage": 25 }
+    }
+  },
+  {
+    "id": "search/raw-is-untouched",
+    "method": "search.raw",
+    "args": ["x", { "type": "book" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [427578],
+              "results": {
+                "found": 1,
+                "hits": [
+                  {
+                    "document": {
+                      "id": "427578",
+                      "title": "Project Hail Mary",
+                      "release_year": 2021,
+                      "users_count": 17048,
+                      "image": { "url": "https://assets.hardcover.app/x.jpg", "color_name": "Brown", "width": 994 },
+                      "contributions": [{ "author": { "id": 123645, "name": "Andy Weir" }, "contributor_role_name": "Author" }],
+                      "series_ids": []
+                    },
+                    "highlight": {},
+                    "text_match": 123
+                  }
+                ],
+                "page": 1,
+                "out_of": 99,
+                "search_time_ms": 3
+              },
+              "query": "q",
+              "query_type": "book",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "x", "queryType": "book" } }],
+      "result": {
+        "ids": [427578],
+        "results": {
+          "found": 1,
+          "hits": [
+            {
+              "document": {
+                "id": "427578",
+                "title": "Project Hail Mary",
+                "release_year": 2021,
+                "users_count": 17048,
+                "image": { "url": "https://assets.hardcover.app/x.jpg", "color_name": "Brown", "width": 994 },
+                "contributions": [{ "author": { "id": 123645, "name": "Andy Weir" }, "contributor_role_name": "Author" }],
+                "series_ids": []
+              },
+              "highlight": {},
+              "text_match": 123
+            }
+          ],
+          "page": 1,
+          "out_of": 99,
+          "search_time_ms": 3
+        },
+        "query": "q",
+        "query_type": "book",
+        "page": 1,
+        "per_page": 25,
+        "error": null
+      }
+    }
+  },
+  {
+    "id": "search/raw-defaults-to-books",
+    "method": "search.raw",
+    "args": ["x"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "search": {
+              "ids": [],
+              "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+              "query": "q",
+              "query_type": "book",
+              "page": 1,
+              "per_page": 25,
+              "error": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "x", "queryType": "book" } }],
+      "result": {
+        "ids": [],
+        "results": { "found": 0, "hits": [], "page": 1, "out_of": 99, "search_time_ms": 3 },
+        "query": "q",
+        "query_type": "book",
+        "page": 1,
+        "per_page": 25,
+        "error": null
+      }
+    }
+  },
+  {
+    "id": "search/failure-is-an-action-error",
+    "method": "search.books",
+    "args": ["x"],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "search": { "ids": null, "results": null, "error": "Not found." } } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Search", "variables": { "query": "x", "queryType": "book" } }],
+      "error": "ActionError",
+      "fields": { "operation": "search", "messages": ["Not found."] }
+    }
+  }
+]

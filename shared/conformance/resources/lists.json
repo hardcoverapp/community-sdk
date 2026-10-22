@@ -1,0 +1,789 @@
+[
+  {
+    "id": "lists/create",
+    "method": "lists.create",
+    "args": [{ "name": "Book club", "privacy": 3, "ranked": true }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "insert_list": { "id": 9, "errors": null, "list": { "id": 9, "name": "Book club" } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "CreateList",
+          "variables": { "object": { "name": "Book club", "privacy_setting_id": 3, "ranked": true } }
+        }
+      ],
+      "result": { "id": 9, "name": "Book club" }
+    }
+  },
+  {
+    "id": "lists/create-action-error",
+    "method": "lists.create",
+    "args": [{ "name": "" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "insert_list": { "id": null, "errors": ["Name can't be blank"], "list": null } } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "CreateList", "variables": { "object": { "name": "" } } }],
+      "error": "ActionError",
+      "fields": { "operation": "insert_list", "messages": ["Name can't be blank"] }
+    }
+  },
+  {
+    "id": "lists/update-sends-only-the-patch",
+    "method": "lists.update",
+    "args": [9, { "description": "Picks for 2027" }],
+    "responses": [{ "status": 200, "body": { "data": { "update_list": { "id": 9, "errors": [], "list": { "id": 9 } } } } }],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "UpdateList",
+          "variables": { "id": 9, "object": { "description": "Picks for 2027" } }
+        }
+      ],
+      "result": { "id": 9 }
+    }
+  },
+  {
+    "id": "lists/delete",
+    "method": "lists.delete",
+    "args": [9],
+    "responses": [{ "status": 200, "body": { "data": { "delete_list": { "success": true } } } }],
+    "expect": { "requests": [{ "operationName": "DeleteList", "variables": { "id": 9 } }], "result": null }
+  },
+  {
+    "id": "lists/delete-missing",
+    "method": "lists.delete",
+    "args": [9],
+    "responses": [{ "status": 200, "body": { "data": { "delete_list": { "success": false } } } }],
+    "expect": {
+      "requests": [{ "operationName": "DeleteList", "variables": { "id": 9 } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "list", "id": 9 }
+    }
+  },
+  {
+    "id": "lists/mine",
+    "method": "lists.mine",
+    "args": [{ "limit": 10 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "lists": [{ "id": 1 }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetListsForUser", "variables": { "userId": 42, "limit": 10, "offset": 0 } }
+      ],
+      "result": { "items": [{ "id": 1 }], "limit": 10, "offset": 0, "hasMore": false }
+    }
+  },
+  {
+    "id": "lists/for-user",
+    "method": "lists.forUser",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "lists": [{ "id": 1 }] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetListsForUser", "variables": { "userId": 7, "limit": 25, "offset": 0 } }],
+      "result": { "items": [{ "id": 1 }], "limit": 25, "offset": 0, "hasMore": false }
+    }
+  },
+  {
+    "id": "lists/get-50-books-by-default",
+    "method": "lists.get",
+    "args": [9],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "lists_by_pk": { "id": 9, "name": "Favorites", "ranked": true, "list_books": [] } } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetList", "variables": { "id": 9, "limit": 50, "offset": 0 } }],
+      "result": { "id": 9, "name": "Favorites", "ranked": true, "list_books": [] }
+    }
+  },
+  {
+    "id": "lists/get-missing",
+    "method": "lists.get",
+    "args": [9, { "limit": 10, "offset": 10 }],
+    "responses": [{ "status": 200, "body": { "data": { "lists_by_pk": null } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetList", "variables": { "id": 9, "limit": 10, "offset": 10 } }],
+      "result": null
+    }
+  },
+  {
+    "id": "lists/add-book-with-edition",
+    "method": "lists.addBook",
+    "args": [9, 100, { "editionId": 5 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": { "insert_list_book": { "id": 70, "list_book": { "id": 70, "book_id": 100, "edition_id": 5 } } }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "AddBookToList",
+          "variables": { "object": { "list_id": 9, "book_id": 100, "edition_id": 5 } }
+        }
+      ],
+      "result": { "id": 70, "book_id": 100, "edition_id": 5 }
+    }
+  },
+  {
+    "id": "lists/add-book-at-position",
+    "method": "lists.addBook",
+    "args": [9, 100, { "position": 3 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "insert_list_book": { "id": 70, "list_book": { "id": 70, "position": 3 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "AddBookToList",
+          "variables": { "object": { "list_id": 9, "book_id": 100, "position": 3 } }
+        }
+      ],
+      "result": { "id": 70, "position": 3 }
+    }
+  },
+  {
+    "id": "lists/remove-book",
+    "method": "lists.removeBook",
+    "args": [9, 100],
+    "responses": [
+      { "status": 200, "body": { "data": { "list_books": [{ "id": 70 }] } } },
+      { "status": 200, "body": { "data": { "delete_list_book": { "id": 70, "list_id": 9 } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "FindListBook", "variables": { "listId": 9, "bookId": 100 } },
+        { "operationName": "RemoveListBook", "variables": { "id": 70 } }
+      ],
+      "result": true
+    }
+  },
+  {
+    "id": "lists/remove-book-not-on-the-list",
+    "method": "lists.removeBook",
+    "args": [9, 100],
+    "responses": [{ "status": 200, "body": { "data": { "list_books": [] } } }],
+    "expect": {
+      "requests": [{ "operationName": "FindListBook", "variables": { "listId": 9, "bookId": 100 } }],
+      "result": false
+    }
+  },
+  {
+    "id": "lists/add-books-cleans-codes-in-one-lookup",
+    "method": "lists.addBooks",
+    "args": [9, ["978-0-593-13520-4", " 0593135202 ", "080442957x"]],
+    "responses": [{ "status": 200, "body": { "data": { "editions": [] } } }],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "FindEditionsByIsbn",
+          "variables": { "isbns": ["9780593135204", "0593135202", "080442957X"] }
+        }
+      ],
+      "result": {
+        "added": [],
+        "notAdded": [
+          { "code": "978-0-593-13520-4", "reason": "no_exact_edition" },
+          { "code": " 0593135202 ", "reason": "no_exact_edition" },
+          { "code": "080442957x", "reason": "no_exact_edition" }
+        ]
+      }
+    }
+  },
+  {
+    "id": "lists/add-books-adds-exact-matches-and-reports-the-rest",
+    "method": "lists.addBooks",
+    "args": [9, ["9780593135204", "071612345678"]],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "editions": [{ "id": 5, "book_id": 100, "isbn_13": "9780593135204", "isbn_10": "0593135202", "title": null }]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "b0": { "id": 70 } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "FindEditionsByIsbn", "variables": { "isbns": ["9780593135204", "071612345678"] } },
+        {
+          "operationName": "AddBooksToList",
+          "variables": { "b0": { "list_id": 9, "book_id": 100, "edition_id": 5 } },
+          "query": "mutation AddBooksToList($b0: ListBookInput!) {\n  b0: insert_list_book(object: $b0) { id }\n}"
+        }
+      ],
+      "result": {
+        "added": [{ "code": "9780593135204", "bookId": 100, "editionId": 5, "listBookId": 70 }],
+        "notAdded": [{ "code": "071612345678", "reason": "no_exact_edition" }]
+      }
+    }
+  },
+  {
+    "id": "lists/add-books-isbn-10-and-first-edition-wins",
+    "method": "lists.addBooks",
+    "args": [9, ["0593135202"]],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "editions": [
+              { "id": 5, "book_id": 100, "isbn_13": "9780593135204", "isbn_10": "0593135202", "title": null },
+              { "id": 6, "book_id": 101, "isbn_13": "9780593135204", "isbn_10": null, "title": null }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "b0": { "id": 70 } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "FindEditionsByIsbn", "variables": { "isbns": ["0593135202"] } },
+        {
+          "operationName": "AddBooksToList",
+          "variables": { "b0": { "list_id": 9, "book_id": 100, "edition_id": 5 } }
+        }
+      ],
+      "result": { "added": [{ "code": "0593135202", "bookId": 100, "editionId": 5, "listBookId": 70 }], "notAdded": [] }
+    }
+  },
+  {
+    "id": "lists/add-books-in-batches-of-5",
+    "method": "lists.addBooks",
+    "args": [
+      9,
+      [
+        "9780000000000", "9780000000001", "9780000000002", "9780000000003", "9780000000004", "9780000000005",
+        "9780000000006", "9780000000007", "9780000000008", "9780000000009", "9780000000010", "9780000000011"
+      ]
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "editions": [
+              { "id": 1, "book_id": 100, "isbn_13": "9780000000000", "isbn_10": null, "title": null },
+              { "id": 2, "book_id": 101, "isbn_13": "9780000000001", "isbn_10": null, "title": null },
+              { "id": 3, "book_id": 102, "isbn_13": "9780000000002", "isbn_10": null, "title": null },
+              { "id": 4, "book_id": 103, "isbn_13": "9780000000003", "isbn_10": null, "title": null },
+              { "id": 5, "book_id": 104, "isbn_13": "9780000000004", "isbn_10": null, "title": null },
+              { "id": 6, "book_id": 105, "isbn_13": "9780000000005", "isbn_10": null, "title": null },
+              { "id": 7, "book_id": 106, "isbn_13": "9780000000006", "isbn_10": null, "title": null },
+              { "id": 8, "book_id": 107, "isbn_13": "9780000000007", "isbn_10": null, "title": null },
+              { "id": 9, "book_id": 108, "isbn_13": "9780000000008", "isbn_10": null, "title": null },
+              { "id": 10, "book_id": 109, "isbn_13": "9780000000009", "isbn_10": null, "title": null },
+              { "id": 11, "book_id": 110, "isbn_13": "9780000000010", "isbn_10": null, "title": null },
+              { "id": 12, "book_id": 111, "isbn_13": "9780000000011", "isbn_10": null, "title": null }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "b0": { "id": 500 },
+            "b1": { "id": 501 },
+            "b2": { "id": 502 },
+            "b3": { "id": 503 },
+            "b4": { "id": 504 }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "b0": { "id": 505 },
+            "b1": { "id": 506 },
+            "b2": { "id": 507 },
+            "b3": { "id": 508 },
+            "b4": { "id": 509 }
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "b0": { "id": 510 }, "b1": { "id": 511 } } } }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "FindEditionsByIsbn",
+          "variables": {
+            "isbns": [
+              "9780000000000", "9780000000001", "9780000000002", "9780000000003", "9780000000004",
+              "9780000000005", "9780000000006", "9780000000007", "9780000000008", "9780000000009",
+              "9780000000010", "9780000000011"
+            ]
+          }
+        },
+        {
+          "operationName": "AddBooksToList",
+          "variables": {
+            "b0": { "list_id": 9, "book_id": 100, "edition_id": 1 },
+            "b1": { "list_id": 9, "book_id": 101, "edition_id": 2 },
+            "b2": { "list_id": 9, "book_id": 102, "edition_id": 3 },
+            "b3": { "list_id": 9, "book_id": 103, "edition_id": 4 },
+            "b4": { "list_id": 9, "book_id": 104, "edition_id": 5 }
+          },
+          "query": "mutation AddBooksToList($b0: ListBookInput!, $b1: ListBookInput!, $b2: ListBookInput!, $b3: ListBookInput!, $b4: ListBookInput!) {\n  b0: insert_list_book(object: $b0) { id }\n  b1: insert_list_book(object: $b1) { id }\n  b2: insert_list_book(object: $b2) { id }\n  b3: insert_list_book(object: $b3) { id }\n  b4: insert_list_book(object: $b4) { id }\n}"
+        },
+        {
+          "operationName": "AddBooksToList",
+          "variables": {
+            "b0": { "list_id": 9, "book_id": 105, "edition_id": 6 },
+            "b1": { "list_id": 9, "book_id": 106, "edition_id": 7 },
+            "b2": { "list_id": 9, "book_id": 107, "edition_id": 8 },
+            "b3": { "list_id": 9, "book_id": 108, "edition_id": 9 },
+            "b4": { "list_id": 9, "book_id": 109, "edition_id": 10 }
+          }
+        },
+        {
+          "operationName": "AddBooksToList",
+          "variables": {
+            "b0": { "list_id": 9, "book_id": 110, "edition_id": 11 },
+            "b1": { "list_id": 9, "book_id": 111, "edition_id": 12 }
+          },
+          "query": "mutation AddBooksToList($b0: ListBookInput!, $b1: ListBookInput!) {\n  b0: insert_list_book(object: $b0) { id }\n  b1: insert_list_book(object: $b1) { id }\n}"
+        }
+      ],
+      "result": {
+        "added": [
+          { "code": "9780000000000", "bookId": 100, "editionId": 1, "listBookId": 500 },
+          { "code": "9780000000001", "bookId": 101, "editionId": 2, "listBookId": 501 },
+          { "code": "9780000000002", "bookId": 102, "editionId": 3, "listBookId": 502 },
+          { "code": "9780000000003", "bookId": 103, "editionId": 4, "listBookId": 503 },
+          { "code": "9780000000004", "bookId": 104, "editionId": 5, "listBookId": 504 },
+          { "code": "9780000000005", "bookId": 105, "editionId": 6, "listBookId": 505 },
+          { "code": "9780000000006", "bookId": 106, "editionId": 7, "listBookId": 506 },
+          { "code": "9780000000007", "bookId": 107, "editionId": 8, "listBookId": 507 },
+          { "code": "9780000000008", "bookId": 108, "editionId": 9, "listBookId": 508 },
+          { "code": "9780000000009", "bookId": 109, "editionId": 10, "listBookId": 509 },
+          { "code": "9780000000010", "bookId": 110, "editionId": 11, "listBookId": 510 },
+          { "code": "9780000000011", "bookId": 111, "editionId": 12, "listBookId": 511 }
+        ],
+        "notAdded": []
+      }
+    }
+  },
+  {
+    "id": "lists/add-books-retries-a-failed-batch-one-by-one",
+    "method": "lists.addBooks",
+    "args": [9, ["9780000000001", "9780000000002", "9780000000003"]],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "editions": [
+              { "id": 1, "book_id": 100, "isbn_13": "9780000000001", "isbn_10": null, "title": null },
+              { "id": 2, "book_id": 101, "isbn_13": "9780000000002", "isbn_10": null, "title": null },
+              { "id": 3, "book_id": 102, "isbn_13": "9780000000003", "isbn_10": null, "title": null }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "errors": [{ "message": "not a valid json response from webhook", "extensions": { "code": "unexpected" } }]
+        }
+      },
+      { "status": 200, "body": { "data": { "b0": { "id": 501 } } } },
+      {
+        "status": 200,
+        "body": {
+          "errors": [{ "message": "not a valid json response from webhook", "extensions": { "code": "unexpected" } }]
+        }
+      },
+      { "status": 200, "body": { "data": { "b0": { "id": 503 } } } }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "FindEditionsByIsbn",
+          "variables": { "isbns": ["9780000000001", "9780000000002", "9780000000003"] }
+        },
+        {
+          "operationName": "AddBooksToList",
+          "variables": {
+            "b0": { "list_id": 9, "book_id": 100, "edition_id": 1 },
+            "b1": { "list_id": 9, "book_id": 101, "edition_id": 2 },
+            "b2": { "list_id": 9, "book_id": 102, "edition_id": 3 }
+          }
+        },
+        {
+          "operationName": "AddBooksToList",
+          "variables": { "b0": { "list_id": 9, "book_id": 100, "edition_id": 1 } }
+        },
+        {
+          "operationName": "AddBooksToList",
+          "variables": { "b0": { "list_id": 9, "book_id": 101, "edition_id": 2 } }
+        },
+        {
+          "operationName": "AddBooksToList",
+          "variables": { "b0": { "list_id": 9, "book_id": 102, "edition_id": 3 } }
+        }
+      ],
+      "result": {
+        "added": [
+          { "code": "9780000000001", "bookId": 100, "editionId": 1, "listBookId": 501 },
+          { "code": "9780000000003", "bookId": 102, "editionId": 3, "listBookId": 503 }
+        ],
+        "notAdded": [{ "code": "9780000000002", "reason": "failed", "error": { "$error": "GraphQLError" } }]
+      }
+    }
+  },
+  {
+    "id": "lists/add-books-reports-every-input-code",
+    "method": "lists.addBooks",
+    "args": [9, ["9780593135204", "978-0593135204"]],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "editions": [{ "id": 5, "book_id": 100, "isbn_13": "9780593135204", "isbn_10": null, "title": null }]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "b0": { "id": 70 } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "FindEditionsByIsbn", "variables": { "isbns": ["9780593135204"] } },
+        {
+          "operationName": "AddBooksToList",
+          "variables": { "b0": { "list_id": 9, "book_id": 100, "edition_id": 5 } }
+        }
+      ],
+      "result": {
+        "added": [
+          { "code": "9780593135204", "bookId": 100, "editionId": 5, "listBookId": 70 },
+          { "code": "978-0593135204", "bookId": 100, "editionId": 5, "listBookId": 70 }
+        ],
+        "notAdded": []
+      }
+    }
+  },
+  {
+    "id": "lists/add-books-nothing-to-add",
+    "method": "lists.addBooks",
+    "args": [9, []],
+    "responses": [],
+    "expect": { "requests": [], "result": { "added": [], "notAdded": [] } }
+  },
+  {
+    "id": "lists/reorder",
+    "method": "lists.reorder",
+    "args": [9, [16, 15, 14, 13, 12, 11]],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "lists_by_pk": { "id": 9, "name": "Favorites", "ranked": true, "list_books": [] } } }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "list_books": [{ "id": 11 }, { "id": 12 }, { "id": 13 }, { "id": 14 }, { "id": 15 }, { "id": 16 }]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "update_list_books": { "affected_rows": 6 } } } },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "p0": { "id": 16 },
+            "p1": { "id": 15 },
+            "p2": { "id": 14 },
+            "p3": { "id": 13 },
+            "p4": { "id": 12 }
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "p0": { "id": 11 } } } },
+      {
+        "status": 200,
+        "body": { "data": { "update_list": { "id": 9, "list": { "id": 9, "name": "Favorites" } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetList", "variables": { "id": 9, "limit": 0, "offset": 0 } },
+        { "operationName": "GetListBookIds", "variables": { "listId": 9 } },
+        {
+          "operationName": "ClearListPositions",
+          "variables": { "listId": 9, "listBookIds": [16, 15, 14, 13, 12, 11] }
+        },
+        {
+          "operationName": "SetListPositions",
+          "variables": {},
+          "query": "mutation SetListPositions {\n  p0: update_list_books_by_pk(pk_columns: { id: 16 }, _set: { position: 0 }) { id }\n  p1: update_list_books_by_pk(pk_columns: { id: 15 }, _set: { position: 1 }) { id }\n  p2: update_list_books_by_pk(pk_columns: { id: 14 }, _set: { position: 2 }) { id }\n  p3: update_list_books_by_pk(pk_columns: { id: 13 }, _set: { position: 3 }) { id }\n  p4: update_list_books_by_pk(pk_columns: { id: 12 }, _set: { position: 4 }) { id }\n}"
+        },
+        {
+          "operationName": "SetListPositions",
+          "variables": {},
+          "query": "mutation SetListPositions {\n  p0: update_list_books_by_pk(pk_columns: { id: 11 }, _set: { position: 5 }) { id }\n}"
+        },
+        { "operationName": "UpdateList", "variables": { "id": 9, "object": { "name": "Favorites" } } }
+      ],
+      "result": null
+    }
+  },
+  {
+    "id": "lists/reorder-refuses-a-partial-order",
+    "method": "lists.reorder",
+    "args": [9, [12]],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "lists_by_pk": { "id": 9, "name": "Favorites", "ranked": true, "list_books": [] } } }
+      },
+      { "status": 200, "body": { "data": { "list_books": [{ "id": 11 }, { "id": 12 }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetList", "variables": { "id": 9, "limit": 0, "offset": 0 } },
+        { "operationName": "GetListBookIds", "variables": { "listId": 9 } }
+      ],
+      "error": "ArgumentError"
+    }
+  },
+  {
+    "id": "lists/reorder-refuses-a-repeated-row",
+    "method": "lists.reorder",
+    "args": [9, [12, 12]],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "lists_by_pk": { "id": 9, "name": "Favorites", "ranked": true, "list_books": [] } } }
+      },
+      { "status": 200, "body": { "data": { "list_books": [{ "id": 11 }, { "id": 12 }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetList", "variables": { "id": 9, "limit": 0, "offset": 0 } },
+        { "operationName": "GetListBookIds", "variables": { "listId": 9 } }
+      ],
+      "error": "ArgumentError"
+    }
+  },
+  {
+    "id": "lists/reorder-refuses-an-unranked-list",
+    "method": "lists.reorder",
+    "args": [9, [11]],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "lists_by_pk": { "id": 9, "name": "Favorites", "ranked": false, "list_books": [] } } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetList", "variables": { "id": 9, "limit": 0, "offset": 0 } }],
+      "error": "ArgumentError"
+    }
+  },
+  {
+    "id": "lists/reorder-missing-list",
+    "method": "lists.reorder",
+    "args": [9, [11]],
+    "responses": [{ "status": 200, "body": { "data": { "lists_by_pk": null } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetList", "variables": { "id": 9, "limit": 0, "offset": 0 } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "list", "id": 9 }
+    }
+  },
+  {
+    "id": "lists/follow",
+    "method": "lists.follow",
+    "args": [9],
+    "responses": [{ "status": 200, "body": { "data": { "upsert_followed_list": { "id": 1, "errors": [] } } } }],
+    "expect": { "requests": [{ "operationName": "FollowList", "variables": { "listId": 9 } }], "result": null }
+  },
+  {
+    "id": "lists/unfollow",
+    "method": "lists.unfollow",
+    "args": [9],
+    "responses": [{ "status": 200, "body": { "data": { "delete_followed_list": { "success": true } } } }],
+    "expect": { "requests": [{ "operationName": "UnfollowList", "variables": { "listId": 9 } }], "result": true }
+  },
+  {
+    "id": "lists/unfollow-not-following",
+    "method": "lists.unfollow",
+    "args": [9],
+    "responses": [{ "status": 200, "body": { "data": { "delete_followed_list": { "success": false } } } }],
+    "expect": { "requests": [{ "operationName": "UnfollowList", "variables": { "listId": 9 } }], "result": false }
+  },
+  {
+    "id": "lists/followed",
+    "method": "lists.followed",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "followed_lists": [{ "id": 1, "list": { "id": 9 } }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetFollowedLists", "variables": { "userId": 42, "limit": 25, "offset": 0 } }
+      ],
+      "result": { "items": [{ "id": 1, "list": { "id": 9 } }], "limit": 25, "offset": 0, "hasMore": false }
+    }
+  },
+  {
+    "id": "lists/invite",
+    "method": "lists.invite",
+    "args": [9, 7],
+    "responses": [{ "status": 200, "body": { "data": { "insert_list_member": { "id": 3, "list_id": 9, "user_id": 7 } } } }],
+    "expect": {
+      "requests": [{ "operationName": "InviteListMember", "variables": { "object": { "list_id": 9, "user_id": 7 } } }],
+      "result": null
+    }
+  },
+  {
+    "id": "lists/respond-accepted-by-name",
+    "method": "lists.respond",
+    "args": [9, 1],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "update_list_member": { "list_id": 9, "user_id": 42, "status": "accepted" } } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "RespondToListInvite", "variables": { "listId": 9, "status": "accepted" } }],
+      "result": null
+    }
+  },
+  {
+    "id": "lists/respond-spam-by-name",
+    "method": "lists.respond",
+    "args": [9, 3],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "update_list_member": { "list_id": 9, "user_id": 42, "status": "spam" } } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "RespondToListInvite", "variables": { "listId": 9, "status": "spam" } }],
+      "result": null
+    }
+  },
+  {
+    "id": "lists/remove-member",
+    "method": "lists.removeMember",
+    "args": [9, 7],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "delete_list_member": { "list_id": 9, "user_id": 7, "removed": true } } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "RemoveListMember", "variables": { "listId": 9, "userId": 7 } }],
+      "result": true
+    }
+  },
+  {
+    "id": "lists/members",
+    "method": "lists.members",
+    "args": [9],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "list_members": [{ "id": 3, "list_id": 9, "user_id": 7, "status": 0, "user": { "username": "sam" } }]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetListMembers", "variables": { "listId": 9 } }],
+      "result": [{ "id": 3, "list_id": 9, "user_id": 7, "status": 0, "user": { "username": "sam" } }]
+    }
+  },
+  {
+    "id": "lists/memberships",
+    "method": "lists.memberships",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "list_members": [] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetListMemberships", "variables": { "userId": 42 } }
+      ],
+      "result": []
+    }
+  }
+]

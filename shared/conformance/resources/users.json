@@ -1,0 +1,256 @@
+[
+  {
+    "id": "users/get",
+    "method": "users.get",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "users_by_pk": { "id": 7, "username": "sam", "name": null } } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetUser", "variables": { "id": 7 } }],
+      "result": { "id": 7, "username": "sam", "name": null }
+    }
+  },
+  {
+    "id": "users/get-missing",
+    "method": "users.get",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "users_by_pk": null } } }],
+    "expect": { "requests": [{ "operationName": "GetUser", "variables": { "id": 7 } }], "result": null }
+  },
+  {
+    "id": "users/get-by-username-drops-a-leading-at",
+    "method": "users.getByUsername",
+    "args": ["@sam"],
+    "responses": [{ "status": 200, "body": { "data": { "users": [{ "id": 7, "username": "sam", "name": null }] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetUserByUsername", "variables": { "username": "sam" } }],
+      "result": { "id": 7, "username": "sam", "name": null }
+    }
+  },
+  {
+    "id": "users/get-by-username-missing",
+    "method": "users.getByUsername",
+    "args": ["nobody"],
+    "responses": [{ "status": 200, "body": { "data": { "users": [] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetUserByUsername", "variables": { "username": "nobody" } }],
+      "result": null
+    }
+  },
+  {
+    "id": "users/followers",
+    "method": "users.followers",
+    "args": [7],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "followed_users": [{ "id": 1, "user": { "id": 8, "username": "ana", "name": null } }] } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetFollowers", "variables": { "userId": 7, "limit": 25, "offset": 0 } }],
+      "result": {
+        "items": [{ "id": 1, "user": { "id": 8, "username": "ana", "name": null } }],
+        "limit": 25,
+        "offset": 0,
+        "hasMore": false
+      }
+    }
+  },
+  {
+    "id": "users/following",
+    "method": "users.following",
+    "args": [7, { "limit": 1 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": { "followed_users": [{ "id": 2, "followed_user": { "id": 9, "username": "kim", "name": null } }] }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetFollowing", "variables": { "userId": 7, "limit": 1, "offset": 0 } }],
+      "result": {
+        "items": [{ "id": 2, "followed_user": { "id": 9, "username": "kim", "name": null } }],
+        "limit": 1,
+        "offset": 0,
+        "hasMore": true
+      }
+    }
+  },
+  {
+    "id": "users/follow",
+    "method": "users.follow",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "insert_follow": { "id": 1, "error": null } } } }],
+    "expect": { "requests": [{ "operationName": "FollowUser", "variables": { "userId": 7 } }], "result": null }
+  },
+  {
+    "id": "users/unfollow",
+    "method": "users.unfollow",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "delete_followed_user": { "id": 1, "error": null } } } }],
+    "expect": {
+      "requests": [{ "operationName": "UnfollowUser", "variables": { "userId": 7, "removeFollower": false } }],
+      "result": null
+    }
+  },
+  {
+    "id": "users/remove-follower",
+    "method": "users.removeFollower",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "delete_followed_user": { "id": 2, "error": null } } } }],
+    "expect": {
+      "requests": [{ "operationName": "UnfollowUser", "variables": { "userId": 7, "removeFollower": true } }],
+      "result": null
+    }
+  },
+  {
+    "id": "users/block-defaults-to-full",
+    "method": "users.block",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "insert_block": { "id": 1, "error": null } } } }],
+    "expect": {
+      "requests": [{ "operationName": "BlockUser", "variables": { "userId": 7, "type": "UserBlock" } }],
+      "result": null
+    }
+  },
+  {
+    "id": "users/block-invites-only",
+    "method": "users.block",
+    "args": [7, { "type": "BlockInvite" }],
+    "responses": [{ "status": 200, "body": { "data": { "insert_block": { "id": 2, "error": null } } } }],
+    "expect": {
+      "requests": [{ "operationName": "BlockUser", "variables": { "userId": 7, "type": "BlockInvite" } }],
+      "result": null
+    }
+  },
+  {
+    "id": "users/unblock-deletes-every-block-on-the-reader",
+    "method": "users.unblock",
+    "args": [7],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_blocks": [
+              { "id": 31, "type": "UserBlock", "blocked_user": { "id": 7, "username": "sam", "name": null } },
+              {
+                "id": 32,
+                "type": "BlockInvite",
+                "blocked_user": { "id": 7, "username": "sam", "name": null }
+              },
+              { "id": 33, "type": "UserBlock", "blocked_user": { "id": 8, "username": "ana", "name": null } }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "delete_user_blocks_by_pk": { "id": 31 } } } },
+      { "status": 200, "body": { "data": { "delete_user_blocks_by_pk": { "id": 32 } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetBlockedUsers", "variables": { "userId": 42 } },
+        { "operationName": "UnblockUser", "variables": { "id": 31 } },
+        { "operationName": "UnblockUser", "variables": { "id": 32 } }
+      ],
+      "result": true
+    }
+  },
+  {
+    "id": "users/unblock-not-blocked",
+    "method": "users.unblock",
+    "args": [7],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_blocks": [] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetBlockedUsers", "variables": { "userId": 42 } }
+      ],
+      "result": false
+    }
+  },
+  {
+    "id": "users/blocked",
+    "method": "users.blocked",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_blocks": [
+              { "id": 31, "type": "UserBlock", "blocked_user": { "id": 7, "username": "sam", "name": null } },
+              {
+                "id": 32,
+                "type": "BlockInvite",
+                "blocked_user": { "id": 7, "username": "sam", "name": null }
+              },
+              { "id": 33, "type": "UserBlock", "blocked_user": { "id": 8, "username": "ana", "name": null } }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetBlockedUsers", "variables": { "userId": 42 } }
+      ],
+      "result": [
+        { "id": 31, "type": "UserBlock", "blocked_user": { "id": 7, "username": "sam", "name": null } },
+        { "id": 32, "type": "BlockInvite", "blocked_user": { "id": 7, "username": "sam", "name": null } },
+        { "id": 33, "type": "UserBlock", "blocked_user": { "id": 8, "username": "ana", "name": null } }
+      ]
+    }
+  }
+]

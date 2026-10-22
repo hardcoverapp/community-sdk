@@ -1,0 +1,560 @@
+[
+  {
+    "id": "reads/list",
+    "method": "reads.list",
+    "args": [7],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": {
+              "id": 7,
+              "book_id": 100,
+              "status_id": 2,
+              "user_book_reads": [
+                {
+                  "id": 2,
+                  "started_at": "2026-09-20",
+                  "finished_at": null,
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                },
+                {
+                  "id": 1,
+                  "started_at": "2026-09-01",
+                  "finished_at": "2026-09-10",
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetUserBook", "variables": { "id": 7 } }],
+      "result": [
+        {
+          "id": 2,
+          "started_at": "2026-09-20",
+          "finished_at": null,
+          "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+        },
+        {
+          "id": 1,
+          "started_at": "2026-09-01",
+          "finished_at": "2026-09-10",
+          "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+        }
+      ]
+    }
+  },
+  {
+    "id": "reads/list-missing-entry",
+    "method": "reads.list",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "user_books_by_pk": null } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetUserBook", "variables": { "id": 7 } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "library entry", "id": 7 }
+    }
+  },
+  {
+    "id": "reads/current-is-the-open-read",
+    "method": "reads.current",
+    "args": [7],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": {
+              "id": 7,
+              "book_id": 100,
+              "status_id": 2,
+              "user_book_reads": [
+                {
+                  "id": 2,
+                  "started_at": "2026-09-20",
+                  "finished_at": null,
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                },
+                {
+                  "id": 1,
+                  "started_at": "2026-09-01",
+                  "finished_at": "2026-09-10",
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetUserBook", "variables": { "id": 7 } }],
+      "result": {
+        "id": 2,
+        "started_at": "2026-09-20",
+        "finished_at": null,
+        "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+      }
+    }
+  },
+  {
+    "id": "reads/current-null-when-all-finished",
+    "method": "reads.current",
+    "args": [7],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": {
+              "id": 7,
+              "book_id": 100,
+              "status_id": 2,
+              "user_book_reads": [
+                {
+                  "id": 1,
+                  "started_at": "2026-09-01",
+                  "finished_at": "2026-09-10",
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "expect": { "requests": [{ "operationName": "GetUserBook", "variables": { "id": 7 } }], "result": null }
+  },
+  {
+    "id": "reads/set-progress-pages-on-the-open-read",
+    "method": "reads.setProgress",
+    "args": [7, { "pages": 142 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": {
+              "id": 7,
+              "book_id": 100,
+              "status_id": 2,
+              "user_book_reads": [
+                {
+                  "id": 2,
+                  "started_at": "2026-09-20",
+                  "finished_at": null,
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                },
+                {
+                  "id": 1,
+                  "started_at": "2026-09-01",
+                  "finished_at": "2026-09-10",
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_user_book_read": { "id": 2, "error": null, "user_book_read": { "id": 2, "progress_pages": 142 } }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetUserBook", "variables": { "id": 7 } },
+        { "operationName": "UpdateUserBookRead", "variables": { "id": 2, "read": { "progress_pages": 142 } } }
+      ],
+      "result": { "id": 2, "progress_pages": 142 }
+    }
+  },
+  {
+    "id": "reads/set-progress-percent-to-pages",
+    "method": "reads.setProgress",
+    "args": [7, { "percent": 15 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": {
+              "id": 7,
+              "book_id": 100,
+              "status_id": 2,
+              "user_book_reads": [
+                {
+                  "id": 2,
+                  "started_at": "2026-09-20",
+                  "finished_at": null,
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                },
+                {
+                  "id": 1,
+                  "started_at": "2026-09-01",
+                  "finished_at": "2026-09-10",
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": { "data": { "update_user_book_read": { "id": 2, "error": null, "user_book_read": { "id": 2 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetUserBook", "variables": { "id": 7 } },
+        { "operationName": "UpdateUserBookRead", "variables": { "id": 2, "read": { "progress_pages": 72 } } }
+      ],
+      "result": { "id": 2 }
+    }
+  },
+  {
+    "id": "reads/set-progress-percent-to-seconds-for-audio",
+    "method": "reads.setProgress",
+    "args": [7, { "percent": 50 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": {
+              "id": 7,
+              "book_id": 100,
+              "status_id": 2,
+              "user_book_reads": [
+                {
+                  "id": 3,
+                  "started_at": "2026-09-01",
+                  "finished_at": null,
+                  "edition": { "id": 6, "pages": null, "audio_seconds": 36000, "reading_format_id": 2 }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": { "data": { "update_user_book_read": { "id": 3, "error": null, "user_book_read": { "id": 3 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetUserBook", "variables": { "id": 7 } },
+        {
+          "operationName": "UpdateUserBookRead",
+          "variables": { "id": 3, "read": { "progress_seconds": 18000 } }
+        }
+      ],
+      "result": { "id": 3 }
+    }
+  },
+  {
+    "id": "reads/set-progress-seconds",
+    "method": "reads.setProgress",
+    "args": [7, { "seconds": 5400 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": {
+              "id": 7,
+              "book_id": 100,
+              "status_id": 2,
+              "user_book_reads": [
+                {
+                  "id": 3,
+                  "started_at": "2026-09-01",
+                  "finished_at": null,
+                  "edition": { "id": 6, "pages": null, "audio_seconds": 36000, "reading_format_id": 2 }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": { "data": { "update_user_book_read": { "id": 3, "error": null, "user_book_read": { "id": 3 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetUserBook", "variables": { "id": 7 } },
+        {
+          "operationName": "UpdateUserBookRead",
+          "variables": { "id": 3, "read": { "progress_seconds": 5400 } }
+        }
+      ],
+      "result": { "id": 3 }
+    }
+  },
+  {
+    "id": "reads/set-progress-occurred-at",
+    "method": "reads.setProgress",
+    "args": [7, { "pages": 60, "occurredAt": "2026-09-25T09:00:00-06:00" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": {
+              "id": 7,
+              "book_id": 100,
+              "status_id": 2,
+              "user_book_reads": [
+                {
+                  "id": 2,
+                  "started_at": "2026-09-20",
+                  "finished_at": null,
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                },
+                {
+                  "id": 1,
+                  "started_at": "2026-09-01",
+                  "finished_at": "2026-09-10",
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": { "data": { "update_user_book_read": { "id": 2, "error": null, "user_book_read": { "id": 2 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetUserBook", "variables": { "id": 7 } },
+        {
+          "operationName": "UpdateUserBookRead",
+          "variables": { "id": 2, "read": { "progress_pages": 60, "action_at": "2026-09-25T09:00:00-06:00" } }
+        }
+      ],
+      "result": { "id": 2 }
+    }
+  },
+  {
+    "id": "reads/set-progress-nothing-being-read",
+    "method": "reads.setProgress",
+    "args": [7, { "pages": 10 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": {
+              "id": 7,
+              "book_id": 100,
+              "status_id": 2,
+              "user_book_reads": [
+                {
+                  "id": 1,
+                  "started_at": "2026-09-01",
+                  "finished_at": "2026-09-10",
+                  "edition": { "id": 5, "pages": 476, "audio_seconds": null, "reading_format_id": 1 }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "expect": { "requests": [{ "operationName": "GetUserBook", "variables": { "id": 7 } }], "error": "HardcoverError" }
+  },
+  {
+    "id": "reads/set-progress-percent-without-page-count",
+    "method": "reads.setProgress",
+    "args": [7, { "percent": 20 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": {
+              "id": 7,
+              "book_id": 100,
+              "status_id": 2,
+              "user_book_reads": [
+                {
+                  "id": 4,
+                  "started_at": "2026-09-01",
+                  "finished_at": null,
+                  "edition": { "id": 7, "pages": null, "audio_seconds": null, "reading_format_id": 1 }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "expect": { "requests": [{ "operationName": "GetUserBook", "variables": { "id": 7 } }], "error": "ArgumentError" }
+  },
+  {
+    "id": "reads/set-progress-rejects-percent-over-100",
+    "method": "reads.setProgress",
+    "args": [7, { "percent": 120 }],
+    "responses": [],
+    "expect": { "requests": [], "error": "ArgumentError" }
+  },
+  {
+    "id": "reads/set-progress-rejects-negative-pages",
+    "method": "reads.setProgress",
+    "args": [7, { "pages": -1 }],
+    "responses": [],
+    "expect": { "requests": [], "error": "ArgumentError" }
+  },
+  {
+    "id": "reads/set-progress-rejects-no-unit",
+    "method": "reads.setProgress",
+    "args": [7, {}],
+    "responses": [],
+    "expect": { "requests": [], "error": "ArgumentError" }
+  },
+  {
+    "id": "reads/set-progress-rejects-two-units",
+    "method": "reads.setProgress",
+    "args": [7, { "pages": 1, "percent": 1 }],
+    "responses": [],
+    "expect": { "requests": [], "error": "ArgumentError" }
+  },
+  {
+    "id": "reads/add",
+    "method": "reads.add",
+    "args": [7, { "startedAt": "2026-01-02", "finishedAt": "2026-01-20", "precision": 1 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_user_book_read": {
+              "id": 77,
+              "error": null,
+              "user_book_read": { "id": 77, "user_book_id": 7, "started_at": "2026-01-02", "finished_at": "2026-01-20" }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "AddUserBookRead",
+          "variables": {
+            "userBookId": 7,
+            "read": { "started_at": "2026-01-02", "finished_at": "2026-01-20", "finished_at_precision": 1 }
+          }
+        }
+      ],
+      "result": { "id": 77, "user_book_id": 7, "started_at": "2026-01-02", "finished_at": "2026-01-20" }
+    }
+  },
+  {
+    "id": "reads/update-null-clears-a-date",
+    "method": "reads.update",
+    "args": [77, { "finishedAt": null }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_user_book_read": {
+              "id": 77,
+              "error": null,
+              "user_book_read": { "id": 77, "user_book_id": 7, "started_at": "2026-01-02", "finished_at": null }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "UpdateUserBookRead", "variables": { "id": 77, "read": { "finished_at": null } } }],
+      "result": { "id": 77, "user_book_id": 7, "started_at": "2026-01-02", "finished_at": null }
+    }
+  },
+  {
+    "id": "reads/delete",
+    "method": "reads.delete",
+    "args": [77],
+    "responses": [{ "status": 200, "body": { "data": { "delete_user_book_read": { "id": 77, "error": null } } } }],
+    "expect": { "requests": [{ "operationName": "RemoveUserBookRead", "variables": { "id": 77 } }], "result": null }
+  },
+  {
+    "id": "reads/finished",
+    "method": "reads.finished",
+    "args": [{ "from": "2026-01-01", "to": "2026-12-31", "limit": 10 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_book_reads": [
+              {
+                "id": 77,
+                "user_book_id": 7,
+                "started_at": "2026-01-02",
+                "finished_at": "2026-01-20",
+                "user_book": { "id": 7, "book_id": 100, "rating": 4.5, "book": { "id": 100 } }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        {
+          "operationName": "GetFinishedReads",
+          "variables": { "userId": 42, "from": "2026-01-01", "to": "2026-12-31", "limit": 10, "offset": 0 }
+        }
+      ],
+      "result": {
+        "items": [
+          {
+            "id": 77,
+            "user_book_id": 7,
+            "started_at": "2026-01-02",
+            "finished_at": "2026-01-20",
+            "user_book": { "id": 7, "book_id": 100, "rating": 4.5, "book": { "id": 100 } }
+          }
+        ],
+        "limit": 10,
+        "offset": 0,
+        "hasMore": false
+      }
+    }
+  }
+]

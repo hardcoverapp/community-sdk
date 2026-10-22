@@ -1,33 +1,23 @@
 // Token checks at construction (spec/03 principle 7): fix what the SDK can
 // fix, refuse clearly only when it genuinely can't proceed. The server stays
 // the authority on whether a token is valid.
+//
+// The cleanup and prefix rules are pinned in shared/conformance/vectors.json
+// (token). These check the client wiring: the cleaned token is what's sent,
+// a warning goes to onWarning once, and a refusal is a TypeError before any request.
 import { describe, expect, it } from "vitest";
 import { HardcoverClient, operations } from "../src/index.ts";
 import { MockTransport } from "../src/testing/index.ts";
 
 const ME_OK = { status: 200, body: { data: { me: [] } } };
 
-async function sentAuthorization(token: string, onWarning?: (message: string) => void) {
-  const transport = new MockTransport([ME_OK]);
-  const client = new HardcoverClient({ token, transport, onWarning });
-  await client.request(operations.Me);
-  return transport.requests[0]!.headers.authorization;
-}
+describe("the client's token", () => {
+  it("sends the cleaned token", async () => {
+    const transport = new MockTransport([ME_OK]);
+    const client = new HardcoverClient({ token: "  Bearer hc_pat_abc123\n", transport });
+    await client.request(operations.Me);
 
-describe("tokens the SDK can fix", () => {
-  it("trims whitespace and newlines from a pasted token", async () => {
-    expect(await sentAuthorization("  hc_pat_abc123\n")).toBe("Bearer hc_pat_abc123");
-  });
-
-  it("drops a pasted Bearer prefix, any case", async () => {
-    expect(await sentAuthorization("Bearer hc_pat_abc123")).toBe("Bearer hc_pat_abc123");
-    expect(await sentAuthorization("bearer   hc_pat_abc123")).toBe("Bearer hc_pat_abc123");
-  });
-
-  it("sends unknown token formats as they are (the server decides)", async () => {
-    const warnings: string[] = [];
-    expect(await sentAuthorization("hc_newtype_xyz", (m) => warnings.push(m))).toBe("Bearer hc_newtype_xyz");
-    expect(warnings).toEqual([]);
+    expect(transport.requests[0]!.headers.authorization).toBe("Bearer hc_pat_abc123");
   });
 
   it("allows a legacy JWT, warning once that it's deprecated", async () => {
@@ -41,29 +31,18 @@ describe("tokens the SDK can fix", () => {
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toMatch(/legacy JWT.*deprecated.*personal access token/i);
   });
-});
 
-describe("tokens the SDK can't use", () => {
-  it.for([
-    ["missing", undefined],
-    ["empty", ""],
-    ["whitespace only", "  \n"],
-    ["only a Bearer prefix", "Bearer "],
-  ] as const)("%s → a clear TypeError before any request", ([, token]) => {
-    expect(() => new HardcoverClient({ token: token as unknown as string, transport: new MockTransport([]) })).toThrow(
-      /token is missing/i,
-    );
+  it("refuses a missing token with a TypeError before any request", () => {
+    const transport = new MockTransport([]);
+
+    expect(() => new HardcoverClient({ token: undefined as unknown as string, transport })).toThrow(TypeError);
+    expect(transport.requests).toHaveLength(0);
   });
 
-  it("a refresh token, saying what to use instead", () => {
-    expect(() => new HardcoverClient({ token: "hc_rt_abc", transport: new MockTransport([]) })).toThrow(
-      /refresh token.*access token/i,
-    );
-  });
+  it("refuses a refresh token with a TypeError before any request", () => {
+    const transport = new MockTransport([]);
 
-  it("an authorization code, saying what to use instead", () => {
-    expect(() => new HardcoverClient({ token: "hc_ac_abc", transport: new MockTransport([]) })).toThrow(
-      /authorization code.*exchange/i,
-    );
+    expect(() => new HardcoverClient({ token: "hc_rt_abc", transport })).toThrow(TypeError);
+    expect(transport.requests).toHaveLength(0);
   });
 });

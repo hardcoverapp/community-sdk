@@ -1,0 +1,22 @@
+[
+  {
+    "id": "likes/like-returns-the-new-count",
+    "method": "likes.like",
+    "args": ["UserBook", 55],
+    "responses": [{ "status": 200, "body": { "data": { "upsert_like": { "id": 1, "likes_count": 4 } } } }],
+    "expect": {
+      "requests": [{ "operationName": "Like", "variables": { "likeableId": 55, "likeableType": "UserBook" } }],
+      "result": 4
+    }
+  },
+  {
+    "id": "likes/unlike-returns-the-new-count",
+    "method": "likes.unlike",
+    "args": ["List", 9],
+    "responses": [{ "status": 200, "body": { "data": { "delete_like": { "likes_count": 3 } } } }],
+    "expect": {
+      "requests": [{ "operationName": "Unlike", "variables": { "likeableId": 9, "likeableType": "List" } }],
+      "result": 3
+    }
+  }
+]

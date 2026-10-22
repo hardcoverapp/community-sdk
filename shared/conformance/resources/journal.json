@@ -1,0 +1,198 @@
+[
+  {
+    "id": "journal/add-defaults-note-no-tags-activity-privacy",
+    "method": "journal.add",
+    "args": [100, { "entry": "Rocky!" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_reading_journal": { "id": 5, "errors": null, "reading_journal": { "id": 5, "event": "note", "entry": "Rocky!" } }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        {
+          "operationName": "AddJournalEntry",
+          "variables": {
+            "object": { "book_id": 100, "event": "note", "entry": "Rocky!", "privacy_setting_id": 3, "tags": [] }
+          }
+        }
+      ],
+      "result": { "id": 5, "event": "note", "entry": "Rocky!" }
+    }
+  },
+  {
+    "id": "journal/add-every-option-skips-the-user-lookup",
+    "method": "journal.add",
+    "args": [
+      100,
+      {
+        "event": "quote",
+        "entry": "Fist my bump.",
+        "privacy": 3,
+        "editionId": 5,
+        "date": "2026-09-24",
+        "tags": [{ "tag": "Rocky", "category": "Tag", "spoiler": false }],
+        "metadata": { "page": 212 }
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "insert_reading_journal": { "id": 6, "errors": null, "reading_journal": { "id": 6 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "AddJournalEntry",
+          "variables": {
+            "object": {
+              "book_id": 100,
+              "event": "quote",
+              "entry": "Fist my bump.",
+              "privacy_setting_id": 3,
+              "edition_id": 5,
+              "action_at": "2026-09-24",
+              "tags": [{ "tag": "Rocky", "category": "Tag", "spoiler": false }],
+              "metadata": { "page": 212 }
+            }
+          }
+        }
+      ],
+      "result": { "id": 6 }
+    }
+  },
+  {
+    "id": "journal/add-any-event",
+    "method": "journal.add",
+    "args": [100, { "event": "progress_updated", "privacy": 1 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "insert_reading_journal": { "id": 7, "errors": null, "reading_journal": { "id": 7 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "AddJournalEntry",
+          "variables": { "object": { "book_id": 100, "event": "progress_updated", "privacy_setting_id": 1, "tags": [] } }
+        }
+      ],
+      "result": { "id": 7 }
+    }
+  },
+  {
+    "id": "journal/add-action-error",
+    "method": "journal.add",
+    "args": [-1, { "privacy": 1 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": { "insert_reading_journal": { "id": null, "errors": ["Book must exist"], "reading_journal": null } }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "AddJournalEntry",
+          "variables": { "object": { "book_id": -1, "event": "note", "privacy_setting_id": 1, "tags": [] } }
+        }
+      ],
+      "error": "ActionError",
+      "fields": { "operation": "insert_reading_journal", "messages": ["Book must exist"] }
+    }
+  },
+  {
+    "id": "journal/for-book",
+    "method": "journal.forBook",
+    "args": [100, { "limit": 2 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "reading_journals": [{ "id": 1 }, { "id": 2 }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        {
+          "operationName": "GetJournalForBook",
+          "variables": { "userId": 42, "bookId": 100, "limit": 2, "offset": 0 }
+        }
+      ],
+      "result": { "items": [{ "id": 1 }, { "id": 2 }], "limit": 2, "offset": 0, "hasMore": true }
+    }
+  },
+  {
+    "id": "journal/update-sends-only-the-patch",
+    "method": "journal.update",
+    "args": [5, { "entry": "Edited" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_reading_journal": { "id": 5, "errors": [], "reading_journal": { "id": 5, "entry": "Edited" } }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "UpdateJournalEntry", "variables": { "id": 5, "object": { "entry": "Edited" } } }],
+      "result": { "id": 5, "entry": "Edited" }
+    }
+  },
+  {
+    "id": "journal/delete",
+    "method": "journal.delete",
+    "args": [5],
+    "responses": [{ "status": 200, "body": { "data": { "delete_reading_journal": { "id": 5 } } } }],
+    "expect": { "requests": [{ "operationName": "DeleteJournalEntry", "variables": { "id": 5 } }], "result": null }
+  },
+  {
+    "id": "journal/clear-for-book",
+    "method": "journal.clearForBook",
+    "args": [100],
+    "responses": [{ "status": 200, "body": { "data": { "delete_reading_journals_for_book": { "ids": [1, 2, 3] } } } }],
+    "expect": {
+      "requests": [{ "operationName": "ClearJournalForBook", "variables": { "bookId": 100 } }],
+      "result": [1, 2, 3]
+    }
+  }
+]

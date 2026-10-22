@@ -1,0 +1,215 @@
+[
+  {
+    "id": "me/get",
+    "method": "me.get",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Me", "variables": {} }],
+      "result": { "id": 42, "username": "reader", "account_privacy_setting_id": 2, "activity_privacy_settings_id": 3 }
+    }
+  },
+  {
+    "id": "me/get-cached",
+    "calls": [{ "method": "me.get", "args": [] }, { "method": "me.get", "args": [] }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Me", "variables": {} }],
+      "result": { "id": 42, "username": "reader", "account_privacy_setting_id": 2, "activity_privacy_settings_id": 3 }
+    }
+  },
+  {
+    "id": "me/get-concurrent-share-one-request",
+    "calls": [{ "method": "me.get", "args": [] }, { "method": "me.get", "args": [] }],
+    "concurrent": true,
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Me", "variables": {} }],
+      "result": { "id": 42, "username": "reader", "account_privacy_setting_id": 2, "activity_privacy_settings_id": 3 }
+    }
+  },
+  {
+    "id": "me/get-refresh",
+    "calls": [{ "method": "me.get", "args": [] }, { "method": "me.get", "args": [{ "refresh": true }] }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Me", "variables": {} }, { "operationName": "Me", "variables": {} }],
+      "result": { "id": 42, "username": "reader", "account_privacy_setting_id": 2, "activity_privacy_settings_id": 3 }
+    }
+  },
+  {
+    "id": "me/forget",
+    "calls": [
+      { "method": "me.get", "args": [] },
+      { "method": "me.forget", "args": [] },
+      { "method": "me.get", "args": [] }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "Me", "variables": {} }, { "operationName": "Me", "variables": {} }],
+      "result": { "id": 42, "username": "reader", "account_privacy_setting_id": 2, "activity_privacy_settings_id": 3 }
+    }
+  },
+  {
+    "id": "me/id",
+    "method": "me.id",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": { "requests": [{ "operationName": "Me", "variables": {} }], "result": 42 }
+  },
+  {
+    "id": "me/id-uses-the-cache",
+    "calls": [{ "method": "me.get", "args": [] }, { "method": "me.id", "args": [] }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": { "requests": [{ "operationName": "Me", "variables": {} }], "result": 42 }
+  },
+  {
+    "id": "me/get-no-user",
+    "method": "me.get",
+    "args": [],
+    "responses": [{ "status": 200, "body": { "data": { "me": [] } } }],
+    "expect": { "requests": [{ "operationName": "Me", "variables": {} }], "error": "HardcoverError" }
+  }
+]

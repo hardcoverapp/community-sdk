@@ -1,0 +1,590 @@
+[
+  {
+    "id": "vibes/mine",
+    "method": "vibes.mine",
+    "args": [{ "limit": 10 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "vibes": [
+              {
+                "id": 9,
+                "slug": "cozy",
+                "title": "Cozy mysteries",
+                "description": null,
+                "vibe_type": 0,
+                "result_type": 0,
+                "privacy_setting_id": 3,
+                "featured": false,
+                "likes_count": 0,
+                "user_id": 42,
+                "created_at": "2026-10-07T00:00:00",
+                "updated_at": "2026-10-07T00:00:00",
+                "books_generated_at": null
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetVibesForUser", "variables": { "userId": 42, "limit": 10, "offset": 0 } }
+      ],
+      "result": {
+        "items": [
+          {
+            "id": 9,
+            "slug": "cozy",
+            "title": "Cozy mysteries",
+            "description": null,
+            "vibe_type": 0,
+            "result_type": 0,
+            "privacy_setting_id": 3,
+            "featured": false,
+            "likes_count": 0,
+            "user_id": 42,
+            "created_at": "2026-10-07T00:00:00",
+            "updated_at": "2026-10-07T00:00:00",
+            "books_generated_at": null
+          }
+        ],
+        "limit": 10,
+        "offset": 0,
+        "hasMore": false
+      }
+    }
+  },
+  {
+    "id": "vibes/for-user",
+    "method": "vibes.forUser",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "vibes": [] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetVibesForUser", "variables": { "userId": 7, "limit": 25, "offset": 0 } }],
+      "result": { "items": [], "limit": 25, "offset": 0, "hasMore": false }
+    }
+  },
+  {
+    "id": "vibes/get",
+    "method": "vibes.get",
+    "args": [9],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "vibes_by_pk": {
+              "id": 9,
+              "slug": "cozy",
+              "title": "Cozy mysteries",
+              "description": null,
+              "vibe_type": 0,
+              "result_type": 0,
+              "privacy_setting_id": 3,
+              "featured": false,
+              "likes_count": 0,
+              "user_id": 42,
+              "created_at": "2026-10-07T00:00:00",
+              "updated_at": "2026-10-07T00:00:00",
+              "books_generated_at": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetVibe", "variables": { "id": 9 } }],
+      "result": {
+        "id": 9,
+        "slug": "cozy",
+        "title": "Cozy mysteries",
+        "description": null,
+        "vibe_type": 0,
+        "result_type": 0,
+        "privacy_setting_id": 3,
+        "featured": false,
+        "likes_count": 0,
+        "user_id": 42,
+        "created_at": "2026-10-07T00:00:00",
+        "updated_at": "2026-10-07T00:00:00",
+        "books_generated_at": null
+      }
+    }
+  },
+  {
+    "id": "vibes/get-missing",
+    "method": "vibes.get",
+    "args": [10],
+    "responses": [{ "status": 200, "body": { "data": { "vibes_by_pk": null } } }],
+    "expect": { "requests": [{ "operationName": "GetVibe", "variables": { "id": 10 } }], "result": null }
+  },
+  {
+    "id": "vibes/books-in-ranked-order",
+    "method": "vibes.books",
+    "args": [9, { "limit": 3 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "vibes_by_pk": {
+              "id": 9,
+              "updated_at": "2026-10-07T00:00:00",
+              "books_generated_at": "2026-10-07T01:00:00",
+              "cached_book_ids": [30, 10, 20, 40]
+            }
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "books": [{ "id": 10 }, { "id": 20 }, { "id": 30 }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetVibeBookIds", "variables": { "id": 9 } },
+        { "operationName": "GetBooks", "variables": { "ids": [30, 10, 20] } }
+      ],
+      "result": {
+        "items": [{ "id": 30 }, { "id": 10 }, { "id": 20 }],
+        "limit": 3,
+        "offset": 0,
+        "hasMore": true,
+        "resultsPending": false,
+        "generatedAt": "2026-10-07T01:00:00"
+      }
+    }
+  },
+  {
+    "id": "vibes/books-last-page",
+    "method": "vibes.books",
+    "args": [9, { "limit": 3, "offset": 3 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "vibes_by_pk": {
+              "id": 9,
+              "updated_at": "2026-10-07T00:00:00",
+              "books_generated_at": "2026-10-07T01:00:00",
+              "cached_book_ids": [30, 10, 20, 40]
+            }
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "books": [{ "id": 40 }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetVibeBookIds", "variables": { "id": 9 } },
+        { "operationName": "GetBooks", "variables": { "ids": [40] } }
+      ],
+      "result": {
+        "items": [{ "id": 40 }],
+        "limit": 3,
+        "offset": 3,
+        "hasMore": false,
+        "resultsPending": false,
+        "generatedAt": "2026-10-07T01:00:00"
+      }
+    }
+  },
+  {
+    "id": "vibes/books-pending-before-generation",
+    "method": "vibes.books",
+    "args": [9],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "vibes_by_pk": {
+              "id": 9,
+              "updated_at": "2026-10-07T00:00:00",
+              "books_generated_at": null,
+              "cached_book_ids": []
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetVibeBookIds", "variables": { "id": 9 } }],
+      "result": { "items": [], "limit": 25, "offset": 0, "hasMore": false, "resultsPending": true, "generatedAt": null }
+    }
+  },
+  {
+    "id": "vibes/books-pending-after-an-edit",
+    "method": "vibes.books",
+    "args": [9],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "vibes_by_pk": {
+              "id": 9,
+              "updated_at": "2026-10-07T02:00:00",
+              "books_generated_at": "2026-10-07T01:00:00",
+              "cached_book_ids": [10]
+            }
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "books": [{ "id": 10 }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetVibeBookIds", "variables": { "id": 9 } },
+        { "operationName": "GetBooks", "variables": { "ids": [10] } }
+      ],
+      "result": {
+        "items": [{ "id": 10 }],
+        "limit": 25,
+        "offset": 0,
+        "hasMore": false,
+        "resultsPending": true,
+        "generatedAt": "2026-10-07T01:00:00"
+      }
+    }
+  },
+  {
+    "id": "vibes/books-missing-vibe",
+    "method": "vibes.books",
+    "args": [9],
+    "responses": [{ "status": 200, "body": { "data": { "vibes_by_pk": null } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetVibeBookIds", "variables": { "id": 9 } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "vibe", "id": 9 }
+    }
+  },
+  {
+    "id": "vibes/create-maps-signals-and-exclusions",
+    "method": "vibes.create",
+    "args": [
+      {
+        "title": "Cozy mysteries",
+        "privacy": 3,
+        "signals": [
+          { "type": "genre", "value": "mystery", "weight": 4 },
+          { "type": "book", "id": 427578, "weight": 2 },
+          { "type": "semantic", "text": "small towns, tea, no gore", "weight": 3 },
+          { "type": "popularity", "weight": -2 }
+        ],
+        "exclusions": [{ "type": "author", "id": 123 }],
+        "dynamicSignals": [{ "category": "recent_rated_books", "count": 5, "minRating": 4.5, "weight": 3 }]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_vibe": {
+              "id": 9,
+              "errors": [],
+              "vibe": {
+                "id": 9,
+                "slug": "cozy",
+                "title": "Cozy mysteries",
+                "description": null,
+                "vibe_type": 0,
+                "result_type": 0,
+                "privacy_setting_id": 3,
+                "featured": false,
+                "likes_count": 0,
+                "user_id": 42,
+                "created_at": "2026-10-07T00:00:00",
+                "updated_at": "2026-10-07T00:00:00",
+                "books_generated_at": null
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "CreateVibe",
+          "variables": {
+            "object": {
+              "title": "Cozy mysteries",
+              "privacy_setting_id": 3,
+              "vibe_signals_attributes": [
+                { "signal_type": "genre", "value": "mystery", "weight": 4 },
+                { "signal_type": "book", "value": "427578", "weight": 2 },
+                { "signal_type": "semantic", "value": "small towns, tea, no gore", "weight": 3 },
+                { "signal_type": "popularity", "weight": -2 }
+              ],
+              "vibe_exclusions_attributes": [{ "excluded_type": "Author", "excluded_id": 123 }],
+              "dynamic_signals": [{ "category": "recent_rated_books", "count": 5, "min_rating": 4.5, "weight": 3 }]
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "slug": "cozy",
+        "title": "Cozy mysteries",
+        "description": null,
+        "vibe_type": 0,
+        "result_type": 0,
+        "privacy_setting_id": 3,
+        "featured": false,
+        "likes_count": 0,
+        "user_id": 42,
+        "created_at": "2026-10-07T00:00:00",
+        "updated_at": "2026-10-07T00:00:00",
+        "books_generated_at": null
+      }
+    }
+  },
+  {
+    "id": "vibes/create-accepts-unknown-taxonomy-values",
+    "method": "vibes.create",
+    "args": [{ "title": "New", "signals": [{ "type": "genre", "value": "solarpunk", "weight": 1 }] }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_vibe": {
+              "id": 9,
+              "errors": [],
+              "vibe": {
+                "id": 9,
+                "slug": "cozy",
+                "title": "New",
+                "description": null,
+                "vibe_type": 0,
+                "result_type": 0,
+                "privacy_setting_id": 3,
+                "featured": false,
+                "likes_count": 0,
+                "user_id": 42,
+                "created_at": "2026-10-07T00:00:00",
+                "updated_at": "2026-10-07T00:00:00",
+                "books_generated_at": null
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "CreateVibe",
+          "variables": {
+            "object": {
+              "title": "New",
+              "vibe_signals_attributes": [{ "signal_type": "genre", "value": "solarpunk", "weight": 1 }]
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "slug": "cozy",
+        "title": "New",
+        "description": null,
+        "vibe_type": 0,
+        "result_type": 0,
+        "privacy_setting_id": 3,
+        "featured": false,
+        "likes_count": 0,
+        "user_id": 42,
+        "created_at": "2026-10-07T00:00:00",
+        "updated_at": "2026-10-07T00:00:00",
+        "books_generated_at": null
+      }
+    }
+  },
+  {
+    "id": "vibes/create-supporter-rule-is-an-action-error",
+    "method": "vibes.create",
+    "args": [{ "title": "x" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_vibe": { "id": null, "errors": ["Creating vibes is a Supporter feature."], "vibe": null }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "CreateVibe", "variables": { "object": { "title": "x" } } }],
+      "error": "ActionError",
+      "fields": { "operation": "insert_vibe", "messages": ["Creating vibes is a Supporter feature."] }
+    }
+  },
+  {
+    "id": "vibes/update-adds-exclusions-only",
+    "method": "vibes.update",
+    "args": [9, { "addExclusions": [{ "type": "book", "id": 5 }] }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_vibe": {
+              "id": 9,
+              "errors": [],
+              "vibe": {
+                "id": 9,
+                "slug": "cozy",
+                "title": "Cozy mysteries",
+                "description": null,
+                "vibe_type": 0,
+                "result_type": 0,
+                "privacy_setting_id": 3,
+                "featured": false,
+                "likes_count": 0,
+                "user_id": 42,
+                "created_at": "2026-10-07T00:00:00",
+                "updated_at": "2026-10-07T00:00:00",
+                "books_generated_at": null
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "UpdateVibe",
+          "variables": {
+            "id": 9,
+            "object": { "vibe_exclusions_attributes": [{ "excluded_type": "Book", "excluded_id": 5 }] }
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "slug": "cozy",
+        "title": "Cozy mysteries",
+        "description": null,
+        "vibe_type": 0,
+        "result_type": 0,
+        "privacy_setting_id": 3,
+        "featured": false,
+        "likes_count": 0,
+        "user_id": 42,
+        "created_at": "2026-10-07T00:00:00",
+        "updated_at": "2026-10-07T00:00:00",
+        "books_generated_at": null
+      }
+    }
+  },
+  {
+    "id": "vibes/update-fields-signals-and-dynamic-signals",
+    "method": "vibes.update",
+    "args": [
+      9,
+      {
+        "description": "Tea first",
+        "addSignals": [{ "type": "author", "id": 77, "weight": 1 }],
+        "dynamicSignals": []
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_vibe": {
+              "id": 9,
+              "errors": [],
+              "vibe": {
+                "id": 9,
+                "slug": "cozy",
+                "title": "Cozy mysteries",
+                "description": "Tea first",
+                "vibe_type": 0,
+                "result_type": 0,
+                "privacy_setting_id": 3,
+                "featured": false,
+                "likes_count": 0,
+                "user_id": 42,
+                "created_at": "2026-10-07T00:00:00",
+                "updated_at": "2026-10-07T00:00:00",
+                "books_generated_at": null
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "UpdateVibe",
+          "variables": {
+            "id": 9,
+            "object": {
+              "description": "Tea first",
+              "vibe_signals_attributes": [{ "signal_type": "author", "value": "77", "weight": 1 }],
+              "dynamic_signals": []
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "slug": "cozy",
+        "title": "Cozy mysteries",
+        "description": "Tea first",
+        "vibe_type": 0,
+        "result_type": 0,
+        "privacy_setting_id": 3,
+        "featured": false,
+        "likes_count": 0,
+        "user_id": 42,
+        "created_at": "2026-10-07T00:00:00",
+        "updated_at": "2026-10-07T00:00:00",
+        "books_generated_at": null
+      }
+    }
+  },
+  {
+    "id": "vibes/delete",
+    "method": "vibes.delete",
+    "args": [9],
+    "responses": [{ "status": 200, "body": { "data": { "delete_vibe": { "success": true } } } }],
+    "expect": { "requests": [{ "operationName": "DeleteVibe", "variables": { "id": 9 } }], "result": null }
+  },
+  {
+    "id": "vibes/delete-missing",
+    "method": "vibes.delete",
+    "args": [9],
+    "responses": [{ "status": 200, "body": { "data": { "delete_vibe": { "success": false } } } }],
+    "expect": {
+      "requests": [{ "operationName": "DeleteVibe", "variables": { "id": 9 } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "vibe", "id": 9 }
+    }
+  }
+]

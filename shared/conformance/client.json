@@ -1,0 +1,2688 @@
+[
+  {
+    "id": "pacing/waits-out-spent-burst",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "The last headers said the burst is spent (r=0, resets in 3s): wait it out before sending, instead of sending into a 429.",
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=0;t=3, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": [
+        3
+      ]
+    }
+  },
+  {
+    "id": "pacing/counts-time-already-passed",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "Two of the three seconds passed between the calls (the app did other work), so only one is left to wait.",
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "advanceSeconds": 2
+      },
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=0;t=3, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": [
+        1
+      ]
+    }
+  },
+  {
+    "id": "pacing/no-wait-with-room",
+    "covers": [
+      "rate-limit"
+    ],
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=5;t=1, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": []
+    }
+  },
+  {
+    "id": "pacing/off",
+    "covers": [
+      "rate-limit"
+    ],
+    "client": {
+      "pace": false
+    },
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=0;t=3, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": []
+    }
+  },
+  {
+    "id": "pacing/waits-for-request-cost",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "1 unit left, refilling at 60/min (1 per second). The next request has 3 top-level fields, so it needs 2 more units: 2 seconds.",
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "op": "raw",
+        "query": "query { a: me { id } b: me { id } c: me { id } }"
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=1;t=1, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {}
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        null
+      ],
+      "sleptSeconds": [
+        2
+      ]
+    }
+  },
+  {
+    "id": "pacing/concurrent-calls-queue",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "2 units left, refilling at 1 per second. Five calls issued together share that allowance: two go now, the next three wait 1, 2 and 3 seconds. Every call decides its wait before any of them sleeps.",
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "together": [
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=2;t=1, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": [
+        1,
+        2,
+        3
+      ]
+    }
+  },
+  {
+    "id": "pacing/cold-start-sends-smallest-burst",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "Before any response the client doesn't know its tier, so it sends 5 units (the smallest burst: free tier over a legacy JWT) and holds the rest. The first answer shows plenty of room, so the other 7 go out together.",
+    "transport": "held",
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=29;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Admin\";q=60;w=60;burst=30, \"daily\";q=50000;w=86400",
+          "ratelimit": "\"Admin\";r=20;t=0, \"daily\";r=900;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": [],
+      "inFlight": [
+        5,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    }
+  },
+  {
+    "id": "pacing/cold-start-no-headers-releases-all",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "The server answered without rate-limit headers, so there is nothing to pace by: everything held back goes out.",
+    "transport": "held",
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": [],
+      "inFlight": [
+        5,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ]
+    }
+  },
+  {
+    "id": "batching/concurrent-reads-share-a-request",
+    "covers": [
+      "rate-limit"
+    ],
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 2
+            }
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "data": {
+              "me": [
+                {
+                  "id": 42
+                }
+              ]
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 2
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "expect": {
+      "requests": [
+        [
+          "GetVibe",
+          "Me",
+          "GetVibe"
+        ]
+      ],
+      "results": [
+        {
+          "data": {
+            "vibes_by_pk": {
+              "id": 1
+            }
+          }
+        },
+        {
+          "data": {
+            "me": [
+              {
+                "id": 42
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "vibes_by_pk": {
+              "id": 2
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "batching/off-by-default",
+    "covers": [
+      "rate-limit"
+    ],
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "vibes_by_pk": {
+              "id": 1
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "GetVibe",
+        "Me"
+      ]
+    }
+  },
+  {
+    "id": "batching/lone-read-is-plain",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "A single read goes out as a plain request, not an array of one.",
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me"
+      ]
+    }
+  },
+  {
+    "id": "batching/identical-reads-sent-once",
+    "covers": [
+      "rate-limit"
+    ],
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "data": {
+              "me": [
+                {
+                  "id": 42
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "expect": {
+      "requests": [
+        [
+          "GetVibe",
+          "Me"
+        ]
+      ],
+      "results": [
+        {
+          "data": {
+            "vibes_by_pk": {
+              "id": 1
+            }
+          }
+        },
+        {
+          "data": {
+            "me": [
+              {
+                "id": 42
+              }
+            ]
+          }
+        },
+        {
+          "data": {
+            "vibes_by_pk": {
+              "id": 1
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "batching/raw-query-never-grouped",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "The raw query escape hatch is sent as written, never in an array. Its order relative to the grouped reads isn't specified.",
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "raw",
+            "query": "query Raw { me { id } }"
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requestsUnordered": [
+        "Raw",
+        "Me"
+      ]
+    }
+  },
+  {
+    "id": "batching/sized-to-burst-capacity",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "The first response says the burst capacity is 10. Twelve one-field reads go out as 10, then 2.",
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 0
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 2
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 3
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 4
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 5
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 6
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 7
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 8
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 9
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 10
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 11
+            }
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"Free\";r=10;t=0, \"daily\";r=4000;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"Free\";r=10;t=0, \"daily\";r=4000;t=80000"
+        },
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 0
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 2
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 3
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 4
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 5
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 6
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 7
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 8
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 9
+              }
+            }
+          }
+        ]
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"Free\";r=8;t=0, \"daily\";r=4000;t=80000"
+        },
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 10
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 11
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        [
+          "GetVibe",
+          "GetVibe",
+          "GetVibe",
+          "GetVibe",
+          "GetVibe",
+          "GetVibe",
+          "GetVibe",
+          "GetVibe",
+          "GetVibe",
+          "GetVibe"
+        ],
+        [
+          "GetVibe",
+          "GetVibe"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "batching/sized-to-smallest-burst-before-headers",
+    "covers": [
+      "rate-limit"
+    ],
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 0
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 2
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 3
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 4
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 5
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 6
+            }
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 0
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 2
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 3
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 4
+              }
+            }
+          }
+        ]
+      },
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 5
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 6
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "expect": {
+      "requests": [
+        [
+          "GetVibe",
+          "GetVibe",
+          "GetVibe",
+          "GetVibe",
+          "GetVibe"
+        ],
+        [
+          "GetVibe",
+          "GetVibe"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "batching/sized-to-remaining-allowance",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "2 units left: two reads go now, the third waits one second for a unit to refill (60/min).",
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 2
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 3
+            }
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"Free\";r=2;t=0, \"daily\";r=4000;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"Free\";r=0;t=0, \"daily\";r=4000;t=80000"
+        },
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 2
+              }
+            }
+          }
+        ]
+      },
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"Free\";r=0;t=0, \"daily\";r=4000;t=80000"
+        },
+        "body": {
+          "data": {
+            "vibes_by_pk": {
+              "id": 3
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        [
+          "GetVibe",
+          "GetVibe"
+        ],
+        "GetVibe"
+      ],
+      "sleptSeconds": [
+        1
+      ]
+    }
+  },
+  {
+    "id": "batching/counts-refill-while-idle",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "The last headers said 1 unit left, refilling at 1 per second. Ten seconds later there is room for all three reads in one request.",
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "advanceSeconds": 10
+      },
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 2
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 3
+            }
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "headers": {
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"Free\";r=1;t=0, \"daily\";r=4000;t=80000"
+        },
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 2
+              }
+            }
+          },
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 3
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        [
+          "GetVibe",
+          "GetVibe",
+          "GetVibe"
+        ]
+      ],
+      "sleptSeconds": []
+    }
+  },
+  {
+    "id": "batching/mutation-is-a-barrier",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "Reads before the mutation go together, the mutation goes alone, then the reads after it. The repeated reads are not merged across the mutation.",
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          },
+          {
+            "op": "DeleteVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "data": {
+              "me": [
+                {
+                  "id": 42
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "delete_vibe": {
+              "success": true
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "data": {
+              "me": [
+                {
+                  "id": 42
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "expect": {
+      "requests": [
+        [
+          "GetVibe",
+          "Me"
+        ],
+        "DeleteVibe",
+        [
+          "GetVibe",
+          "Me"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "batching/no-dedupe-across-mutation",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "The second read sees the write.",
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "DeleteVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "vibes_by_pk": {
+              "id": 1
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "delete_vibe": {
+              "success": true
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "vibes_by_pk": null
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "GetVibe",
+        "DeleteVibe",
+        "GetVibe"
+      ],
+      "results": [
+        {
+          "data": {
+            "vibes_by_pk": {
+              "id": 1
+            }
+          }
+        },
+        "ok",
+        {
+          "data": {
+            "vibes_by_pk": null
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "batching/mutation-runs-after-failed-read",
+    "covers": [
+      "rate-limit"
+    ],
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "DeleteVibe",
+            "variables": {
+              "id": 1
+            }
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "errors": [
+            {
+              "message": "boom"
+            }
+          ]
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "delete_vibe": {
+              "success": true
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "GetVibe",
+        "DeleteVibe"
+      ],
+      "results": [
+        {
+          "error": "GraphQLError"
+        },
+        "ok"
+      ]
+    }
+  },
+  {
+    "id": "batching/failed-item-rejects-only-its-caller",
+    "covers": [
+      "rate-limit"
+    ],
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 2
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "errors": [
+              {
+                "message": "invalid input syntax"
+              }
+            ]
+          },
+          {
+            "data": {
+              "me": [
+                {
+                  "id": 42
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "expect": {
+      "requests": [
+        [
+          "GetVibe",
+          "GetVibe",
+          "Me"
+        ]
+      ],
+      "results": [
+        "ok",
+        {
+          "error": "GraphQLError",
+          "fields": {
+            "operationName": "GetVibe"
+          }
+        },
+        "ok"
+      ]
+    }
+  },
+  {
+    "id": "batching/burst-429-retries-whole-array",
+    "covers": [
+      "rate-limit"
+    ],
+    "client": {
+      "batch": true
+    },
+    "random": 0,
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 429,
+        "headers": {
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"Free\";r=0;t=0, \"daily\";r=4000;t=80000",
+          "retry-after": "2"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      },
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "data": {
+              "me": [
+                {
+                  "id": 42
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "expect": {
+      "requests": [
+        [
+          "GetVibe",
+          "Me"
+        ],
+        [
+          "GetVibe",
+          "Me"
+        ]
+      ],
+      "sleptSeconds": [
+        2
+      ]
+    }
+  },
+  {
+    "id": "batching/network-failure-retries-whole-array",
+    "covers": [
+      "rate-limit"
+    ],
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "network": "reset"
+      },
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          },
+          {
+            "data": {
+              "me": [
+                {
+                  "id": 42
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "expect": {
+      "requests": [
+        [
+          "GetVibe",
+          "Me"
+        ],
+        [
+          "GetVibe",
+          "Me"
+        ]
+      ],
+      "sleptSeconds": [
+        0.25
+      ]
+    }
+  },
+  {
+    "id": "batching/whole-array-rejection-sends-items-alone",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "A missing scope on one item gets the whole array a 403. Sent alone, each item gets its own answer.",
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 403,
+        "body": {
+          "error": "insufficient_scope",
+          "error_description": "Missing scopes: lists:read",
+          "scope": "lists:read"
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "vibes_by_pk": {
+              "id": 1
+            }
+          }
+        }
+      },
+      {
+        "status": 403,
+        "body": {
+          "error": "insufficient_scope",
+          "error_description": "Missing scopes: lists:read",
+          "scope": "lists:read"
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        [
+          "GetVibe",
+          "Me"
+        ],
+        "GetVibe",
+        "Me"
+      ],
+      "results": [
+        "ok",
+        {
+          "error": "ScopeError"
+        }
+      ]
+    }
+  },
+  {
+    "id": "batching/daily-429-rejects-every-item",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "The daily cap can't be waited out, so nothing is retried.",
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 429,
+        "headers": {
+          "ratelimit-policy": "\"Free\";q=60;w=60;burst=10, \"daily\";q=5000;w=86400",
+          "ratelimit": "\"daily\";r=0;t=5000",
+          "retry-after": "5000"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        [
+          "GetVibe",
+          "Me"
+        ]
+      ],
+      "results": [
+        {
+          "error": "RateLimitError",
+          "fields": {
+            "window": "daily"
+          }
+        },
+        {
+          "error": "RateLimitError",
+          "fields": {
+            "window": "daily"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "batching/mismatched-response-rejects-every-item",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "The response must be an array with one answer per item.",
+    "client": {
+      "batch": true
+    },
+    "steps": [
+      {
+        "together": [
+          {
+            "op": "GetVibe",
+            "variables": {
+              "id": 1
+            }
+          },
+          {
+            "op": "Me",
+            "variables": {}
+          }
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": [
+          {
+            "data": {
+              "vibes_by_pk": {
+                "id": 1
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "expect": {
+      "requests": [
+        [
+          "GetVibe",
+          "Me"
+        ]
+      ],
+      "results": [
+        {
+          "error": "HardcoverError"
+        },
+        {
+          "error": "HardcoverError"
+        }
+      ]
+    }
+  },
+  {
+    "id": "retry/network-backoff-schedule",
+    "covers": [
+      "errors"
+    ],
+    "notes": "Reads retry network failures after 250ms, 1s, then 4s.",
+    "client": {
+      "maxRetries": 3
+    },
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "network": "reset"
+      },
+      {
+        "network": "reset"
+      },
+      {
+        "network": "reset"
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me",
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": [
+        0.25,
+        1,
+        4
+      ]
+    }
+  },
+  {
+    "id": "retry/network-gives-up",
+    "covers": [
+      "errors"
+    ],
+    "client": {
+      "maxRetries": 1
+    },
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "network": "reset"
+      },
+      {
+        "network": "reset"
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": [
+        0.25
+      ],
+      "results": [
+        {
+          "error": "NetworkError",
+          "fields": {
+            "mayHaveSucceeded": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "retry/mutation-drop-may-have-succeeded",
+    "covers": [
+      "errors"
+    ],
+    "client": {
+      "maxRetries": 3
+    },
+    "steps": [
+      {
+        "op": "AddUserBook",
+        "variables": {
+          "object": {
+            "book_id": 1
+          }
+        }
+      }
+    ],
+    "responses": [
+      {
+        "network": "reset"
+      }
+    ],
+    "expect": {
+      "requests": [
+        "AddUserBook"
+      ],
+      "sleptSeconds": [],
+      "results": [
+        {
+          "error": "NetworkError",
+          "fields": {
+            "mayHaveSucceeded": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "retry/server-error-retried-for-read",
+    "covers": [
+      "errors"
+    ],
+    "client": {
+      "maxRetries": 3
+    },
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "status": 503,
+        "body": {
+          "error": "Service Unavailable"
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": [
+        0.25
+      ]
+    }
+  },
+  {
+    "id": "retry/server-error-not-retried-for-mutation",
+    "covers": [
+      "errors"
+    ],
+    "client": {
+      "maxRetries": 3
+    },
+    "steps": [
+      {
+        "op": "AddUserBook",
+        "variables": {
+          "object": {
+            "book_id": 1
+          }
+        }
+      }
+    ],
+    "responses": [
+      {
+        "status": 503,
+        "body": {
+          "error": "Service Unavailable"
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "AddUserBook"
+      ],
+      "sleptSeconds": [],
+      "results": [
+        {
+          "error": "ServerError"
+        }
+      ]
+    }
+  },
+  {
+    "id": "retry/timeout-retried-for-read",
+    "covers": [
+      "errors"
+    ],
+    "client": {
+      "maxRetries": 3
+    },
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "network": "timeout"
+      },
+      {
+        "status": 408,
+        "body": {
+          "error": "Request Timeout"
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": [
+        0.25,
+        1
+      ]
+    }
+  },
+  {
+    "id": "retry/timeout-not-retried-for-mutation",
+    "covers": [
+      "errors"
+    ],
+    "client": {
+      "maxRetries": 3
+    },
+    "steps": [
+      {
+        "op": "AddUserBook",
+        "variables": {
+          "object": {
+            "book_id": 1
+          }
+        }
+      }
+    ],
+    "responses": [
+      {
+        "network": "timeout"
+      }
+    ],
+    "expect": {
+      "requests": [
+        "AddUserBook"
+      ],
+      "sleptSeconds": [],
+      "results": [
+        {
+          "error": "TimeoutError",
+          "fields": {
+            "mayHaveSucceeded": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "retry/max-retries-zero",
+    "covers": [
+      "errors"
+    ],
+    "client": {
+      "maxRetries": 0
+    },
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "status": 429,
+        "headers": {
+          "retry-after": "1"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me"
+      ],
+      "sleptSeconds": [],
+      "results": [
+        {
+          "error": "RateLimitError"
+        }
+      ]
+    }
+  },
+  {
+    "id": "rate-limit/contention-resets-after-success",
+    "covers": [
+      "rate-limit"
+    ],
+    "notes": "Each call: an ordinary 429 waits Retry-After (1s); the repeat is contention, 1 + 0.5 × 2 = 2s. A success resets the count, so the second call starts over.",
+    "client": {
+      "maxRetries": 3
+    },
+    "random": 0.5,
+    "steps": [
+      {
+        "op": "Me",
+        "variables": {}
+      },
+      {
+        "op": "Me",
+        "variables": {}
+      }
+    ],
+    "responses": [
+      {
+        "status": 429,
+        "headers": {
+          "retry-after": "1"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      },
+      {
+        "status": 429,
+        "headers": {
+          "retry-after": "1"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      },
+      {
+        "status": 429,
+        "headers": {
+          "retry-after": "1"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      },
+      {
+        "status": 429,
+        "headers": {
+          "retry-after": "1"
+        },
+        "body": {
+          "error": "Too Many Requests"
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me",
+        "Me"
+      ],
+      "sleptSeconds": [
+        1,
+        2,
+        1,
+        2
+      ]
+    }
+  }
+]

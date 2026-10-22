@@ -1,0 +1,70 @@
+[
+  {
+    "id": "activities/for-user",
+    "method": "activities.forUser",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "activities": [{ "id": 1, "event": "UserBookActivity" }] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetActivitiesForUser", "variables": { "userId": 7, "limit": 25, "offset": 0 } }],
+      "result": { "items": [{ "id": 1, "event": "UserBookActivity" }], "limit": 25, "offset": 0, "hasMore": false }
+    }
+  },
+  {
+    "id": "activities/for-book",
+    "method": "activities.forBook",
+    "args": [100, { "limit": 1, "offset": 1 }],
+    "responses": [{ "status": 200, "body": { "data": { "activities": [{ "id": 1, "event": "UserBookActivity" }] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetActivitiesForBook", "variables": { "bookId": 100, "limit": 1, "offset": 1 } }],
+      "result": { "items": [{ "id": 1, "event": "UserBookActivity" }], "limit": 1, "offset": 1, "hasMore": true }
+    }
+  },
+  {
+    "id": "activities/following",
+    "method": "activities.following",
+    "args": [{ "limit": 5 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "activities": [{ "id": 1, "event": "UserBookActivity" }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetFollowingActivities", "variables": { "userId": 42, "limit": 5, "offset": 0 } }
+      ],
+      "result": { "items": [{ "id": 1, "event": "UserBookActivity" }], "limit": 5, "offset": 0, "hasMore": false }
+    }
+  },
+  {
+    "id": "activities/delete",
+    "method": "activities.delete",
+    "args": [1],
+    "responses": [{ "status": 200, "body": { "data": { "delete_activities_by_pk": { "id": 1 } } } }],
+    "expect": { "requests": [{ "operationName": "DeleteActivity", "variables": { "id": 1 } }], "result": null }
+  },
+  {
+    "id": "activities/delete-missing-or-not-yours",
+    "method": "activities.delete",
+    "args": [1],
+    "responses": [{ "status": 200, "body": { "data": { "delete_activities_by_pk": null } } }],
+    "expect": {
+      "requests": [{ "operationName": "DeleteActivity", "variables": { "id": 1 } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "activity", "id": 1 }
+    }
+  }
+]

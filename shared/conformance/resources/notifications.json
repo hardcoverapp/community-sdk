@@ -1,0 +1,196 @@
+[
+  {
+    "id": "notifications/list",
+    "method": "notifications.list",
+    "args": [{ "limit": 10 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "notification_deliveries": [{ "id": 501, "read": false, "notification": { "id": 9, "title": "Sam liked your review" } }]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetNotifications", "variables": { "userId": 42, "limit": 10, "offset": 0 } }
+      ],
+      "result": {
+        "items": [{ "id": 501, "read": false, "notification": { "id": 9, "title": "Sam liked your review" } }],
+        "limit": 10,
+        "offset": 0,
+        "hasMore": false
+      }
+    }
+  },
+  {
+    "id": "notifications/unread-count",
+    "method": "notifications.unreadCount",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": { "data": { "notification_deliveries_aggregate": { "aggregate": { "count": 3 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "CountUnreadNotifications", "variables": { "userId": 42 } }
+      ],
+      "result": 3
+    }
+  },
+  {
+    "id": "notifications/unread-count-empty",
+    "method": "notifications.unreadCount",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "notification_deliveries_aggregate": { "aggregate": null } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "CountUnreadNotifications", "variables": { "userId": 42 } }
+      ],
+      "result": 0
+    }
+  },
+  {
+    "id": "notifications/mark-read-these",
+    "method": "notifications.markRead",
+    "args": [[501, 502]],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "update_notification_deliveries": { "affected_rows": 2 } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        {
+          "operationName": "MarkNotificationsRead",
+          "variables": { "userId": 42, "ids": [501, 502], "readAt": { "$type": "string" } }
+        }
+      ],
+      "result": 2
+    }
+  },
+  {
+    "id": "notifications/mark-read-all-unread",
+    "method": "notifications.markRead",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "update_notification_deliveries": { "affected_rows": 5 } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        {
+          "operationName": "MarkAllNotificationsRead",
+          "variables": { "userId": 42, "readAt": { "$type": "string" } }
+        }
+      ],
+      "result": 5
+    }
+  },
+  {
+    "id": "notifications/mark-read-empty-list-sends-nothing",
+    "method": "notifications.markRead",
+    "args": [[]],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": { "requests": [{ "operationName": "Me", "variables": {} }], "result": 0 }
+  }
+]

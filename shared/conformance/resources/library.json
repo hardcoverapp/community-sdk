@@ -1,0 +1,837 @@
+[
+  {
+    "id": "library/add-defaults-to-want-to-read",
+    "method": "library.add",
+    "args": [100],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_user_book": { "id": 7, "error": null, "user_book": { "id": 7, "book_id": 100, "status_id": 1 } }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "AddUserBook", "variables": { "object": { "book_id": 100, "status_id": 1 } } }],
+      "result": { "id": 7, "book_id": 100, "status_id": 1 }
+    }
+  },
+  {
+    "id": "library/add-maps-options",
+    "method": "library.add",
+    "args": [100, { "status": 2, "editionId": 5, "privacy": 3, "rating": 4, "startDate": "2026-09-01" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "insert_user_book": { "id": 7, "error": null, "user_book": { "id": 7 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "AddUserBook",
+          "variables": {
+            "object": {
+              "book_id": 100,
+              "status_id": 2,
+              "edition_id": 5,
+              "privacy_setting_id": 3,
+              "rating": 4,
+              "user_start_date": "2026-09-01"
+            }
+          }
+        }
+      ],
+      "result": { "id": 7 }
+    }
+  },
+  {
+    "id": "library/add-read-without-date-leaves-it-to-the-server",
+    "method": "library.add",
+    "args": [100, { "status": 3 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "insert_user_book": { "id": 7, "error": null, "user_book": { "id": 7 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "AddUserBook", "variables": { "object": { "book_id": 100, "status_id": 3 } } }],
+      "result": { "id": 7 }
+    }
+  },
+  {
+    "id": "library/add-read-with-date",
+    "method": "library.add",
+    "args": [100, { "status": 3, "date": "2025-12-31" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "insert_user_book": { "id": 7, "error": null, "user_book": { "id": 7 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "AddUserBook",
+          "variables": { "object": { "book_id": 100, "status_id": 3, "user_date": "2025-12-31" } }
+        }
+      ],
+      "result": { "id": 7 }
+    }
+  },
+  {
+    "id": "library/add-rejects-a-bad-rating",
+    "method": "library.add",
+    "args": [100, { "rating": 3.3 }],
+    "responses": [],
+    "expect": { "requests": [], "error": "ArgumentError" }
+  },
+  {
+    "id": "library/update-sends-only-the-patch",
+    "method": "library.update",
+    "args": [7, { "rating": 4.5 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": { "update_user_book": { "id": 7, "error": null, "user_book": { "id": 7, "rating": 4.5 } } }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "UpdateUserBook", "variables": { "id": 7, "object": { "rating": 4.5 } } }],
+      "result": { "id": 7, "rating": 4.5 }
+    }
+  },
+  {
+    "id": "library/update-review-and-notes",
+    "method": "library.update",
+    "args": [7, { "review": { "markdown": "Loved it", "hasSpoilers": false }, "notes": "gift from Sam" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "update_user_book": { "id": 7, "error": null, "user_book": { "id": 7 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "UpdateUserBook",
+          "variables": {
+            "id": 7,
+            "object": { "review_markdown": "Loved it", "review_has_spoilers": false, "private_notes": "gift from Sam" }
+          }
+        }
+      ],
+      "result": { "id": 7 }
+    }
+  },
+  {
+    "id": "library/update-occurred-at-backdates",
+    "method": "library.update",
+    "args": [7, { "status": 4, "occurredAt": "2026-09-24T21:00:00-06:00" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "update_user_book": { "id": 7, "error": null, "user_book": { "id": 7 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "UpdateUserBook",
+          "variables": { "id": 7, "object": { "status_id": 4, "action_at": "2026-09-24T21:00:00-06:00" } }
+        }
+      ],
+      "result": { "id": 7 }
+    }
+  },
+  {
+    "id": "library/set-status-read-leaves-the-date-to-the-server",
+    "method": "library.setStatus",
+    "args": [7, 3],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": { "update_user_book": { "id": 7, "error": null, "user_book": { "id": 7, "status_id": 3 } } }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "UpdateUserBook", "variables": { "id": 7, "object": { "status_id": 3 } } }],
+      "result": { "id": 7, "status_id": 3 }
+    }
+  },
+  {
+    "id": "library/set-status-paused",
+    "method": "library.setStatus",
+    "args": [7, 4],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "update_user_book": { "id": 7, "error": null, "user_book": { "id": 7 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "UpdateUserBook", "variables": { "id": 7, "object": { "status_id": 4 } } }],
+      "result": { "id": 7 }
+    }
+  },
+  {
+    "id": "library/set-status-with-date-and-occurred-at",
+    "method": "library.setStatus",
+    "args": [7, 3, { "date": "2026-10-01", "occurredAt": "2026-10-01T20:00:00-06:00" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "update_user_book": { "id": 7, "error": null, "user_book": { "id": 7 } } } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "UpdateUserBook",
+          "variables": {
+            "id": 7,
+            "object": { "status_id": 3, "user_date": "2026-10-01", "action_at": "2026-10-01T20:00:00-06:00" }
+          }
+        }
+      ],
+      "result": { "id": 7 }
+    }
+  },
+  {
+    "id": "library/rate-half-star",
+    "method": "library.rate",
+    "args": [7, 3.5],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": { "update_user_book": { "id": 7, "error": null, "user_book": { "id": 7, "rating": 3.5 } } }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "UpdateUserBook", "variables": { "id": 7, "object": { "rating": 3.5 } } }],
+      "result": { "id": 7, "rating": 3.5 }
+    }
+  },
+  {
+    "id": "library/rate-null-clears",
+    "method": "library.rate",
+    "args": [7, null],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": { "update_user_book": { "id": 7, "error": null, "user_book": { "id": 7, "rating": null } } }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "UpdateUserBook", "variables": { "id": 7, "object": { "rating": null } } }],
+      "result": { "id": 7, "rating": null }
+    }
+  },
+  {
+    "id": "library/rate-rejects-off-step",
+    "method": "library.rate",
+    "args": [7, 3.3],
+    "responses": [],
+    "expect": { "requests": [], "error": "ArgumentError" }
+  },
+  {
+    "id": "library/rate-rejects-zero",
+    "method": "library.rate",
+    "args": [7, 0],
+    "responses": [],
+    "expect": { "requests": [], "error": "ArgumentError" }
+  },
+  {
+    "id": "library/rate-rejects-above-five",
+    "method": "library.rate",
+    "args": [7, 5.5],
+    "responses": [],
+    "expect": { "requests": [], "error": "ArgumentError" }
+  },
+  {
+    "id": "library/list-by-status",
+    "method": "library.list",
+    "args": [{ "status": 3, "limit": 2 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_books": [{ "id": 1 }, { "id": 2 }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        {
+          "operationName": "GetLibrary",
+          "variables": { "userId": 42, "statusIds": [3], "limit": 2, "offset": 0 }
+        }
+      ],
+      "result": { "items": [{ "id": 1 }, { "id": 2 }], "limit": 2, "offset": 0, "hasMore": true }
+    }
+  },
+  {
+    "id": "library/list-without-status-uses-the-operation-default",
+    "method": "library.list",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_books": [] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetLibrary", "variables": { "userId": 42, "limit": 25, "offset": 0 } }
+      ],
+      "result": { "items": [], "limit": 25, "offset": 0, "hasMore": false }
+    }
+  },
+  {
+    "id": "library/list-several-statuses",
+    "method": "library.list",
+    "args": [{ "status": [1, 2], "offset": 25 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_books": [] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        {
+          "operationName": "GetLibrary",
+          "variables": { "userId": 42, "statusIds": [1, 2], "limit": 25, "offset": 25 }
+        }
+      ],
+      "result": { "items": [], "limit": 25, "offset": 25, "hasMore": false }
+    }
+  },
+  {
+    "id": "library/count",
+    "method": "library.count",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_books_aggregate": { "aggregate": { "count": 12 } } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "CountLibrary", "variables": { "userId": 42 } }
+      ],
+      "result": 12
+    }
+  },
+  {
+    "id": "library/count-by-status",
+    "method": "library.count",
+    "args": [{ "status": 2 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_books_aggregate": { "aggregate": { "count": 3 } } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "CountLibrary", "variables": { "userId": 42, "statusIds": [2] } }
+      ],
+      "result": 3
+    }
+  },
+  {
+    "id": "library/for-book",
+    "method": "library.forBook",
+    "args": [100],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_books": [{ "id": 7, "book_id": 100 }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetUserBookForBook", "variables": { "userId": 42, "bookId": 100 } }
+      ],
+      "result": { "id": 7, "book_id": 100 }
+    }
+  },
+  {
+    "id": "library/for-book-not-in-library",
+    "method": "library.forBook",
+    "args": [100],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_books": [] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetUserBookForBook", "variables": { "userId": 42, "bookId": 100 } }
+      ],
+      "result": null
+    }
+  },
+  {
+    "id": "library/get",
+    "method": "library.get",
+    "args": [7],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books_by_pk": { "id": 7, "book_id": 100, "book": { "id": 100, "title": "Project Hail Mary" } }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetUserBook", "variables": { "id": 7 } }],
+      "result": { "id": 7, "book_id": 100, "book": { "id": 100, "title": "Project Hail Mary" } }
+    }
+  },
+  {
+    "id": "library/get-missing",
+    "method": "library.get",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "user_books_by_pk": null } } }],
+    "expect": { "requests": [{ "operationName": "GetUserBook", "variables": { "id": 7 } }], "result": null }
+  },
+  {
+    "id": "library/remove",
+    "method": "library.remove",
+    "args": [7],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "delete_user_book": { "id": 7, "book_id": 100, "user_id": 42 } } }
+      }
+    ],
+    "expect": { "requests": [{ "operationName": "RemoveUserBook", "variables": { "id": 7 } }], "result": null }
+  },
+  {
+    "id": "library/remove-missing",
+    "method": "library.remove",
+    "args": [7],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "delete_user_book": { "id": null, "book_id": null, "user_id": null } } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "RemoveUserBook", "variables": { "id": 7 } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "library entry", "id": 7 }
+    }
+  },
+  {
+    "id": "library/changes-from-the-start",
+    "method": "library.changes",
+    "args": [{ "limit": 2 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "user_books": [
+              { "id": 1, "updated_at": "2026-10-07T01:00:00.123456+00:00", "book_id": 10 },
+              { "id": 2, "updated_at": "2026-10-07T02:00:00.654321+00:00", "book_id": 20 }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetLibraryChanges", "variables": { "userId": 42, "limit": 2 } }
+      ],
+      "result": {
+        "items": [
+          { "id": 1, "updated_at": "2026-10-07T01:00:00.123456+00:00", "book_id": 10 },
+          { "id": 2, "updated_at": "2026-10-07T02:00:00.654321+00:00", "book_id": 20 }
+        ],
+        "cursor": "2026-10-07T02:00:00.654321+00:00|2",
+        "hasMore": true
+      }
+    }
+  },
+  {
+    "id": "library/changes-resume-after-cursor",
+    "method": "library.changes",
+    "args": [{ "since": "2026-10-07T01:00:00.123456+00:00|7" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_books": [] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        {
+          "operationName": "GetLibraryChanges",
+          "variables": { "userId": 42, "limit": 25, "after": "2026-10-07T01:00:00.123456+00:00", "afterId": 7 }
+        }
+      ],
+      "result": { "items": [], "cursor": "2026-10-07T01:00:00.123456+00:00|7", "hasMore": false }
+    }
+  },
+  {
+    "id": "library/changes-null-cursor-before-any-sync",
+    "method": "library.changes",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_books": [] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetLibraryChanges", "variables": { "userId": 42, "limit": 25 } }
+      ],
+      "result": { "items": [], "cursor": null, "hasMore": false }
+    }
+  },
+  {
+    "id": "library/changes-removed-ids-from-known-ids",
+    "method": "library.changes",
+    "args": [{ "knownIds": [1, 2, 3, 3] }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": { "user_books": [{ "id": 1, "updated_at": "2026-10-07T01:00:00.123456+00:00", "book_id": 10 }] }
+        }
+      },
+      { "status": 200, "body": { "data": { "user_books": [{ "id": 1 }, { "id": 2 }] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetLibraryChanges", "variables": { "userId": 42, "limit": 25 } },
+        { "operationName": "GetLibraryIds", "variables": { "userId": 42 } }
+      ],
+      "result": {
+        "items": [{ "id": 1, "updated_at": "2026-10-07T01:00:00.123456+00:00", "book_id": 10 }],
+        "cursor": "2026-10-07T01:00:00.123456+00:00|1",
+        "hasMore": false,
+        "removedIds": [3]
+      }
+    }
+  },
+  {
+    "id": "library/changes-rejects-a-foreign-cursor",
+    "method": "library.changes",
+    "args": [{ "since": "2026-10-07" }],
+    "responses": [],
+    "expect": { "requests": [], "error": "ArgumentError" }
+  },
+  {
+    "id": "library/mark-owned",
+    "method": "library.markOwned",
+    "args": [300],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "edition_owned": { "id": 5, "list_book": { "id": 5, "list_id": 9, "book_id": 100, "edition_id": 300 } }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "MarkOwned", "variables": { "editionId": 300 } }],
+      "result": { "id": 5, "list_id": 9, "book_id": 100, "edition_id": 300 }
+    }
+  },
+  {
+    "id": "library/owned",
+    "method": "library.owned",
+    "args": [{ "limit": 1 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": { "data": { "lists": [{ "id": 9, "list_books": [{ "id": 5, "book_id": 100, "edition_id": 300 }] }] } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetOwnedBooks", "variables": { "userId": 42, "limit": 1, "offset": 0 } }
+      ],
+      "result": { "items": [{ "id": 5, "book_id": 100, "edition_id": 300 }], "limit": 1, "offset": 0, "hasMore": true }
+    }
+  },
+  {
+    "id": "library/owned-empty-without-an-owned-list",
+    "method": "library.owned",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "lists": [] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetOwnedBooks", "variables": { "userId": 42, "limit": 25, "offset": 0 } }
+      ],
+      "result": { "items": [], "limit": 25, "offset": 0, "hasMore": false }
+    }
+  },
+  {
+    "id": "library/unmark-owned",
+    "method": "library.unmarkOwned",
+    "args": [100],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "lists": [{ "id": 9, "list_books": [] }] } } },
+      { "status": 200, "body": { "data": { "list_books": [{ "id": 5 }] } } },
+      { "status": 200, "body": { "data": { "delete_list_book": { "id": 5 } } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetOwnedBooks", "variables": { "userId": 42, "limit": 0 } },
+        { "operationName": "FindListBook", "variables": { "listId": 9, "bookId": 100 } },
+        { "operationName": "RemoveListBook", "variables": { "id": 5 } }
+      ],
+      "result": true
+    }
+  },
+  {
+    "id": "library/unmark-owned-without-an-owned-list",
+    "method": "library.unmarkOwned",
+    "args": [100],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      { "status": 200, "body": { "data": { "lists": [] } } }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetOwnedBooks", "variables": { "userId": 42, "limit": 0 } }
+      ],
+      "result": false
+    }
+  }
+]

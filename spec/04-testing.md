@@ -25,13 +25,18 @@ test their own code too.
   never with a silent empty result.
 - **Fake clock.** Retry and backoff read time through an injectable clock, so
   rate-limit tests run instantly.
-- **Conformance suite.** [`shared/conformance/cases.json`](../shared/conformance/cases.json)
-  holds the language-neutral behavior cases: error mapping, action envelopes,
-  429 handling, the no-retry-on-mutation rule. Each language ships a roughly
-  50-line runner. **These cases are the definition of parity**; a README
+- **Conformance suite.** [`shared/conformance/`](../shared/conformance)
+  holds the language-neutral cases: error mapping and envelopes
+  (`cases.json`), pure functions such as header parsing, request cost, ISBN
+  cleanup and local dates (`vectors.json`), pacing, batching and retries over
+  time (`client.json`), what every resource method sends and returns
+  (`resources/`), and OAuth (`oauth.json`). Each language ships a small
+  runner per file. **These cases are the definition of parity**; a README
   matrix cell turns ✅ only when the covering cases pass.
-- **Unit tests** cover the logic an SDK owns: progress math, local dates,
-  rating validation, chunking, header parsing, PKCE generation.
+- **Unit tests** stay per language for what the shared cases can't express:
+  the language's types and error classes, its runtime (Hermes, timers), and
+  wiring such as callbacks and the mock transport. A behavior any language
+  must share goes in `shared/conformance`, not in one SDK's tests.
   Trivial pass-through methods don't need their own tests.
 
 ## Layer 2: contract tests

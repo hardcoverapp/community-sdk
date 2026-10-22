@@ -1,18 +1,10 @@
+// The localDate rules are pinned in shared/conformance/vectors.json. This
+// checks a runtime detail: the result never comes from Intl's locale format.
 import { describe, expect, it, vi } from "vitest";
 import { localDate } from "../src/core/dates.ts";
 
 describe("localDate", () => {
   const at = new Date("2026-09-29T02:30:00Z");
-
-  it("uses the calendar date in the given timezone", () => {
-    expect(localDate(at, "America/Denver")).toBe("2026-09-28");
-    expect(localDate(at, "Asia/Tokyo")).toBe("2026-09-29");
-    expect(localDate(at, "UTC")).toBe("2026-09-29");
-  });
-
-  it("zero-pads month and day", () => {
-    expect(localDate(new Date("2026-01-05T12:00:00Z"), "UTC")).toBe("2026-01-05");
-  });
 
   it("does not depend on the runtime locale's date format", () => {
     // Simulate a runtime whose formatted dates are US-style. `format` is a getter.

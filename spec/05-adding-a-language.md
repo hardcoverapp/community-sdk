@@ -12,6 +12,9 @@ and rewrite them run on Node 24 with pnpm, whatever language you're adding:
 - enums (`shared/enums.json`)
 - the error taxonomy and matching rules (`shared/errors.json`)
 - environments (`shared/environments.json`)
+- client constants: retries, timeouts, pacing, cost, page sizes, limits,
+  User-Agent format (`shared/client.json`)
+- token rules and OAuth timings (`shared/auth.json`)
 - behavior tests (`shared/conformance/`)
 - recorded API responses (`shared/fixtures/`, planned: empty today)
 - the schema and scope map (`api-snapshot/`)
@@ -21,10 +24,10 @@ and rewrite them run on Node 24 with pnpm, whatever language you're adding:
 | # | Piece | Done when |
 |---|---|---|
 | 1 | `scripts/case-operations.mjs --case camel` (or `snake`) for the language's convention, then codegen over the output and `api-snapshot/schema.graphql` | Rewritten operations validate; types are generated in CI; freshness check passes |
-| 2 | Enum and error generation from `shared/*.json` | No hand-written copies of ids or error names |
+| 2 | Generation from `shared/*.json`: enums, errors, environments, `client.json`, `auth.json` | No hand-written copies of ids, error names, limits or timings |
 | 3 | Transport interface, platform HTTP transport, mock transport | Conformance runner uses the mock |
-| 4 | Core pipeline (auth, classify, retry, unwrap, rate-limit state) | Every case in `shared/conformance` passes |
-| 5 | Resources (v1 list in [03](03-sdk-design.md#resources-v1)) | Public API reviewed for idiom |
+| 4 | Core pipeline (auth, classify, retry, unwrap, rate-limit state, pacing, batching) | `cases.json`, `vectors.json` and `client.json` in `shared/conformance` pass |
+| 5 | Resources (v1 list in [03](03-sdk-design.md#resources-v1)) | Every case in `shared/conformance/resources/` passes; public API reviewed for idiom |
 | 6 | OAuth session (sign-in, refresh, store) | Every case in `shared/conformance/oauth.json` passes; constants come from `shared/auth.json`; one live sign-in run by hand |
 | 7 | Live suite reading the shared env vars | Green against staging |
 | 8 | Fixture-backed public mock client | Documented in the package README |

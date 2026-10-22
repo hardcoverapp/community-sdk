@@ -63,19 +63,20 @@ export interface LibraryChanges {
 
 // The cursor is the (updated_at, id) of the last row seen. updated_at stays the
 // server's string (microseconds), which a JS Date would round.
-function encodeCursor(row: { updatedAt?: string | null; id: number }): string {
+export function encodeCursor(row: { updatedAt?: string | null; id: number }): string {
   return `${row.updatedAt}|${row.id}`;
 }
 
-function decodeCursor(cursor: string): { after: string; afterId: number } {
+export function decodeCursor(cursor: string): { after: string; afterId: number } {
   const split = cursor.lastIndexOf("|");
-  const afterId = Number(cursor.slice(split + 1));
+  const id = cursor.slice(split + 1);
 
-  if (split <= 0 || !Number.isInteger(afterId)) {
+  // The id is the row's integer id: digits only, never empty.
+  if (split <= 0 || !/^\d+$/.test(id)) {
     throw new RangeError(`Not a library changes cursor: ${JSON.stringify(cursor)}`);
   }
 
-  return { after: cursor.slice(0, split), afterId };
+  return { after: cursor.slice(0, split), afterId: Number(id) };
 }
 
 /** A review on a library entry. Every field needs the `write:reviews` scope. */

@@ -1,0 +1,533 @@
+[
+  {
+    "id": "books/get",
+    "method": "books.get",
+    "args": [7],
+    "responses": [{ "status": 200, "body": { "data": { "books_by_pk": { "id": 7, "title": "Book 7" } } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetBook", "variables": { "id": 7 } }],
+      "result": { "id": 7, "title": "Book 7" }
+    }
+  },
+  {
+    "id": "books/get-missing",
+    "method": "books.get",
+    "args": [8],
+    "responses": [{ "status": 200, "body": { "data": { "books_by_pk": null } } }],
+    "expect": { "requests": [{ "operationName": "GetBook", "variables": { "id": 8 } }], "result": null }
+  },
+  {
+    "id": "books/get-by-slug",
+    "method": "books.getBySlug",
+    "args": ["project-hail-mary"],
+    "responses": [{ "status": 200, "body": { "data": { "books": [{ "id": 7, "title": "Book 7" }] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetBookBySlug", "variables": { "slug": "project-hail-mary" } }],
+      "result": { "id": 7, "title": "Book 7" }
+    }
+  },
+  {
+    "id": "books/get-by-slug-missing",
+    "method": "books.getBySlug",
+    "args": ["nope"],
+    "responses": [{ "status": 200, "body": { "data": { "books": [] } } }],
+    "expect": { "requests": [{ "operationName": "GetBookBySlug", "variables": { "slug": "nope" } }], "result": null }
+  },
+  {
+    "id": "books/get-many-in-the-order-asked-skipping-missing",
+    "method": "books.getMany",
+    "args": [[1, 2, 3]],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "books": [{ "id": 3, "title": "Book 3" }, { "id": 1, "title": "Book 1" }] } }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetBooks", "variables": { "ids": [1, 2, 3] } }],
+      "result": [{ "id": 1, "title": "Book 1" }, { "id": 3, "title": "Book 3" }]
+    }
+  },
+  {
+    "id": "books/get-many-no-ids-no-request",
+    "method": "books.getMany",
+    "args": [[]],
+    "responses": [],
+    "expect": { "requests": [], "result": [] }
+  },
+  {
+    "id": "books/editions",
+    "method": "books.editions",
+    "args": [7, { "limit": 2 }],
+    "responses": [{ "status": 200, "body": { "data": { "editions": [{ "id": 5 }, { "id": 6 }] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetEditionsForBook", "variables": { "bookId": 7, "limit": 2, "offset": 0 } }],
+      "result": { "items": [{ "id": 5 }, { "id": 6 }], "limit": 2, "offset": 0, "hasMore": true }
+    }
+  },
+  {
+    "id": "books/find-by-isbn-cleans-and-dedupes",
+    "method": "books.findByIsbn",
+    "args": [["978-0-593-13520-4", "9780593135204", " 080442957x "]],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": { "editions": [{ "id": 5, "isbn_13": "9780593135204", "book": { "id": 7, "title": "Book 7" } }] }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "FindEditionsByIsbn", "variables": { "isbns": ["9780593135204", "080442957X"] } }],
+      "result": [{ "id": 5, "isbn_13": "9780593135204", "book": { "id": 7, "title": "Book 7" } }]
+    }
+  },
+  {
+    "id": "books/find-by-isbn-nothing-to-look-up",
+    "method": "books.findByIsbn",
+    "args": [[" ", "-"]],
+    "responses": [],
+    "expect": { "requests": [], "result": [] }
+  },
+  {
+    "id": "books/edition",
+    "method": "books.edition",
+    "args": [26096001],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "editions_by_pk": {
+              "id": 26096001,
+              "book_id": 427473,
+              "isbn_13": "9780345539786",
+              "book": { "id": 427473, "title": "Book 427473" }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetEdition", "variables": { "id": 26096001 } }],
+      "result": {
+        "id": 26096001,
+        "book_id": 427473,
+        "isbn_13": "9780345539786",
+        "book": { "id": 427473, "title": "Book 427473" }
+      }
+    }
+  },
+  {
+    "id": "books/edition-missing",
+    "method": "books.edition",
+    "args": [1],
+    "responses": [{ "status": 200, "body": { "data": { "editions_by_pk": null } } }],
+    "expect": { "requests": [{ "operationName": "GetEdition", "variables": { "id": 1 } }], "result": null }
+  },
+  {
+    "id": "books/find-by-external-ids-cleans-to-strings",
+    "method": "books.findByExternalIds",
+    "args": [1, [15839976, " 15839976 ", "", "999"]],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "book_mappings": [
+              {
+                "external_id": "15839976",
+                "edition_id": null,
+                "book": { "id": 427473, "title": "Book 427473" }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "FindBookMappings",
+          "variables": { "platformId": 1, "externalIds": ["15839976", "999"] }
+        }
+      ],
+      "result": [{ "external_id": "15839976", "edition_id": null, "book": { "id": 427473, "title": "Book 427473" } }]
+    }
+  },
+  {
+    "id": "books/find-by-external-ids-nothing-to-look-up",
+    "method": "books.findByExternalIds",
+    "args": [2, [" "]],
+    "responses": [],
+    "expect": { "requests": [], "result": [] }
+  },
+  {
+    "id": "books/released",
+    "method": "books.released",
+    "args": [{ "from": "2026-10-12", "to": "2026-10-18", "limit": 2 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": { "data": { "books": [{ "id": 5, "title": "Book 5" }, { "id": 2, "title": "Book 2" }] } }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "ReleasedBooks",
+          "variables": { "from": "2026-10-12", "to": "2026-10-18", "limit": 2, "offset": 0 }
+        }
+      ],
+      "result": {
+        "items": [{ "id": 5, "title": "Book 5" }, { "id": 2, "title": "Book 2" }],
+        "limit": 2,
+        "offset": 0,
+        "hasMore": true
+      }
+    }
+  },
+  {
+    "id": "books/trending-in-trending-order",
+    "method": "books.trending",
+    "args": [{ "duration": "week", "limit": 3 }],
+    "responses": [
+      { "status": 200, "body": { "data": { "books_trending": { "ids": [9, 4, 6], "error": null } } } },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "books": [{ "id": 4, "title": "Book 4" }, { "id": 6, "title": "Book 6" }, { "id": 9, "title": "Book 9" }]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "TrendingBookIds", "variables": { "duration": "week", "limit": 3, "offset": 0 } },
+        { "operationName": "GetBooks", "variables": { "ids": [9, 4, 6] } }
+      ],
+      "result": {
+        "items": [{ "id": 9, "title": "Book 9" }, { "id": 4, "title": "Book 4" }, { "id": 6, "title": "Book 6" }],
+        "limit": 3,
+        "offset": 0,
+        "hasMore": true
+      }
+    }
+  },
+  {
+    "id": "books/trending-defaults",
+    "method": "books.trending",
+    "args": [],
+    "responses": [{ "status": 200, "body": { "data": { "books_trending": { "ids": [], "error": null } } } }],
+    "expect": {
+      "requests": [{ "operationName": "TrendingBookIds", "variables": { "duration": "month", "limit": 25, "offset": 0 } }],
+      "result": { "items": [], "limit": 25, "offset": 0, "hasMore": false }
+    }
+  },
+  {
+    "id": "books/trending-caps-limit-at-100",
+    "method": "books.trending",
+    "args": [{ "duration": "week", "limit": 200 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "books_trending": {
+              "ids": [
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+                27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+                51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74,
+                75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98,
+                99, 100
+              ],
+              "error": null
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "books": [
+              { "id": 1 },
+              { "id": 2 },
+              { "id": 3 },
+              { "id": 4 },
+              { "id": 5 },
+              { "id": 6 },
+              { "id": 7 },
+              { "id": 8 },
+              { "id": 9 },
+              { "id": 10 },
+              { "id": 11 },
+              { "id": 12 },
+              { "id": 13 },
+              { "id": 14 },
+              { "id": 15 },
+              { "id": 16 },
+              { "id": 17 },
+              { "id": 18 },
+              { "id": 19 },
+              { "id": 20 },
+              { "id": 21 },
+              { "id": 22 },
+              { "id": 23 },
+              { "id": 24 },
+              { "id": 25 },
+              { "id": 26 },
+              { "id": 27 },
+              { "id": 28 },
+              { "id": 29 },
+              { "id": 30 },
+              { "id": 31 },
+              { "id": 32 },
+              { "id": 33 },
+              { "id": 34 },
+              { "id": 35 },
+              { "id": 36 },
+              { "id": 37 },
+              { "id": 38 },
+              { "id": 39 },
+              { "id": 40 },
+              { "id": 41 },
+              { "id": 42 },
+              { "id": 43 },
+              { "id": 44 },
+              { "id": 45 },
+              { "id": 46 },
+              { "id": 47 },
+              { "id": 48 },
+              { "id": 49 },
+              { "id": 50 },
+              { "id": 51 },
+              { "id": 52 },
+              { "id": 53 },
+              { "id": 54 },
+              { "id": 55 },
+              { "id": 56 },
+              { "id": 57 },
+              { "id": 58 },
+              { "id": 59 },
+              { "id": 60 },
+              { "id": 61 },
+              { "id": 62 },
+              { "id": 63 },
+              { "id": 64 },
+              { "id": 65 },
+              { "id": 66 },
+              { "id": 67 },
+              { "id": 68 },
+              { "id": 69 },
+              { "id": 70 },
+              { "id": 71 },
+              { "id": 72 },
+              { "id": 73 },
+              { "id": 74 },
+              { "id": 75 },
+              { "id": 76 },
+              { "id": 77 },
+              { "id": 78 },
+              { "id": 79 },
+              { "id": 80 },
+              { "id": 81 },
+              { "id": 82 },
+              { "id": 83 },
+              { "id": 84 },
+              { "id": 85 },
+              { "id": 86 },
+              { "id": 87 },
+              { "id": 88 },
+              { "id": 89 },
+              { "id": 90 },
+              { "id": 91 },
+              { "id": 92 },
+              { "id": 93 },
+              { "id": 94 },
+              { "id": 95 },
+              { "id": 96 },
+              { "id": 97 },
+              { "id": 98 },
+              { "id": 99 },
+              { "id": 100 }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "TrendingBookIds", "variables": { "duration": "week", "limit": 100, "offset": 0 } },
+        {
+          "operationName": "GetBooks",
+          "variables": {
+            "ids": [
+              1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+              27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+              51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74,
+              75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98,
+              99, 100
+            ]
+          }
+        }
+      ],
+      "result": {
+        "items": [
+          { "id": 1 },
+          { "id": 2 },
+          { "id": 3 },
+          { "id": 4 },
+          { "id": 5 },
+          { "id": 6 },
+          { "id": 7 },
+          { "id": 8 },
+          { "id": 9 },
+          { "id": 10 },
+          { "id": 11 },
+          { "id": 12 },
+          { "id": 13 },
+          { "id": 14 },
+          { "id": 15 },
+          { "id": 16 },
+          { "id": 17 },
+          { "id": 18 },
+          { "id": 19 },
+          { "id": 20 },
+          { "id": 21 },
+          { "id": 22 },
+          { "id": 23 },
+          { "id": 24 },
+          { "id": 25 },
+          { "id": 26 },
+          { "id": 27 },
+          { "id": 28 },
+          { "id": 29 },
+          { "id": 30 },
+          { "id": 31 },
+          { "id": 32 },
+          { "id": 33 },
+          { "id": 34 },
+          { "id": 35 },
+          { "id": 36 },
+          { "id": 37 },
+          { "id": 38 },
+          { "id": 39 },
+          { "id": 40 },
+          { "id": 41 },
+          { "id": 42 },
+          { "id": 43 },
+          { "id": 44 },
+          { "id": 45 },
+          { "id": 46 },
+          { "id": 47 },
+          { "id": 48 },
+          { "id": 49 },
+          { "id": 50 },
+          { "id": 51 },
+          { "id": 52 },
+          { "id": 53 },
+          { "id": 54 },
+          { "id": 55 },
+          { "id": 56 },
+          { "id": 57 },
+          { "id": 58 },
+          { "id": 59 },
+          { "id": 60 },
+          { "id": 61 },
+          { "id": 62 },
+          { "id": 63 },
+          { "id": 64 },
+          { "id": 65 },
+          { "id": 66 },
+          { "id": 67 },
+          { "id": 68 },
+          { "id": 69 },
+          { "id": 70 },
+          { "id": 71 },
+          { "id": 72 },
+          { "id": 73 },
+          { "id": 74 },
+          { "id": 75 },
+          { "id": 76 },
+          { "id": 77 },
+          { "id": 78 },
+          { "id": 79 },
+          { "id": 80 },
+          { "id": 81 },
+          { "id": 82 },
+          { "id": 83 },
+          { "id": 84 },
+          { "id": 85 },
+          { "id": 86 },
+          { "id": 87 },
+          { "id": 88 },
+          { "id": 89 },
+          { "id": 90 },
+          { "id": 91 },
+          { "id": 92 },
+          { "id": 93 },
+          { "id": 94 },
+          { "id": 95 },
+          { "id": 96 },
+          { "id": 97 },
+          { "id": 98 },
+          { "id": 99 },
+          { "id": 100 }
+        ],
+        "limit": 100,
+        "offset": 0,
+        "hasMore": true
+      }
+    }
+  },
+  {
+    "id": "books/friends-skips-empty-rows",
+    "method": "books.friends",
+    "args": [100],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "following_user_books": [
+              {
+                "user_book": {
+                  "id": 5,
+                  "book_id": 100,
+                  "status_id": 3,
+                  "rating": 4,
+                  "user": { "id": 8, "username": "ana" }
+                }
+              },
+              { "user_book": null }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetFriendsForBook", "variables": { "userId": 42, "bookId": 100, "limit": 25 } }
+      ],
+      "result": [{ "id": 5, "book_id": 100, "status_id": 3, "rating": 4, "user": { "id": 8, "username": "ana" } }]
+    }
+  }
+]

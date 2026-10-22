@@ -1,0 +1,782 @@
+[
+  {
+    "id": "prompts/get",
+    "method": "prompts.get",
+    "args": [203],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "prompts_by_pk": {
+              "id": 203,
+              "slug": "whats-your-favorite-cozy-fantasy",
+              "question": "What's your favorite cozy fantasy?",
+              "description": "Low stakes, warm hearts.",
+              "featured": true,
+              "answers_count": 510,
+              "books_count": 60,
+              "users_count": 300,
+              "user_id": 7,
+              "created_at": "2024-01-01T00:00:00"
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetPrompt", "variables": { "id": 203 } }],
+      "result": {
+        "id": 203,
+        "slug": "whats-your-favorite-cozy-fantasy",
+        "question": "What's your favorite cozy fantasy?",
+        "description": "Low stakes, warm hearts.",
+        "featured": true,
+        "answers_count": 510,
+        "books_count": 60,
+        "users_count": 300,
+        "user_id": 7,
+        "created_at": "2024-01-01T00:00:00"
+      }
+    }
+  },
+  {
+    "id": "prompts/get-missing",
+    "method": "prompts.get",
+    "args": [9],
+    "responses": [{ "status": 200, "body": { "data": { "prompts_by_pk": null } } }],
+    "expect": { "requests": [{ "operationName": "GetPrompt", "variables": { "id": 9 } }], "result": null }
+  },
+  {
+    "id": "prompts/get-by-slug",
+    "method": "prompts.getBySlug",
+    "args": ["whats-your-favorite-cozy-fantasy"],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "prompts": [
+              {
+                "id": 203,
+                "slug": "whats-your-favorite-cozy-fantasy",
+                "question": "What's your favorite cozy fantasy?",
+                "description": "Low stakes, warm hearts.",
+                "featured": true,
+                "answers_count": 510,
+                "books_count": 60,
+                "users_count": 300,
+                "user_id": 7,
+                "created_at": "2024-01-01T00:00:00"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetPromptBySlug", "variables": { "slug": "whats-your-favorite-cozy-fantasy" } }],
+      "result": {
+        "id": 203,
+        "slug": "whats-your-favorite-cozy-fantasy",
+        "question": "What's your favorite cozy fantasy?",
+        "description": "Low stakes, warm hearts.",
+        "featured": true,
+        "answers_count": 510,
+        "books_count": 60,
+        "users_count": 300,
+        "user_id": 7,
+        "created_at": "2024-01-01T00:00:00"
+      }
+    }
+  },
+  {
+    "id": "prompts/get-by-slug-missing",
+    "method": "prompts.getBySlug",
+    "args": ["missing"],
+    "responses": [{ "status": 200, "body": { "data": { "prompts": [] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetPromptBySlug", "variables": { "slug": "missing" } }],
+      "result": null
+    }
+  },
+  {
+    "id": "prompts/list-most-answered-first",
+    "method": "prompts.list",
+    "args": [{ "limit": 10 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "prompts": [
+              {
+                "id": 203,
+                "slug": "whats-your-favorite-cozy-fantasy",
+                "question": "What's your favorite cozy fantasy?",
+                "description": "Low stakes, warm hearts.",
+                "featured": true,
+                "answers_count": 510,
+                "books_count": 60,
+                "users_count": 300,
+                "user_id": 7,
+                "created_at": "2024-01-01T00:00:00"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "GetPrompts",
+          "variables": {
+            "where": {},
+            "orderBy": [{ "answers_count": "desc" }, { "id": "desc" }],
+            "limit": 10,
+            "offset": 0
+          }
+        }
+      ],
+      "result": {
+        "items": [
+          {
+            "id": 203,
+            "slug": "whats-your-favorite-cozy-fantasy",
+            "question": "What's your favorite cozy fantasy?",
+            "description": "Low stakes, warm hearts.",
+            "featured": true,
+            "answers_count": 510,
+            "books_count": 60,
+            "users_count": 300,
+            "user_id": 7,
+            "created_at": "2024-01-01T00:00:00"
+          }
+        ],
+        "limit": 10,
+        "offset": 0,
+        "hasMore": false
+      }
+    }
+  },
+  {
+    "id": "prompts/list-featured-newest",
+    "method": "prompts.list",
+    "args": [{ "featured": true, "sort": "newest" }],
+    "responses": [{ "status": 200, "body": { "data": { "prompts": [] } } }],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "GetPrompts",
+          "variables": {
+            "where": { "featured": { "_eq": true } },
+            "orderBy": [{ "created_at": "desc" }, { "id": "desc" }],
+            "limit": 25,
+            "offset": 0
+          }
+        }
+      ],
+      "result": { "items": [], "limit": 25, "offset": 0, "hasMore": false }
+    }
+  },
+  {
+    "id": "prompts/mine",
+    "method": "prompts.mine",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "prompts": [
+              {
+                "id": 203,
+                "slug": "whats-your-favorite-cozy-fantasy",
+                "question": "What's your favorite cozy fantasy?",
+                "description": "Low stakes, warm hearts.",
+                "featured": true,
+                "answers_count": 510,
+                "books_count": 60,
+                "users_count": 300,
+                "user_id": 42,
+                "created_at": "2024-01-01T00:00:00"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetPromptsForUser", "variables": { "userId": 42, "limit": 25, "offset": 0 } }
+      ],
+      "result": {
+        "items": [
+          {
+            "id": 203,
+            "slug": "whats-your-favorite-cozy-fantasy",
+            "question": "What's your favorite cozy fantasy?",
+            "description": "Low stakes, warm hearts.",
+            "featured": true,
+            "answers_count": 510,
+            "books_count": 60,
+            "users_count": 300,
+            "user_id": 42,
+            "created_at": "2024-01-01T00:00:00"
+          }
+        ],
+        "limit": 25,
+        "offset": 0,
+        "hasMore": false
+      }
+    }
+  },
+  {
+    "id": "prompts/for-user",
+    "method": "prompts.forUser",
+    "args": [7, { "limit": 5, "offset": 5 }],
+    "responses": [{ "status": 200, "body": { "data": { "prompts": [] } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetPromptsForUser", "variables": { "userId": 7, "limit": 5, "offset": 5 } }],
+      "result": { "items": [], "limit": 5, "offset": 5, "hasMore": false }
+    }
+  },
+  {
+    "id": "prompts/books-keep-the-ranking-and-skip-lost-books",
+    "method": "prompts.books",
+    "args": [203, { "limit": 3 }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "prompt_books_summary": [
+              { "answers_count": 40, "book": { "id": 1, "title": "Book 1" } },
+              { "answers_count": 12, "book": null },
+              { "answers_count": 9, "book": { "id": 2, "title": "Book 2" } }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetPromptBooks", "variables": { "promptId": 203, "limit": 3, "offset": 0 } }],
+      "result": {
+        "items": [
+          { "answersCount": 40, "book": { "id": 1, "title": "Book 1" } },
+          { "answersCount": 9, "book": { "id": 2, "title": "Book 2" } }
+        ],
+        "limit": 3,
+        "offset": 0,
+        "hasMore": true
+      }
+    }
+  },
+  {
+    "id": "prompts/for-book",
+    "method": "prompts.forBook",
+    "args": [1],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "prompt_books_summary": [
+              {
+                "answers_count": 40,
+                "prompt": {
+                  "id": 203,
+                  "slug": "whats-your-favorite-cozy-fantasy",
+                  "question": "What's your favorite cozy fantasy?",
+                  "description": "Low stakes, warm hearts.",
+                  "featured": true,
+                  "answers_count": 510,
+                  "books_count": 60,
+                  "users_count": 300,
+                  "user_id": 7,
+                  "created_at": "2024-01-01T00:00:00"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "GetPromptsForBook", "variables": { "bookId": 1, "limit": 25, "offset": 0 } }],
+      "result": {
+        "items": [
+          {
+            "answersCount": 40,
+            "prompt": {
+              "id": 203,
+              "slug": "whats-your-favorite-cozy-fantasy",
+              "question": "What's your favorite cozy fantasy?",
+              "description": "Low stakes, warm hearts.",
+              "featured": true,
+              "answers_count": 510,
+              "books_count": 60,
+              "users_count": 300,
+              "user_id": 7,
+              "created_at": "2024-01-01T00:00:00"
+            }
+          }
+        ],
+        "limit": 25,
+        "offset": 0,
+        "hasMore": false
+      }
+    }
+  },
+  {
+    "id": "prompts/my-answers",
+    "method": "prompts.myAnswers",
+    "args": [203],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "prompt_answers": [{ "id": 5, "prompt_id": 203, "book_id": 1, "book": { "id": 1, "title": "Book 1" } }]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetPromptAnswersForUser", "variables": { "userId": 42, "promptId": 203 } }
+      ],
+      "result": [{ "id": 5, "prompt_id": 203, "book_id": 1, "book": { "id": 1, "title": "Book 1" } }]
+    }
+  },
+  {
+    "id": "prompts/following",
+    "method": "prompts.following",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "followed_prompts": [
+              {
+                "id": 1,
+                "prompt": {
+                  "id": 203,
+                  "slug": "whats-your-favorite-cozy-fantasy",
+                  "question": "What's your favorite cozy fantasy?",
+                  "description": "Low stakes, warm hearts.",
+                  "featured": true,
+                  "answers_count": 510,
+                  "books_count": 60,
+                  "users_count": 300,
+                  "user_id": 7,
+                  "created_at": "2024-01-01T00:00:00"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "Me", "variables": {} },
+        { "operationName": "GetFollowedPrompts", "variables": { "userId": 42, "limit": 25, "offset": 0 } }
+      ],
+      "result": {
+        "items": [
+          {
+            "id": 1,
+            "prompt": {
+              "id": 203,
+              "slug": "whats-your-favorite-cozy-fantasy",
+              "question": "What's your favorite cozy fantasy?",
+              "description": "Low stakes, warm hearts.",
+              "featured": true,
+              "answers_count": 510,
+              "books_count": 60,
+              "users_count": 300,
+              "user_id": 7,
+              "created_at": "2024-01-01T00:00:00"
+            }
+          }
+        ],
+        "limit": 25,
+        "offset": 0,
+        "hasMore": false
+      }
+    }
+  },
+  {
+    "id": "prompts/create-is-always-public",
+    "method": "prompts.create",
+    "args": [{ "question": "What's your favorite cozy fantasy?", "description": "Low stakes." }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_prompt": {
+              "id": 203,
+              "error": null,
+              "prompt": {
+                "id": 203,
+                "slug": "whats-your-favorite-cozy-fantasy",
+                "question": "What's your favorite cozy fantasy?",
+                "description": "Low stakes, warm hearts.",
+                "featured": true,
+                "answers_count": 510,
+                "books_count": 60,
+                "users_count": 300,
+                "user_id": 7,
+                "created_at": "2024-01-01T00:00:00"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "CreatePrompt",
+          "variables": {
+            "object": {
+              "question": "What's your favorite cozy fantasy?",
+              "description": "Low stakes.",
+              "privacy_setting_id": 1
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 203,
+        "slug": "whats-your-favorite-cozy-fantasy",
+        "question": "What's your favorite cozy fantasy?",
+        "description": "Low stakes, warm hearts.",
+        "featured": true,
+        "answers_count": 510,
+        "books_count": 60,
+        "users_count": 300,
+        "user_id": 7,
+        "created_at": "2024-01-01T00:00:00"
+      }
+    }
+  },
+  {
+    "id": "prompts/update-sends-the-whole-prompt",
+    "method": "prompts.update",
+    "args": [203, { "description": "New" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "prompts_by_pk": {
+              "id": 203,
+              "slug": "whats-your-favorite-cozy-fantasy",
+              "question": "What's your favorite cozy fantasy?",
+              "description": "Low stakes, warm hearts.",
+              "featured": true,
+              "answers_count": 510,
+              "books_count": 60,
+              "users_count": 300,
+              "user_id": 7,
+              "created_at": "2024-01-01T00:00:00"
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_prompt": {
+              "id": 203,
+              "error": null,
+              "prompt": {
+                "id": 203,
+                "slug": "whats-your-favorite-cozy-fantasy",
+                "question": "What's your favorite cozy fantasy?",
+                "description": "New",
+                "featured": true,
+                "answers_count": 510,
+                "books_count": 60,
+                "users_count": 300,
+                "user_id": 7,
+                "created_at": "2024-01-01T00:00:00"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        { "operationName": "GetPrompt", "variables": { "id": 203 } },
+        {
+          "operationName": "UpdatePrompt",
+          "variables": {
+            "object": {
+              "id": 203,
+              "question": "What's your favorite cozy fantasy?",
+              "description": "New",
+              "privacy_setting_id": 1
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 203,
+        "slug": "whats-your-favorite-cozy-fantasy",
+        "question": "What's your favorite cozy fantasy?",
+        "description": "New",
+        "featured": true,
+        "answers_count": 510,
+        "books_count": 60,
+        "users_count": 300,
+        "user_id": 7,
+        "created_at": "2024-01-01T00:00:00"
+      }
+    }
+  },
+  {
+    "id": "prompts/update-missing",
+    "method": "prompts.update",
+    "args": [9, { "description": "x" }],
+    "responses": [{ "status": 200, "body": { "data": { "prompts_by_pk": null } } }],
+    "expect": {
+      "requests": [{ "operationName": "GetPrompt", "variables": { "id": 9 } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "prompt", "id": 9 }
+    }
+  },
+  {
+    "id": "prompts/delete",
+    "method": "prompts.delete",
+    "args": [203],
+    "responses": [{ "status": 200, "body": { "data": { "delete_prompts_by_pk": { "id": 203 } } } }],
+    "expect": { "requests": [{ "operationName": "DeletePrompt", "variables": { "id": 203 } }], "result": null }
+  },
+  {
+    "id": "prompts/delete-missing",
+    "method": "prompts.delete",
+    "args": [9],
+    "responses": [{ "status": 200, "body": { "data": { "delete_prompts_by_pk": null } } }],
+    "expect": {
+      "requests": [{ "operationName": "DeletePrompt", "variables": { "id": 9 } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "prompt", "id": 9 }
+    }
+  },
+  {
+    "id": "prompts/answer-returns-the-new-count",
+    "method": "prompts.answer",
+    "args": [203, 1, { "description": "So warm" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_prompt_answer": {
+              "id": 5,
+              "prompt_answer": {
+                "id": 5,
+                "prompt_id": 203,
+                "book_id": 1,
+                "user_id": 42,
+                "description": "So warm",
+                "created_at": null
+              },
+              "prompt_book": { "answers_count": 41 }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "AnswerPrompt",
+          "variables": { "object": { "prompt_id": 203, "book_id": 1, "description": "So warm" } }
+        }
+      ],
+      "result": {
+        "answer": {
+          "id": 5,
+          "prompt_id": 203,
+          "book_id": 1,
+          "user_id": 42,
+          "description": "So warm",
+          "created_at": null
+        },
+        "answersCount": 41
+      }
+    }
+  },
+  {
+    "id": "prompts/answer-without-description",
+    "method": "prompts.answer",
+    "args": [203, 1],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_prompt_answer": {
+              "id": 5,
+              "prompt_answer": {
+                "id": 5,
+                "prompt_id": 203,
+                "book_id": 1,
+                "user_id": 42,
+                "description": null,
+                "created_at": null
+              },
+              "prompt_book": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "AnswerPrompt", "variables": { "object": { "prompt_id": 203, "book_id": 1 } } }],
+      "result": {
+        "answer": { "id": 5, "prompt_id": 203, "book_id": 1, "user_id": 42, "description": null, "created_at": null },
+        "answersCount": 0
+      }
+    }
+  },
+  {
+    "id": "prompts/update-answer",
+    "method": "prompts.updateAnswer",
+    "args": [5, { "description": "Even warmer" }],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_prompt_answers_by_pk": {
+              "id": 5,
+              "prompt_id": 203,
+              "book_id": 1,
+              "user_id": 42,
+              "description": "Even warmer",
+              "created_at": null
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [{ "operationName": "UpdatePromptAnswer", "variables": { "id": 5, "description": "Even warmer" } }],
+      "result": {
+        "id": 5,
+        "prompt_id": 203,
+        "book_id": 1,
+        "user_id": 42,
+        "description": "Even warmer",
+        "created_at": null
+      }
+    }
+  },
+  {
+    "id": "prompts/update-answer-missing",
+    "method": "prompts.updateAnswer",
+    "args": [5, { "description": "x" }],
+    "responses": [{ "status": 200, "body": { "data": { "update_prompt_answers_by_pk": null } } }],
+    "expect": {
+      "requests": [{ "operationName": "UpdatePromptAnswer", "variables": { "id": 5, "description": "x" } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "prompt answer", "id": 5 }
+    }
+  },
+  {
+    "id": "prompts/delete-answer",
+    "method": "prompts.deleteAnswer",
+    "args": [5],
+    "responses": [{ "status": 200, "body": { "data": { "delete_prompt_answer": { "id": 5 } } } }],
+    "expect": { "requests": [{ "operationName": "DeletePromptAnswer", "variables": { "id": 5 } }], "result": null }
+  },
+  {
+    "id": "prompts/delete-answer-missing",
+    "method": "prompts.deleteAnswer",
+    "args": [5],
+    "responses": [{ "status": 200, "body": { "data": { "delete_prompt_answer": null } } }],
+    "expect": {
+      "requests": [{ "operationName": "DeletePromptAnswer", "variables": { "id": 5 } }],
+      "error": "NotFoundError",
+      "fields": { "resource": "prompt answer", "id": 5 }
+    }
+  },
+  {
+    "id": "prompts/follow",
+    "method": "prompts.follow",
+    "args": [203],
+    "responses": [{ "status": 200, "body": { "data": { "insert_followed_prompt": { "id": 1 } } } }],
+    "expect": { "requests": [{ "operationName": "FollowPrompt", "variables": { "promptId": 203 } }], "result": null }
+  },
+  {
+    "id": "prompts/unfollow",
+    "method": "prompts.unfollow",
+    "args": [203],
+    "responses": [{ "status": 200, "body": { "data": { "delete_followed_prompt": { "success": true } } } }],
+    "expect": { "requests": [{ "operationName": "UnfollowPrompt", "variables": { "promptId": 203 } }], "result": true }
+  },
+  {
+    "id": "prompts/unfollow-not-following",
+    "method": "prompts.unfollow",
+    "args": [203],
+    "responses": [{ "status": 200, "body": { "data": { "delete_followed_prompt": { "success": false } } } }],
+    "expect": { "requests": [{ "operationName": "UnfollowPrompt", "variables": { "promptId": 203 } }], "result": false }
+  }
+]

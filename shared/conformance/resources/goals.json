@@ -1,0 +1,971 @@
+[
+  {
+    "id": "goals/create-maps-input-and-defaults-conditions",
+    "method": "goals.create",
+    "args": [
+      {
+        "metric": "book",
+        "goal": 50,
+        "description": "50 books in 2026",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "privacy": 1
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_goal": {
+              "id": 9,
+              "errors": [],
+              "goal": {
+                "id": 9,
+                "metric": "book",
+                "goal": 50,
+                "progress": 10,
+                "description": "50 books in 2026",
+                "conditions": {
+                  "readingFormatId": 1
+                },
+                "archived": false,
+                "state": "active",
+                "start_date": "2026-01-01",
+                "end_date": "2026-12-31",
+                "completed_at": null,
+                "privacy_setting_id": 1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "CreateGoal",
+          "variables": {
+            "object": {
+              "metric": "book",
+              "goal": 50,
+              "description": "50 books in 2026",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "conditions": {},
+              "privacy_setting_id": 1
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "metric": "book",
+        "goal": 50,
+        "progress": 10,
+        "description": "50 books in 2026",
+        "conditions": {
+          "readingFormatId": 1
+        },
+        "archived": false,
+        "state": "active",
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31",
+        "completed_at": null,
+        "privacy_setting_id": 1
+      }
+    }
+  },
+  {
+    "id": "goals/create-without-privacy",
+    "method": "goals.create",
+    "args": [
+      {
+        "metric": "book",
+        "goal": 50,
+        "description": "50 books in 2026",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31"
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_goal": {
+              "id": 9,
+              "errors": [],
+              "goal": {
+                "id": 9,
+                "metric": "book",
+                "goal": 50,
+                "progress": 10,
+                "description": "50 books in 2026",
+                "conditions": {
+                  "readingFormatId": 1
+                },
+                "archived": false,
+                "state": "active",
+                "start_date": "2026-01-01",
+                "end_date": "2026-12-31",
+                "completed_at": null,
+                "privacy_setting_id": 1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "CreateGoal",
+          "variables": {
+            "object": {
+              "metric": "book",
+              "goal": 50,
+              "description": "50 books in 2026",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "conditions": {}
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "metric": "book",
+        "goal": 50,
+        "progress": 10,
+        "description": "50 books in 2026",
+        "conditions": {
+          "readingFormatId": 1
+        },
+        "archived": false,
+        "state": "active",
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31",
+        "completed_at": null,
+        "privacy_setting_id": 1
+      }
+    }
+  },
+  {
+    "id": "goals/create-applies-privacy-the-api-ignores",
+    "method": "goals.create",
+    "args": [
+      {
+        "metric": "book",
+        "goal": 50,
+        "description": "50 books in 2026",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "privacy": 3
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "insert_goal": {
+              "id": 9,
+              "errors": [],
+              "goal": {
+                "id": 9,
+                "metric": "book",
+                "goal": 50,
+                "progress": 10,
+                "description": "50 books in 2026",
+                "conditions": {
+                  "readingFormatId": 1
+                },
+                "archived": false,
+                "state": "active",
+                "start_date": "2026-01-01",
+                "end_date": "2026-12-31",
+                "completed_at": null,
+                "privacy_setting_id": 1
+              }
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_goal": {
+              "id": 9,
+              "errors": [],
+              "goal": {
+                "id": 9,
+                "metric": "book",
+                "goal": 50,
+                "progress": 10,
+                "description": "50 books in 2026",
+                "conditions": {
+                  "readingFormatId": 1
+                },
+                "archived": false,
+                "state": "active",
+                "start_date": "2026-01-01",
+                "end_date": "2026-12-31",
+                "completed_at": null,
+                "privacy_setting_id": 3
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "CreateGoal",
+          "variables": {
+            "object": {
+              "metric": "book",
+              "goal": 50,
+              "description": "50 books in 2026",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "conditions": {},
+              "privacy_setting_id": 3
+            }
+          }
+        },
+        {
+          "operationName": "UpdateGoal",
+          "variables": {
+            "id": 9,
+            "object": {
+              "metric": "book",
+              "goal": 50,
+              "description": "50 books in 2026",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "conditions": {
+                "readingFormatId": 1
+              },
+              "privacy_setting_id": 3,
+              "archived": false
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "metric": "book",
+        "goal": 50,
+        "progress": 10,
+        "description": "50 books in 2026",
+        "conditions": {
+          "readingFormatId": 1
+        },
+        "archived": false,
+        "state": "active",
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31",
+        "completed_at": null,
+        "privacy_setting_id": 3
+      }
+    }
+  },
+  {
+    "id": "goals/update-merges-into-the-current-goal",
+    "method": "goals.update",
+    "args": [
+      9,
+      {
+        "goal": 60
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "goals_by_pk": {
+              "id": 9,
+              "metric": "book",
+              "goal": 50,
+              "progress": 10,
+              "description": "50 books in 2026",
+              "conditions": {
+                "readingFormatId": 1
+              },
+              "archived": false,
+              "state": "active",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "completed_at": null,
+              "privacy_setting_id": 1
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_goal": {
+              "id": 9,
+              "errors": [],
+              "goal": {
+                "id": 9,
+                "metric": "book",
+                "goal": 60,
+                "progress": 10,
+                "description": "50 books in 2026",
+                "conditions": {
+                  "readingFormatId": 1
+                },
+                "archived": false,
+                "state": "active",
+                "start_date": "2026-01-01",
+                "end_date": "2026-12-31",
+                "completed_at": null,
+                "privacy_setting_id": 1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "GetGoal",
+          "variables": {
+            "id": 9
+          }
+        },
+        {
+          "operationName": "UpdateGoal",
+          "variables": {
+            "id": 9,
+            "object": {
+              "metric": "book",
+              "goal": 60,
+              "description": "50 books in 2026",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "conditions": {
+                "readingFormatId": 1
+              },
+              "privacy_setting_id": 1,
+              "archived": false
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "metric": "book",
+        "goal": 60,
+        "progress": 10,
+        "description": "50 books in 2026",
+        "conditions": {
+          "readingFormatId": 1
+        },
+        "archived": false,
+        "state": "active",
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31",
+        "completed_at": null,
+        "privacy_setting_id": 1
+      }
+    }
+  },
+  {
+    "id": "goals/update-missing",
+    "method": "goals.update",
+    "args": [
+      9,
+      {
+        "goal": 60
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "goals_by_pk": null
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "GetGoal",
+          "variables": {
+            "id": 9
+          }
+        }
+      ],
+      "error": "NotFoundError",
+      "fields": {
+        "resource": "goal",
+        "id": 9
+      }
+    }
+  },
+  {
+    "id": "goals/archive",
+    "method": "goals.archive",
+    "args": [
+      9
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "goals_by_pk": {
+              "id": 9,
+              "metric": "book",
+              "goal": 50,
+              "progress": 10,
+              "description": "50 books in 2026",
+              "conditions": {
+                "readingFormatId": 1
+              },
+              "archived": false,
+              "state": "active",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "completed_at": null,
+              "privacy_setting_id": 1
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_goal": {
+              "id": 9,
+              "errors": [],
+              "goal": {
+                "id": 9,
+                "metric": "book",
+                "goal": 50,
+                "progress": 10,
+                "description": "50 books in 2026",
+                "conditions": {
+                  "readingFormatId": 1
+                },
+                "archived": true,
+                "state": "active",
+                "start_date": "2026-01-01",
+                "end_date": "2026-12-31",
+                "completed_at": null,
+                "privacy_setting_id": 1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "GetGoal",
+          "variables": {
+            "id": 9
+          }
+        },
+        {
+          "operationName": "UpdateGoal",
+          "variables": {
+            "id": 9,
+            "object": {
+              "metric": "book",
+              "goal": 50,
+              "description": "50 books in 2026",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "conditions": {
+                "readingFormatId": 1
+              },
+              "privacy_setting_id": 1,
+              "archived": true
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "metric": "book",
+        "goal": 50,
+        "progress": 10,
+        "description": "50 books in 2026",
+        "conditions": {
+          "readingFormatId": 1
+        },
+        "archived": true,
+        "state": "active",
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31",
+        "completed_at": null,
+        "privacy_setting_id": 1
+      }
+    }
+  },
+  {
+    "id": "goals/unarchive",
+    "method": "goals.unarchive",
+    "args": [
+      9
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "goals_by_pk": {
+              "id": 9,
+              "metric": "book",
+              "goal": 50,
+              "progress": 10,
+              "description": "50 books in 2026",
+              "conditions": {
+                "readingFormatId": 1
+              },
+              "archived": true,
+              "state": "active",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "completed_at": null,
+              "privacy_setting_id": 1
+            }
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_goal": {
+              "id": 9,
+              "errors": [],
+              "goal": {
+                "id": 9,
+                "metric": "book",
+                "goal": 50,
+                "progress": 10,
+                "description": "50 books in 2026",
+                "conditions": {
+                  "readingFormatId": 1
+                },
+                "archived": false,
+                "state": "active",
+                "start_date": "2026-01-01",
+                "end_date": "2026-12-31",
+                "completed_at": null,
+                "privacy_setting_id": 1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "GetGoal",
+          "variables": {
+            "id": 9
+          }
+        },
+        {
+          "operationName": "UpdateGoal",
+          "variables": {
+            "id": 9,
+            "object": {
+              "metric": "book",
+              "goal": 50,
+              "description": "50 books in 2026",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "conditions": {
+                "readingFormatId": 1
+              },
+              "privacy_setting_id": 1,
+              "archived": false
+            }
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "metric": "book",
+        "goal": 50,
+        "progress": 10,
+        "description": "50 books in 2026",
+        "conditions": {
+          "readingFormatId": 1
+        },
+        "archived": false,
+        "state": "active",
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31",
+        "completed_at": null,
+        "privacy_setting_id": 1
+      }
+    }
+  },
+  {
+    "id": "goals/refresh-progress",
+    "method": "goals.refreshProgress",
+    "args": [
+      9
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "update_goal_progress": {
+              "id": 9,
+              "errors": [],
+              "goal": {
+                "id": 9,
+                "metric": "book",
+                "goal": 50,
+                "progress": 12,
+                "description": "50 books in 2026",
+                "conditions": {
+                  "readingFormatId": 1
+                },
+                "archived": false,
+                "state": "active",
+                "start_date": "2026-01-01",
+                "end_date": "2026-12-31",
+                "completed_at": null,
+                "privacy_setting_id": 1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "RefreshGoalProgress",
+          "variables": {
+            "id": 9
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "metric": "book",
+        "goal": 50,
+        "progress": 12,
+        "description": "50 books in 2026",
+        "conditions": {
+          "readingFormatId": 1
+        },
+        "archived": false,
+        "state": "active",
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31",
+        "completed_at": null,
+        "privacy_setting_id": 1
+      }
+    }
+  },
+  {
+    "id": "goals/delete",
+    "method": "goals.delete",
+    "args": [
+      9
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "delete_goal": {
+              "id": 9,
+              "errors": []
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "DeleteGoal",
+          "variables": {
+            "id": 9
+          }
+        }
+      ],
+      "result": null
+    }
+  },
+  {
+    "id": "goals/delete-action-error",
+    "method": "goals.delete",
+    "args": [
+      9
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "delete_goal": {
+              "id": null,
+              "errors": [
+                "Not yours"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "DeleteGoal",
+          "variables": {
+            "id": 9
+          }
+        }
+      ],
+      "error": "ActionError",
+      "fields": {
+        "operation": "delete_goal",
+        "messages": [
+          "Not yours"
+        ]
+      }
+    }
+  },
+  {
+    "id": "goals/list-including-archived",
+    "method": "goals.list",
+    "args": [
+      {
+        "includeArchived": true
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "goals": [
+              {
+                "id": 9,
+                "metric": "book",
+                "goal": 50,
+                "progress": 10,
+                "description": "50 books in 2026",
+                "conditions": {
+                  "readingFormatId": 1
+                },
+                "archived": false,
+                "state": "active",
+                "start_date": "2026-01-01",
+                "end_date": "2026-12-31",
+                "completed_at": null,
+                "privacy_setting_id": 1
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "Me",
+          "variables": {}
+        },
+        {
+          "operationName": "GetGoals",
+          "variables": {
+            "userId": 42,
+            "includeArchived": true
+          }
+        }
+      ],
+      "result": [
+        {
+          "id": 9,
+          "metric": "book",
+          "goal": 50,
+          "progress": 10,
+          "description": "50 books in 2026",
+          "conditions": {
+            "readingFormatId": 1
+          },
+          "archived": false,
+          "state": "active",
+          "start_date": "2026-01-01",
+          "end_date": "2026-12-31",
+          "completed_at": null,
+          "privacy_setting_id": 1
+        }
+      ]
+    }
+  },
+  {
+    "id": "goals/list-defaults-to-unarchived",
+    "method": "goals.list",
+    "args": [],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "me": [
+              {
+                "id": 42,
+                "username": "reader",
+                "account_privacy_setting_id": 2,
+                "activity_privacy_settings_id": 3
+              }
+            ]
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "goals": []
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "Me",
+          "variables": {}
+        },
+        {
+          "operationName": "GetGoals",
+          "variables": {
+            "userId": 42,
+            "includeArchived": false
+          }
+        }
+      ],
+      "result": []
+    }
+  },
+  {
+    "id": "goals/get",
+    "method": "goals.get",
+    "args": [
+      9
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "goals_by_pk": {
+              "id": 9,
+              "metric": "book",
+              "goal": 50,
+              "progress": 10,
+              "description": "50 books in 2026",
+              "conditions": {
+                "readingFormatId": 1
+              },
+              "archived": false,
+              "state": "active",
+              "start_date": "2026-01-01",
+              "end_date": "2026-12-31",
+              "completed_at": null,
+              "privacy_setting_id": 1
+            }
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "GetGoal",
+          "variables": {
+            "id": 9
+          }
+        }
+      ],
+      "result": {
+        "id": 9,
+        "metric": "book",
+        "goal": 50,
+        "progress": 10,
+        "description": "50 books in 2026",
+        "conditions": {
+          "readingFormatId": 1
+        },
+        "archived": false,
+        "state": "active",
+        "start_date": "2026-01-01",
+        "end_date": "2026-12-31",
+        "completed_at": null,
+        "privacy_setting_id": 1
+      }
+    }
+  },
+  {
+    "id": "goals/get-missing",
+    "method": "goals.get",
+    "args": [
+      1
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "goals_by_pk": null
+          }
+        }
+      }
+    ],
+    "expect": {
+      "requests": [
+        {
+          "operationName": "GetGoal",
+          "variables": {
+            "id": 1
+          }
+        }
+      ],
+      "result": null
+    }
+  }
+]
