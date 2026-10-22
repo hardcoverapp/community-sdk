@@ -33,10 +33,11 @@ prompts, the catalog (books, authors, series, editions, external ids), people
 and feeds, and notifications. A few niche areas come later, and some endpoints
 are left out on purpose (librarian-only catalog edits, operations the gateway
 blocks for tokens); [spec/03](spec/03-sdk-design.md#coverage) lists both. It
-runs in browsers, Node and React Native (Hermes), with OAuth sign-in (browser
-and device) and personal access tokens. Packaging comes next, and nothing is published to a package registry yet. The first consumers
-are the Hardcover docs site (live examples) and a React Native app. Swift,
-Kotlin (Java-friendly), Python and Ruby follow once the shared layer has proven
+runs in browsers, Node and React Native (Hermes), and signs in with OAuth
+(browser or device code) or a personal access token. Packaging comes next, and
+nothing is published to a package registry yet. The first consumers are the
+Hardcover docs site (live examples) and a React Native app. Swift, Kotlin
+(Java-friendly), Python and Ruby follow once the shared layer has proven
 itself.
 
 ## Language matrix
@@ -108,6 +109,7 @@ shared/
   operations/     every GraphQL document, once (validated against the snapshot)
   enums.json      status, privacy, reading format, date precision, search types
   errors.json     error taxonomy + how to recognize each raw failure
+  auth.json       token prefixes and the OAuth session's rules and timings
   environments.json  prod / staging / local endpoints
   conformance/    language-neutral behavior tests every SDK must pass
   fixtures/       recorded, scrubbed API responses for mock clients
@@ -164,6 +166,14 @@ account's token:
 cd packages/typescript
 HARDCOVER_API_KEY=hc_pat_... HARDCOVER_ENV=staging pnpm test:live          # reads
 HARDCOVER_API_KEY=hc_pat_... HARDCOVER_ENV=local pnpm test:live:writes      # plus real-user writes
+```
+
+OAuth sign-in needs a person to approve it, so it has its own interactive
+check. Register an app with redirect URI `http://127.0.0.1/callback`, then:
+
+```sh
+HARDCOVER_OAUTH_CLIENT_ID=... node scripts/oauth-smoke.ts             # browser sign-in, refresh, sign-out
+HARDCOVER_OAUTH_CLIENT_ID=... node scripts/oauth-smoke.ts rejections  # or: device, identity, offline
 ```
 
 See [spec/04](spec/04-testing.md#layer-3-live-integration) for every variable,
