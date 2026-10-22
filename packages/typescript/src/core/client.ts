@@ -20,7 +20,7 @@ import { UsersResource } from "../resources/users.ts";
 import { VibesResource } from "../resources/vibes.ts";
 import { Allowance } from "./allowance.ts";
 import { requestCost } from "./cost.ts";
-import { NetworkError, RateLimitError, ServerError, TimeoutError } from "./errors.ts";
+import { AuthenticationError, NetworkError, RateLimitError, ServerError, TimeoutError } from "./errors.ts";
 import type { WithJsonColumns } from "./json-columns.ts";
 import { RequestPlanner } from "./planner.ts";
 import type { RateLimitState } from "./rate-limit.ts";
@@ -30,12 +30,35 @@ import { fetchTransport, TransportFailure, type HttpRequest, type HttpResponse, 
 
 export type { Environment };
 
+/**
+ * Supplies access tokens for a client that refreshes them, e.g. an
+ * `OAuthSession` from `@hardcover/sdk/oauth`.
+ */
+export interface TokenSource {
+  /** A current access token. Throws (SignedOutError) when there isn't one. */
+  getAccessToken(): Promise<string>;
+
+  /** The server refused `rejectedToken` with a 401: return a fresh one to replay with once, or throw. */
+  refreshAfterUnauthorized?(rejectedToken: string): Promise<string>;
+
+  /**
+   * A number that changes whenever the signed-in user may have changed (a new
+   * sign-in, or signing out), so the client knows its cached user is stale.
+   * A refresh keeps the same user and the same number.
+   */
+  userVersion?(): number;
+}
+
 export interface HardcoverClientOptions {
   /**
-   * A personal access token (`hc_pat_...`) or OAuth access token. Whitespace
-   * and a pasted `Bearer ` prefix are cleaned up.
+   * A personal access token (`hc_pat_...`) or an OAuth access token your app
+   * manages itself. Whitespace and a pasted `Bearer ` prefix are cleaned up.
+   * Pass this or `auth`, not both.
    */
-  token: string;
+  token?: string;
+
+  /** An OAuth session (or any TokenSource) that refreshes and stores tokens itself. Pass this or `token`. */
+  auth?: TokenSource;
 
   /** Called for problems that don't stop the client, e.g. a deprecated legacy JWT. Defaults to console.warn. */
   onWarning?: (message: string) => void;
@@ -115,7 +138,9 @@ export class HardcoverClient {
   readonly activities: ActivitiesResource;
   readonly notifications: NotificationsResource;
 
-  readonly #token: string;
+  /** Set for a static token, so those requests skip the TokenSource round trip. */
+  readonly #staticToken: string | undefined;
+  readonly #auth: TokenSource | undefined;
   readonly #transport: Transport;
   readonly #maxRetries: number;
   readonly #userAgent: string;
@@ -129,7 +154,14 @@ export class HardcoverClient {
 
   constructor(options: HardcoverClientOptions) {
     this.endpoint = options.endpoint ?? environments[options.environment ?? "prod"].graphql;
-    this.#token = normalizeToken(options.token, options.onWarning ?? ((message) => console.warn(message)));
+    if (options.auth && options.token !== undefined) {
+      throw new TypeError("Pass either `token` or `auth` to HardcoverClient, not both.");
+    }
+
+    this.#auth = options.auth;
+    this.#staticToken = options.auth
+      ? undefined
+      : normalizeToken(options.token, options.onWarning ?? ((message) => console.warn(message)));
     this.#transport = options.transport ?? fetchTransport({ timeoutMs: options.timeoutMs });
     this.#maxRetries = options.maxRetries ?? 3;
     this.#userAgent = options.userAgent ? `${options.userAgent} ${SDK_USER_AGENT}` : SDK_USER_AGENT;
@@ -151,7 +183,7 @@ export class HardcoverClient {
       });
     }
 
-    this.me = new MeResource(this);
+    this.me = new MeResource(this, () => options.auth?.userVersion?.() ?? 0);
     this.library = new LibraryResource(this);
     this.reads = new ReadsResource(this);
     this.lists = new ListsResource(this);
@@ -218,10 +250,13 @@ export class HardcoverClient {
   // Sends with pacing and retries; returns the parsed body of a 2xx response or
   // throws the classified failure.
   async #send(body: string, cost: number, isMutation: boolean, operationName: string | undefined): Promise<SendResult> {
-    const request = this.#httpRequest(body);
+    let replayedAfterRefresh = false;
 
     for (let attempt = 0; ; attempt++) {
       const canRetry = attempt < this.#maxRetries;
+
+      const token = this.#staticToken ?? (await this.#auth!.getAccessToken());
+      const request = this.#httpRequest(body, token);
 
       await this.#allowance.reserve(cost);
 
@@ -265,6 +300,17 @@ export class HardcoverClient {
         return { status: response.status, payload };
       }
 
+      // A 401 with a refreshing token source: refresh once and replay once. The
+      // gateway refused the token before running anything, so replaying a
+      // mutation can't double-write.
+      const refreshAfterUnauthorized = this.#auth?.refreshAfterUnauthorized;
+      if (failure instanceof AuthenticationError && refreshAfterUnauthorized && !replayedAfterRefresh) {
+        replayedAfterRefresh = true;
+        await refreshAfterUnauthorized.call(this.#auth, token);
+        attempt--;
+        continue;
+      }
+
       // A burst 429: wait it out (plus jitter if another client is competing), then retry.
       if (failure instanceof RateLimitError && failure.window === "burst" && canRetry) {
         await this.#sleep(failure.retryAfterSeconds * 1_000 + this.#allowance.contentionJitterMs(hadRoom));
@@ -283,11 +329,11 @@ export class HardcoverClient {
     }
   }
 
-  #httpRequest(body: string): HttpRequest {
+  #httpRequest(body: string, token: string): HttpRequest {
     return {
       url: this.endpoint,
       headers: {
-        authorization: `Bearer ${this.#token}`,
+        authorization: `Bearer ${token}`,
         "content-type": "application/json",
         accept: "application/json",
         "user-agent": this.#userAgent,

@@ -49,8 +49,9 @@ variables.
 | `hc_ac_` | Authorization code | 10 min, single use | |
 | (JWT) | Legacy API key | until expiry, ~1 year deprecation window | Full access, half the burst capacity |
 
-API tokens and OAuth are **beta-gated** behind user feature flags
-(`Features :api_tokens`, `:oauth_apps`).
+API tokens and OAuth were beta-gated behind the `api_tokens` and
+`oauth_apps` feature flags. Both shipped to everyone; the `oauth_apps` flag
+was removed on 2026-10-10.
 
 ### OAuth flows
 
@@ -66,6 +67,16 @@ API tokens and OAuth are **beta-gated** behind user feature flags
   must have device grant enabled.
 - **Refresh.** An optional `scope` narrows the grant. It fails with
   `re-authorization required` if the user's app authorization went stale.
+- **OpenID Connect** (added 2026-10-10). Identity scopes `openid`,
+  `profile`, `email` and `offline_access` (each of the last three implies
+  `openid`). With `openid` the token response carries an RS256 `id_token`;
+  `nonce` passed to `/oauth2/authorize` comes back in it. Discovery is at
+  `/.well-known/openid-configuration`, keys at `/.well-known/jwks.json`,
+  and `/oauth2/userinfo` returns the claims. **An identity-only grant gets a
+  short-lived access token and no refresh token** unless it includes
+  `offline_access`; any data scope gets a refresh token as before.
+- **Redirect back** carries `code` (or `error`, `error_description`),
+  `state`, and `iss` (RFC 9207, the API root URL).
 - **Revoke (RFC 7009)** always returns 200. **Introspect (RFC 7662)** is for
   confidential clients only.
 

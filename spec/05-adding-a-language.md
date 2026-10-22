@@ -25,7 +25,7 @@ and rewrite them run on Node 24 with pnpm, whatever language you're adding:
 | 3 | Transport interface, platform HTTP transport, mock transport | Conformance runner uses the mock |
 | 4 | Core pipeline (auth, classify, retry, unwrap, rate-limit state) | Every case in `shared/conformance` passes |
 | 5 | Resources (v1 list in [03](03-sdk-design.md#resources-v1)) | Public API reviewed for idiom |
-| 6 | OAuth helpers | PKCE unit tests pass; device-grant smoke test run once by hand |
+| 6 | OAuth session (sign-in, refresh, store) | Every case in `shared/conformance/oauth.json` passes; constants come from `shared/auth.json`; one live sign-in run by hand |
 | 7 | Live suite reading the shared env vars | Green against staging |
 | 8 | Fixture-backed public mock client | Documented in the package README |
 | 9 | Row in `languages.json`, with support flags set honestly | `matrix:check` passes |

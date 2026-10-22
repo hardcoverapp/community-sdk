@@ -6,6 +6,7 @@ import {
   operations, ScopeError, UserBookStatus,
 } from "../../src/index.ts";
 import { MockTransport, type MockResponse } from "../../src/testing/index.ts";
+import { memoryStore, OAuthSession, type RandomSource } from "../../src/oauth/index.ts";
 
 declare const print: ((...args: unknown[]) => void) | undefined;
 const log = (line: string) => (typeof print === "function" ? print(line) : console.log(line));
@@ -127,6 +128,24 @@ async function main() {
     const sent = JSON.parse(transport.requests[0]!.body) as { variables: { object: Record<string, unknown> } };
     assert(transport.requests.length === 1, `${transport.requests.length} requests`);
     assert(!("user_date" in sent.variables.object), "sent a user_date");
+  });
+
+  await check("oauth: sign-in without URL or WebCrypto, then a 401 refreshes and replays", async () => {
+    // Hermes has no crypto global without a polyfill; the app passes one in.
+    const random: RandomSource = { getRandomValues: (bytes) => bytes.fill(1) };
+    const token = (suffix: string): MockResponse => ({
+      status: 200,
+      body: { access_token: `hc_at_${suffix}`, refresh_token: `hc_rt_${suffix}`, expires_in: 604_800, scope: "read:library" },
+    });
+    const transport = new MockTransport([token("a"), { status: 401, body: { error: "invalid_token" } }, token("b"), ok({ me: [] })]);
+    const session = new OAuthSession({ clientId: "smoke", redirectUri: "smoke://cb", store: memoryStore(), transport, random });
+
+    const attempt = session.authorize({ scopes: ["read:library"] });
+    await session.completeAuthorization(`smoke://cb?code=hc_ac_1&state=${attempt.state}`, attempt);
+    await new HardcoverClient({ auth: session, transport }).request(operations.Me);
+
+    const bearers = transport.requests.map((r) => r.headers.authorization).filter(Boolean);
+    assert(bearers.join() === "Bearer hc_at_a,Bearer hc_at_b", `bearers ${bearers.join()}`);
   });
 
   for (const r of results) log(`${r.status}  ${r.name}${r.detail ? `  (${r.detail})` : ""}`);

@@ -22,6 +22,29 @@ export class HardcoverError extends Error {
 
 export class AuthenticationError extends HardcoverError {}
 
+/** Why an OAuth session has no usable tokens (shared/auth.json). */
+export type SignedOutReason = "not-signed-in" | "signed-out" | "revoked" | "expired";
+
+/**
+ * An OAuth session has no usable tokens, so the user needs to sign in again.
+ * The session already cleared its store and called `onSignedOut`.
+ */
+export class SignedOutError extends AuthenticationError {
+  readonly reason: SignedOutReason;
+
+  constructor(reason: SignedOutReason, options?: HardcoverErrorOptions) {
+    super(SIGNED_OUT_MESSAGES[reason], options);
+    this.reason = reason;
+  }
+}
+
+const SIGNED_OUT_MESSAGES: Record<SignedOutReason, string> = {
+  "not-signed-in": "Not signed in to Hardcover.",
+  "signed-out": "Signed out of Hardcover.",
+  revoked: "Hardcover no longer accepts this sign-in (revoked or expired). Sign in again.",
+  expired: "The Hardcover sign-in expired and can't be refreshed. Sign in again.",
+};
+
 /**
  * The token lacks scopes this request needs. `missingScopes` lists every one,
  * exactly as the server reported them; ask the user to grant these.
@@ -97,7 +120,11 @@ export class ActionError extends HardcoverError {
   }
 }
 
-/** Reserved for the OAuth helpers (planned; spec/03 Auth). Nothing raises it yet. */
+/**
+ * An OAuth endpoint or redirect refused the request. `code` is the RFC 6749
+ * error code (`invalid_grant`, `access_denied`, …) or one of the SDK's own
+ * redirect checks: `state_mismatch`, `issuer_mismatch`.
+ */
 export class OAuthError extends HardcoverError {
   readonly code: string;
   readonly description: string | undefined;

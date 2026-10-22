@@ -48,6 +48,14 @@ of this.
    today and breaks tomorrow is worse than a clear error. The SDK only refuses
    when it genuinely can't proceed, and then says exactly what's wrong and what
    to use instead.
+8. **The app identifies itself; the SDK never stands in for it.** (Decided
+   2026-10-22.) Anything that names or describes the app, or decides what
+   it asks the user for, comes from the app and has no SDK default:
+   `clientId`, `redirectUri`, the scopes on every sign-in, the store key.
+   What users see on the consent screen and at `/link` (name, description,
+   image) is the app's own registration on Hardcover, looked up by
+   `clientId`, so it can't read "Hardcover SDK". The SDK only appends its
+   own name and version to the app's `userAgent`, after it.
 
 ## Layers
 
@@ -63,7 +71,7 @@ of this.
 ├──────────────────────────────────────────────────────────┤
 │ Transport   HTTP (fetch / URLSession / OkHttp / httpx)    │  pluggable; mock in tests
 └──────────────────────────────────────────────────────────┘
-      Auth       static token today; TokenProvider (OAuth, refreshing) planned
+      Auth       static token, or an OAuth session that owns the token lifecycle
 ```
 
 ### Naming
@@ -85,7 +93,8 @@ of this.
 
 | Option | Default | Notes |
 |---|---|---|
-| `token` | required | A PAT or OAuth access token. (`tokenProvider` for refreshing OAuth tokens: planned) |
+| `token` | one of `token`/`auth` | A PAT, or an OAuth access token the app manages itself |
+| `auth` | one of `token`/`auth` | An `OAuthSession`, or any `TokenSource` (`getAccessToken`, optional `refreshAfterUnauthorized` and `userVersion`): refreshes and stores tokens itself |
 | `environment` | `prod` | `prod`, `staging` or `local`, from `shared/environments.json` |
 | `endpoint` | from environment | Overrides the GraphQL URL (Conductor ports, proxies) |
 | `transport` | platform HTTP | Swap in the mock transport for tests |
@@ -103,40 +112,133 @@ reader's local day from their own timezone (spec/02, Dates).
 
 ## Auth
 
-Status: static tokens are built (checks below); OAuth is planned, after
-packaging and test tooling.
+Two ways in: a static token (a PAT, or an access token the app manages
+itself) or an OAuth session that the SDK runs end to end. Exactly one is
+given to the client: `token` or `auth`.
 
-- **`TokenProvider`** (planned) is the only thing the core knows about. It
-  exposes `getToken()` and optionally `refresh()`.
-- **Static token (built).** At construction: whitespace and a pasted `Bearer `
-  prefix are cleaned up; a missing token, a refresh token (`hc_rt_`) or an
-  authorization code (`hc_ac_`) throws a `TypeError` saying what to use
-  instead; a legacy JWT works but triggers one `onWarning` (default
-  `console.warn`); any other format is sent as-is for the server to judge.
-  A refresh token is always refused as `token`, even once OAuth exists:
-  refresh tokens rotate, so exchanging one would spend the copy in the user's
-  `.env`; the next run would replay it and the API would revoke the whole
-  token family. Refresh tokens only go through `tokenProvider`, which hands
-  every rotated token to the app to store (`onTokens`).
-- **OAuth helpers** live in a separate entry point so PAT-only users don't pay
-  for them:
-  - `buildAuthorizeUrl({clientId, redirectUri, scopes, state})` returns
-    `{url, codeVerifier}`. It is S256 only.
-  - `exchangeCode({code, codeVerifier, clientSecret?})` returns `TokenSet`.
-  - `startDeviceAuthorization({clientId, scopes})`, then `pollDeviceToken(...)`.
-    Polling handles `authorization_pending` and `slow_down` (+5s each)
-    internally and stops at `expires_in`.
-  - `refresh(tokenSet)` rotates. The provider **must persist the new refresh
-    token before using the new access token**, via an `onTokens(tokenSet)`
-    callback, because reusing a rotated refresh token revokes the whole family.
-    Concurrent refreshes are de-duplicated, as in the app.
-  - `revoke(token)`.
-- **On 401** with a refreshable provider: refresh once, replay once, then raise
-  `AuthenticationError`.
-- **Scope helpers.** Generate `requiredScopes(operationName)` from
-  `api-snapshot/capability-scopes.json` and show it in each method's doc
-  comment. A `ScopeError` message names the missing scope and links to the PAT
-  link builder.
+### Static token (built)
+
+At construction: whitespace and a pasted `Bearer ` prefix are cleaned up; a
+missing token, a refresh token (`hc_rt_`) or an authorization code (`hc_ac_`)
+throws a `TypeError` saying what to use instead; a legacy JWT works but
+triggers one `onWarning` (default `console.warn`); any other format is sent
+as-is for the server to judge. A refresh token is always refused as `token`:
+refresh tokens rotate, so exchanging one would spend the copy in the user's
+`.env`; the next run would replay it and the API would revoke the whole token
+family. Refresh tokens only ever live inside an OAuth session's store.
+
+### OAuth session (the SDK owns the token lifecycle)
+
+Every OAuth app needs the same hard parts, and each one signs the user out
+when it's wrong. So the SDK owns all of them. The only thing it can't decide
+is *where* tokens are kept, because that's platform-specific; that is a
+pluggable `TokenStore` with secure defaults wherever the platform has one.
+
+What the session handles:
+
+- **Sign-in.** Authorization code + PKCE (S256, the only method the server
+  accepts) for apps with a browser, and the device grant for TVs and CLIs.
+  It generates the verifier, `state` and (with `openid`) `nonce`, builds the
+  authorize URL, and on the redirect checks `state` and `iss` (RFC 9207, the
+  server sends it) before exchanging the code. Redirect parsing doesn't use
+  `URL`/`URLSearchParams`, which React Native implements only partly.
+- **Refresh at the right time.** Shortly before `expires_in` runs out
+  (with slack for clock drift), and once more after an unexpected 401, then
+  replay the request once. A 401 means the gateway refused the token before
+  running anything, so replaying a mutation is safe. If the token endpoint
+  fails (offline, rate limited, down) while the access token still works,
+  requests keep using it and the next refresh waits a few seconds, or the
+  server's Retry-After.
+- **One refresh at a time.** Concurrent callers share one in-flight refresh.
+  Two refreshes with the same refresh token look like theft to the server,
+  which revokes the whole family.
+- **Persist before use.** The rotated pair is written to the store before the
+  new access token is used or the call returns. A crash in between would
+  otherwise leave only the spent refresh token, and the next launch would
+  replay it. If the write fails, the session keeps the new pair in memory
+  (the old one is already spent) and the write's error reaches the caller.
+- **Sign-in and sign-out end in-flight refreshes.** A refresh that returns
+  after a sign-out or a different sign-in never saves: its pair is revoked
+  and the waiting request gets SignedOutError, so a signed-out user can't
+  be signed back in by a late answer, and one user's tokens never overwrite
+  another's.
+- **Across processes.** Tabs, a CLI run twice, or an app plus its widget can
+  share one store. A store may provide `lock(fn)`; the session refreshes
+  inside it and re-reads the store first, adopting a pair another process
+  already rotated instead of refreshing again.
+- **Losing access.** `invalid_grant` on refresh (revoked on the website,
+  "re-authorization required", refresh token expired or replayed) clears the
+  store, calls `onSignedOut(reason)` and throws `SignedOutError`, a subclass
+  of `AuthenticationError`. Apps show sign-in again on that one signal.
+- **Identity-only sign-ins.** With only `openid`/`profile`/`email` and no
+  `offline_access`, the server issues a short-lived access token and **no
+  refresh token**. When it expires the session is signed out (`expired`),
+  not broken.
+- **Sign-out.** `signOut()` revokes what the store holds (another process
+  may have rotated it) on the server, best effort since revoking either
+  token revokes both, then clears the store and calls `onSignedOut`. A
+  throwing `onSignedOut` can't break this: its error is rethrown on its own.
+- **The refresh token stays inside.** `tokens()`, `completeAuthorization`
+  and `signInWithDevice` return everything but the refresh token
+  (`canRefresh` says whether there is one): an app that spent it itself
+  would get the sign-in revoked.
+- **The client's cached user.** `client.me` caches the signed-in user. The
+  session's `userVersion()` changes on every sign-in and sign-out, and the
+  client fetches the user again when it does. It's a number to compare,
+  not a listener, so clients never need disposing.
+- **Device polling** retries network and server errors until the code
+  expires (the user may already have typed it), and an abort signal stops
+  it immediately, including before it starts.
+- **OpenID Connect.** The session sends `nonce` and keeps the `id_token` in
+  the token set as-is. The SDK doesn't verify its signature (that needs a
+  JWKS fetch and RS256 on every platform); apps that use it for their own
+  backend login verify it there. `me.get()` covers what most apps want.
+
+```ts
+const session = new OAuthSession({
+  clientId, redirectUri: "myapp://oauth/callback",
+  store: secureStore(SecureStore, "hardcover"),   // any async get/set/delete
+  onSignedOut: (reason) => showSignIn(),
+});
+const client = new HardcoverClient({ auth: session });
+
+const attempt = session.authorize({ scopes: ["read:library", "write:library"] });
+const result = await openAuthSessionAsync(attempt.url, redirectUri);
+await session.completeAuthorization(result.url, attempt);
+```
+
+`attempt` is plain JSON, so an SPA keeps it in `sessionStorage` across the
+redirect. The low-level helpers (`createAuthorization`, `exchangeCode`,
+`refreshTokens`, `revokeToken`, `startDeviceAuthorization`,
+`pollDeviceToken`, `parseRedirect`) are exported for apps that run their own
+flow, e.g. a server that keeps tokens per user in a database.
+
+Stores, per platform:
+
+| Platform | Default | Notes |
+|---|---|---|
+| TypeScript | `memoryStore()` | Gone when the process ends. `secureStore(kv, key)` adapts any async key-value store (`expo-secure-store`, Keychain wrappers). A browser store with a Web Locks cross-tab lock and a Node file store (owner-only file, lock file) are planned as separate entry points |
+| Swift | Keychain | Optional access group so extensions share tokens |
+| Kotlin | Android Keystore-backed encrypted storage | JVM: the app passes a store |
+
+Crypto: PKCE needs random bytes and SHA-256. The TS session uses WebCrypto
+when present; SHA-256 has a small built-in fallback, so React Native only
+needs a `getRandomValues` polyfill (`expo-crypto`,
+`react-native-get-random-values`) or an explicit `crypto` option. Without a
+secure random source it refuses to start rather than fall back to
+`Math.random`.
+
+Requests to the OAuth endpoints are form-encoded POSTs over the same
+`Transport`, so the mock transport covers them in tests. Their errors are
+`OAuthError` (`code`, `description`); `authorization_pending` and `slow_down`
+stay inside the device poll loop.
+
+### Scope helpers (planned)
+
+Generate `requiredScopes(operationName)` from
+`api-snapshot/capability-scopes.json` and show it in each method's doc
+comment. A `ScopeError` message names the missing scope and links to the PAT
+link builder.
 
 ## Request pipeline
 
@@ -476,12 +578,12 @@ the server's entry carries when the reading actually happened.
     Node and browsers:
     - No `AbortSignal.timeout`, WebCrypto or Node built-ins in core. Timeouts
       use `AbortController` plus `setTimeout`.
-    - OAuth helpers take a pluggable crypto (`sha256`, `randomBytes`) so apps
-      can pass `expo-crypto` or `react-native-quick-crypto`.
+    - OAuth needs only a `getRandomValues` polyfill (`expo-crypto`,
+      `react-native-get-random-values`); SHA-256 has a built-in fallback.
     - Redirects use a `native` app's custom scheme, opened with the platform
       auth session (e.g. `expo-web-browser` `openAuthSessionAsync`).
-    - The SDK never persists tokens. `onTokens` hands them to the app for
-      Keychain/Keystore storage (e.g. `expo-secure-store`), never AsyncStorage.
+    - Tokens go to Keychain/Keystore through `secureStore(SecureStore, key)`
+      (`expo-secure-store`), never AsyncStorage.
     - The published package bundles `shared/*.json`; Metro can't import
       outside the package.
 - **Swift.**

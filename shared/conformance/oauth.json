@@ -1,0 +1,397 @@
+{
+  "$comment": "OAuth conformance (spec/03 Auth, shared/auth.json). Every SDK's runner loads this file. Format: see README.md, OAuth section. Every case uses client id \"test-client\", environment prod, and the fake clock starting at `now`, which each sleep advances.",
+  "now": 1800000000000,
+  "clientId": "test-client",
+
+  "vectors": {
+    "sha256": [
+      { "input": "", "hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+      { "input": "abc", "hex": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" },
+      { "input": "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq", "hex": "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1" }
+    ],
+    "base64url": [
+      { "hex": "", "out": "" },
+      { "hex": "00", "out": "AA" },
+      { "hex": "ff", "out": "_w" },
+      { "hex": "fbff", "out": "-_8" },
+      { "hex": "000102", "out": "AAEC" },
+      { "hex": "00010203", "out": "AAECAw" }
+    ],
+    "pkce": [
+      { "source": "RFC 7636 Appendix B", "verifier": "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk", "challenge": "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM" }
+    ]
+  },
+
+  "authorize": [
+    {
+      "id": "authorize/code-flow",
+      "$comment": "The random source returns zero bytes, so verifier and state are all 'A'.",
+      "scopes": ["read:library", "write:library"],
+      "redirectUri": "myapp://oauth/callback",
+      "expect": {
+        "base": "https://hardcover.app/oauth2/authorize",
+        "params": {
+          "response_type": "code",
+          "client_id": "test-client",
+          "redirect_uri": "myapp://oauth/callback",
+          "scope": "read:library write:library",
+          "state": "AAAAAAAAAAAAAAAAAAAAAA",
+          "code_challenge": "DwBzhbb51LfusnSGBa_hqYSgo7-j8BTQnip4TOnlzRo",
+          "code_challenge_method": "S256"
+        },
+        "codeVerifier": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "issuer": "https://api.hardcover.app"
+      }
+    },
+    {
+      "id": "authorize/openid-adds-nonce",
+      "scopes": ["profile"],
+      "redirectUri": "myapp://oauth/callback",
+      "expect": {
+        "base": "https://hardcover.app/oauth2/authorize",
+        "params": {
+          "response_type": "code",
+          "client_id": "test-client",
+          "redirect_uri": "myapp://oauth/callback",
+          "scope": "profile",
+          "state": "AAAAAAAAAAAAAAAAAAAAAA",
+          "nonce": "AAAAAAAAAAAAAAAAAAAAAA",
+          "code_challenge": "DwBzhbb51LfusnSGBa_hqYSgo7-j8BTQnip4TOnlzRo",
+          "code_challenge_method": "S256"
+        }
+      }
+    },
+    { "id": "authorize/scopes-required", "scopes": [], "redirectUri": "myapp://oauth/callback", "expect": { "argumentError": true } },
+    { "id": "authorize/redirect-required", "scopes": ["read:library"], "redirectUri": "", "expect": { "argumentError": true } }
+  ],
+
+  "redirects": [
+    {
+      "id": "redirect/code",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?code=hc_ac_abc&state=S1&iss=https%3A%2F%2Fapi.hardcover.app",
+      "expect": { "code": "hc_ac_abc" }
+    },
+    {
+      "id": "redirect/no-iss",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?code=hc_ac_abc&state=S1",
+      "expect": { "code": "hc_ac_abc" }
+    },
+    {
+      "id": "redirect/empty-iss-counts-as-absent",
+      "$comment": "A server with its issuer setting blank sends iss=. That carries no information, so it's treated like a missing iss (spec/06 #41).",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?code=hc_ac_abc&state=S1&iss=",
+      "expect": { "code": "hc_ac_abc" }
+    },
+    {
+      "id": "redirect/decodes",
+      "attempt": { "state": "a b", "issuer": "https://api.hardcover.app" },
+      "url": "https://example.com/cb?state=a+b&code=x%2By",
+      "expect": { "code": "x+y" }
+    },
+    {
+      "id": "redirect/ignores-fragment",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?code=real&state=S1#code=other",
+      "expect": { "code": "real" }
+    },
+    {
+      "id": "redirect/first-value-wins",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?code=first&state=S1&code=second",
+      "expect": { "code": "first" }
+    },
+    {
+      "id": "redirect/state-mismatch",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?code=hc_ac_abc&state=S2",
+      "expect": { "error": "OAuthError", "code": "state_mismatch" }
+    },
+    {
+      "id": "redirect/state-missing",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?code=hc_ac_abc",
+      "expect": { "error": "OAuthError", "code": "state_mismatch" }
+    },
+    {
+      "id": "redirect/issuer-mismatch",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?code=hc_ac_abc&state=S1&iss=https%3A%2F%2Fevil.example",
+      "expect": { "error": "OAuthError", "code": "issuer_mismatch" }
+    },
+    {
+      "id": "redirect/denied",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?error=access_denied&state=S1",
+      "expect": { "error": "OAuthError", "code": "access_denied" }
+    },
+    {
+      "id": "redirect/error-with-wrong-state",
+      "$comment": "State is checked first, so a forged error can't pass for this attempt's.",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?error=access_denied&state=S2",
+      "expect": { "error": "OAuthError", "code": "state_mismatch" }
+    },
+    {
+      "id": "redirect/no-code",
+      "attempt": { "state": "S1", "issuer": "https://api.hardcover.app" },
+      "url": "myapp://oauth/callback?state=S1",
+      "expect": { "error": "OAuthError", "code": "invalid_request" }
+    }
+  ],
+
+  "tokenResponses": [
+    {
+      "id": "token-response/full",
+      "body": { "access_token": "hc_at_a", "token_type": "Bearer", "expires_in": 604800, "scope": "read:library", "refresh_token": "hc_rt_a", "id_token": "eyJ.x.y" },
+      "expect": { "tokens": { "accessToken": "hc_at_a", "refreshToken": "hc_rt_a", "idToken": "eyJ.x.y", "scope": "read:library", "expiresAt": 1800604800000 } }
+    },
+    {
+      "id": "token-response/identity-only",
+      "body": { "access_token": "hc_at_a", "token_type": "Bearer", "expires_in": 900, "scope": "openid profile", "id_token": "eyJ.x.y" },
+      "expect": { "tokens": { "accessToken": "hc_at_a", "idToken": "eyJ.x.y", "scope": "openid profile", "expiresAt": 1800000900000 } }
+    },
+    {
+      "id": "token-response/no-expiry",
+      "body": { "access_token": "hc_at_a", "scope": "read:library" },
+      "expect": { "tokens": { "accessToken": "hc_at_a", "scope": "read:library" } }
+    },
+    {
+      "id": "token-response/no-access-token",
+      "body": { "token_type": "Bearer" },
+      "expect": { "error": "OAuthError", "code": "invalid_response" }
+    }
+  ],
+
+  "device": [
+    {
+      "id": "device/pending-then-slow-down-then-approved",
+      "scopes": ["read:library"],
+      "responses": {
+        "device": [{ "status": 200, "body": { "device_code": "dc", "user_code": "WDJB-MJHT", "verification_uri": "https://hardcover.app/link", "verification_uri_complete": "https://hardcover.app/link?c=WDJB-MJHT", "expires_in": 900, "interval": 5 } }],
+        "token": [
+          { "status": 400, "body": { "error": "authorization_pending" } },
+          { "status": 400, "body": { "error": "slow_down" } },
+          { "status": 200, "body": { "access_token": "hc_at_d", "refresh_token": "hc_rt_d", "expires_in": 604800, "scope": "read:library" } }
+        ]
+      },
+      "expect": {
+        "userCode": "WDJB-MJHT",
+        "sleptSeconds": [5, 5, 10],
+        "forms": { "device": [{ "client_id": "test-client", "scope": "read:library" }], "token": [
+          { "grant_type": "urn:ietf:params:oauth:grant-type:device_code", "device_code": "dc", "client_id": "test-client" },
+          { "grant_type": "urn:ietf:params:oauth:grant-type:device_code", "device_code": "dc", "client_id": "test-client" },
+          { "grant_type": "urn:ietf:params:oauth:grant-type:device_code", "device_code": "dc", "client_id": "test-client" }
+        ] },
+        "result": "ok",
+        "stored": { "accessToken": "hc_at_d", "refreshToken": "hc_rt_d", "scope": "read:library", "expiresAt": 1800604820000 }
+      }
+    },
+    {
+      "id": "device/denied",
+      "scopes": ["read:library"],
+      "responses": {
+        "device": [{ "status": 200, "body": { "device_code": "dc", "user_code": "U", "verification_uri": "https://hardcover.app/link", "expires_in": 900, "interval": 5 } }],
+        "token": [{ "status": 400, "body": { "error": "access_denied" } }]
+      },
+      "expect": { "sleptSeconds": [5], "result": { "error": "OAuthError", "fields": { "code": "access_denied" } }, "stored": null }
+    },
+    {
+      "id": "device/expires-before-approval",
+      "$comment": "The first wait already passes expires_in, so the token endpoint is never called.",
+      "scopes": ["read:library"],
+      "responses": {
+        "device": [{ "status": 200, "body": { "device_code": "dc", "user_code": "U", "verification_uri": "https://hardcover.app/link", "expires_in": 4, "interval": 5 } }],
+        "token": []
+      },
+      "expect": { "sleptSeconds": [5], "result": { "error": "OAuthError", "fields": { "code": "expired_token" } }, "stored": null }
+    },
+    {
+      "id": "device/unknown-client",
+      "scopes": ["read:library"],
+      "responses": { "device": [{ "status": 401, "body": { "error": "invalid_client" } }] },
+      "expect": { "sleptSeconds": [], "result": { "error": "OAuthError", "fields": { "code": "invalid_client", "status": 401 } }, "stored": null }
+    }
+  ],
+
+  "sessions": [
+    {
+      "id": "session/uses-stored-token",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800003600000 },
+      "calls": [{ "op": "Me" }],
+      "responses": { "graphql": [{ "status": 200, "body": { "data": { "me": [] } } }] },
+      "expect": { "result": "ok", "bearers": ["hc_at_old"], "forms": { "token": [] }, "stored": "unchanged", "signedOut": [] }
+    },
+    {
+      "id": "session/refreshes-before-expiry",
+      "$comment": "30s left is inside the 60s skew, so it refreshes first and stores before sending.",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800000030000 },
+      "calls": [{ "op": "Me" }],
+      "responses": {
+        "token": [{ "status": 200, "body": { "access_token": "hc_at_new", "refresh_token": "hc_rt_new", "expires_in": 604800, "scope": "read:library" } }],
+        "graphql": [{ "status": 200, "body": { "data": { "me": [] } } }]
+      },
+      "expect": {
+        "result": "ok",
+        "bearers": ["hc_at_new"],
+        "forms": { "token": [{ "grant_type": "refresh_token", "refresh_token": "hc_rt_old", "client_id": "test-client" }] },
+        "stored": { "accessToken": "hc_at_new", "refreshToken": "hc_rt_new", "scope": "read:library", "expiresAt": 1800604800000 },
+        "signedOut": []
+      }
+    },
+    {
+      "id": "session/401-refreshes-and-replays-once",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800003600000 },
+      "calls": [{ "op": "Me" }],
+      "responses": {
+        "graphql": [
+          { "status": 401, "body": { "error": "invalid_token" } },
+          { "status": 200, "body": { "data": { "me": [] } } }
+        ],
+        "token": [{ "status": 200, "body": { "access_token": "hc_at_new", "refresh_token": "hc_rt_new", "expires_in": 604800, "scope": "read:library" } }]
+      },
+      "expect": { "result": "ok", "bearers": ["hc_at_old", "hc_at_new"], "forms": { "token": [{ "grant_type": "refresh_token", "refresh_token": "hc_rt_old", "client_id": "test-client" }] }, "signedOut": [] }
+    },
+    {
+      "id": "session/401-replays-a-mutation",
+      "$comment": "A 401 means the gateway refused the token before running anything, so replaying a mutation is safe.",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "write:vibes", "expiresAt": 1800003600000 },
+      "calls": [{ "op": "DeleteVibe", "variables": { "id": 1 } }],
+      "responses": {
+        "graphql": [
+          { "status": 401, "body": { "error": "invalid_token" } },
+          { "status": 200, "body": { "data": { "delete_vibe": { "success": true } } } }
+        ],
+        "token": [{ "status": 200, "body": { "access_token": "hc_at_new", "refresh_token": "hc_rt_new", "expires_in": 604800, "scope": "write:vibes" } }]
+      },
+      "expect": { "result": "ok", "bearers": ["hc_at_old", "hc_at_new"], "signedOut": [] }
+    },
+    {
+      "id": "session/second-401-surfaces",
+      "$comment": "Replay once only: a fresh token that's still refused is an AuthenticationError, and the session stays signed in.",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800003600000 },
+      "calls": [{ "op": "Me" }],
+      "responses": {
+        "graphql": [
+          { "status": 401, "body": { "error": "invalid_token" } },
+          { "status": 401, "body": { "error": "invalid_token" } }
+        ],
+        "token": [{ "status": 200, "body": { "access_token": "hc_at_new", "refresh_token": "hc_rt_new", "expires_in": 604800, "scope": "read:library" } }]
+      },
+      "expect": { "result": { "error": "AuthenticationError" }, "bearers": ["hc_at_old", "hc_at_new"], "signedOut": [] }
+    },
+    {
+      "id": "session/concurrent-401s-refresh-once",
+      "$comment": "Two requests refused at the same time share one refresh. Spending the refresh token twice would revoke the sign-in. Bearers are compared as a multiset (order depends on scheduling).",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800003600000 },
+      "concurrent": true,
+      "calls": [{ "op": "Me" }, { "op": "Me" }],
+      "responses": {
+        "graphql": [
+          { "status": 401, "body": { "error": "invalid_token" } },
+          { "status": 401, "body": { "error": "invalid_token" } },
+          { "status": 200, "body": { "data": { "me": [] } } },
+          { "status": 200, "body": { "data": { "me": [] } } }
+        ],
+        "token": [{ "status": 200, "body": { "access_token": "hc_at_new", "refresh_token": "hc_rt_new", "expires_in": 604800, "scope": "read:library" } }]
+      },
+      "expect": { "result": "ok", "bearersUnordered": ["hc_at_old", "hc_at_old", "hc_at_new", "hc_at_new"], "forms": { "token": [{ "grant_type": "refresh_token", "refresh_token": "hc_rt_old", "client_id": "test-client" }] }, "signedOut": [] }
+    },
+    {
+      "id": "session/revoked-signs-out",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800003600000 },
+      "calls": [{ "op": "Me" }],
+      "responses": {
+        "graphql": [{ "status": 401, "body": { "error": "invalid_token" } }],
+        "token": [{ "status": 400, "body": { "error": "invalid_grant", "error_description": "re-authorization required" } }]
+      },
+      "expect": { "result": { "error": "SignedOutError", "fields": { "reason": "revoked" } }, "stored": null, "signedOut": ["revoked"] }
+    },
+    {
+      "id": "session/refresh-offline-keeps-working",
+      "$comment": "The token endpoint is unreachable but the access token has 30s left: requests keep using it, and the next refresh waits retryAfterFailureSeconds instead of hitting the endpoint on every call.",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800000030000 },
+      "calls": [{ "op": "Me" }, { "op": "Me" }],
+      "responses": {
+        "token": [{ "network": "reset" }],
+        "graphql": [{ "status": 200, "body": { "data": { "me": [] } } }, { "status": 200, "body": { "data": { "me": [] } } }]
+      },
+      "expect": { "result": "ok", "bearers": ["hc_at_old", "hc_at_old"], "forms": { "token": [{ "grant_type": "refresh_token", "refresh_token": "hc_rt_old", "client_id": "test-client" }] }, "stored": "unchanged", "signedOut": [] }
+    },
+    {
+      "id": "session/refresh-offline-after-expiry",
+      "$comment": "Once the access token has expired there's nothing to fall back on: the network error surfaces and the tokens are kept for the next try.",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1799999999000 },
+      "calls": [{ "op": "Me" }],
+      "responses": { "token": [{ "network": "reset" }] },
+      "expect": { "result": { "error": "NetworkError" }, "bearers": [], "stored": "unchanged", "signedOut": [] }
+    },
+    {
+      "id": "session/no-refresh-token-still-valid",
+      "$comment": "Identity-only grant: no refresh token, so the access token is used until it actually expires.",
+      "stored": { "accessToken": "hc_at_old", "scope": "openid profile", "expiresAt": 1800000030000 },
+      "calls": [{ "op": "Me" }],
+      "responses": { "graphql": [{ "status": 200, "body": { "data": { "me": [] } } }] },
+      "expect": { "result": "ok", "bearers": ["hc_at_old"], "stored": "unchanged", "signedOut": [] }
+    },
+    {
+      "id": "session/no-refresh-token-expired",
+      "stored": { "accessToken": "hc_at_old", "scope": "openid profile", "expiresAt": 1799999999000 },
+      "calls": [{ "op": "Me" }],
+      "responses": {},
+      "expect": { "result": { "error": "SignedOutError", "fields": { "reason": "expired" } }, "bearers": [], "stored": null, "signedOut": ["expired"] }
+    },
+    {
+      "id": "session/not-signed-in",
+      "stored": null,
+      "calls": [{ "op": "Me" }],
+      "responses": {},
+      "expect": { "result": { "error": "SignedOutError", "fields": { "reason": "not-signed-in" } }, "bearers": [], "stored": null, "signedOut": [] }
+    },
+    {
+      "id": "session/adopts-tokens-rotated-elsewhere",
+      "$comment": "Another process refreshed first. The session re-reads the store before refreshing (inside the store's lock) and uses those tokens instead of spending a refresh token that's already used.",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800000030000 },
+      "storeAfterFirstRead": { "accessToken": "hc_at_other", "refreshToken": "hc_rt_other", "scope": "read:library", "expiresAt": 1800604800000 },
+      "calls": [{ "op": "Me" }],
+      "responses": { "graphql": [{ "status": 200, "body": { "data": { "me": [] } } }] },
+      "expect": { "result": "ok", "bearers": ["hc_at_other"], "forms": { "token": [] }, "signedOut": [] }
+    },
+    {
+      "id": "session/sign-out-revokes",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800003600000 },
+      "calls": [{ "session": "signOut" }],
+      "responses": { "revoke": [{ "status": 200, "body": "" }] },
+      "expect": { "result": "ok", "forms": { "revoke": [{ "token": "hc_rt_old", "client_id": "test-client" }] }, "stored": null, "signedOut": ["signed-out"] }
+    },
+    {
+      "id": "session/sign-out-forgets-the-user",
+      "$comment": "The client caches the signed-in user (me). After sign-out it must ask again, and with no session that's SignedOutError, never the previous user.",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:me", "expiresAt": 1800003600000 },
+      "calls": [{ "resource": "me.get" }, { "session": "signOut" }, { "resource": "me.get" }],
+      "responses": { "graphql": [{ "status": 200, "body": { "data": { "me": [{ "id": 42 }] } } }], "revoke": [{ "status": 200, "body": "" }] },
+      "expect": { "result": { "error": "SignedOutError", "fields": { "reason": "not-signed-in" } }, "bearers": ["hc_at_old"], "stored": null, "signedOut": ["signed-out"] }
+    },
+    {
+      "id": "session/sign-out-offline",
+      "$comment": "Revoking is best effort; the local sign-out always happens.",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800003600000 },
+      "calls": [{ "session": "signOut" }],
+      "responses": { "revoke": [{ "network": "reset" }] },
+      "expect": { "result": "ok", "stored": null, "signedOut": ["signed-out"] }
+    },
+    {
+      "id": "session/token-endpoint-rate-limited",
+      "$comment": "Rate limited while the access token still works: keep using it until the server's Retry-After.",
+      "stored": { "accessToken": "hc_at_old", "refreshToken": "hc_rt_old", "scope": "read:library", "expiresAt": 1800000030000 },
+      "calls": [{ "op": "Me" }],
+      "responses": {
+        "token": [{ "status": 429, "headers": { "retry-after": "30" }, "body": "Retry later" }],
+        "graphql": [{ "status": 200, "body": { "data": { "me": [] } } }]
+      },
+      "expect": { "result": "ok", "bearers": ["hc_at_old"], "stored": "unchanged", "signedOut": [] }
+    }
+  ]
+}

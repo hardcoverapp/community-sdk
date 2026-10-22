@@ -14,6 +14,8 @@ would otherwise repeat:
   `notifications`, `search`) with one consistent shape across them
 - rate limits: pacing from the API's headers, backoff when other apps share the
   same budget, and opt-in batching of concurrent reads
+- OAuth sign-in (browser with PKCE, device code, OpenID) where the SDK owns the
+  tokens: refresh, rotation, secure storage and one signed-out signal
 - one error taxonomy, with missing scopes and failed actions spelled out
 - local details apps get wrong: ISBN cleanup, token cleanup
 - incremental library sync with a server-side cursor
@@ -31,8 +33,8 @@ prompts, the catalog (books, authors, series, editions, external ids), people
 and feeds, and notifications. A few niche areas come later, and some endpoints
 are left out on purpose (librarian-only catalog edits, operations the gateway
 blocks for tokens); [spec/03](spec/03-sdk-design.md#coverage) lists both. It
-runs in browsers, Node and React Native (Hermes); OAuth and packaging come
-next, and nothing is published to a package registry yet. The first consumers
+runs in browsers, Node and React Native (Hermes), with OAuth sign-in (browser
+and device) and personal access tokens. Packaging comes next, and nothing is published to a package registry yet. The first consumers
 are the Hardcover docs site (live examples) and a React Native app. Swift,
 Kotlin (Java-friendly), Python and Ruby follow once the shared layer has proven
 itself.
@@ -53,9 +55,9 @@ changing it.
 | Types generated from `shared/operations` | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Auth** |  |  |  |  |  |
 | Personal access token | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
-| OAuth authorization code + PKCE | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| OAuth device grant | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| Refresh rotation + revoke | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| OAuth authorization code + PKCE | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| OAuth device grant | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Refresh rotation + revoke | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Resources** |  |  |  |  |  |
 | `me` (read) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | `books` / `editions` (read) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |

@@ -18,6 +18,26 @@
       "notes": "Expired, revoked or malformed token, or an anonymous JWT. With a refreshable OAuth token provider, the client refreshes once and replays before surfacing this."
     },
     {
+      "name": "SignedOutError",
+      "parent": "AuthenticationError",
+      "match": [
+        {
+          "source": "oauth-session"
+        }
+      ],
+      "fields": [
+        "reason"
+      ],
+      "reasons": [
+        "not-signed-in",
+        "signed-out",
+        "revoked",
+        "expired"
+      ],
+      "retry": false,
+      "notes": "Raised only by an OAuth session, never mapped from a response. The session has no usable tokens: never signed in, the app called signOut, the server refused the refresh token (invalid_grant: revoked, re-authorization required, replayed), or the access token expired with no refresh token (identity-only grant). The store is already cleared and onSignedOut was called; the app shows sign-in. Reasons are defined in auth.json."
+    },
+    {
       "name": "ScopeError",
       "parent": "HardcoverError",
       "match": [
@@ -154,16 +174,22 @@
         "description"
       ],
       "codes": [
+        "invalid_request",
         "invalid_client",
         "invalid_grant",
         "invalid_scope",
         "unsupported_grant_type",
+        "unsupported_response_type",
         "unauthorized_client",
         "access_denied",
-        "expired_token"
+        "expired_token",
+        "temporarily_unavailable",
+        "invalid_response",
+        "state_mismatch",
+        "issuer_mismatch"
       ],
       "retry": false,
-      "notes": "authorization_pending and slow_down are handled inside the device-grant poll loop and never surface."
+      "notes": "authorization_pending and slow_down are handled inside the device-grant poll loop and never surface. access_denied, invalid_scope and the other authorize errors arrive on the redirect, not a response. invalid_response, state_mismatch and issuer_mismatch are client-side. invalid_response: a success answer missing a required field. For the other two, the redirect's state or iss didn't match the attempt (possible CSRF or mix-up attack), and the code is never exchanged."
     },
     {
       "name": "NotFoundError",

@@ -8,6 +8,7 @@ Hardcover docs site pages as each resource lands there.
 | Example | Shows |
 |---|---|
 | [quick-start.ts](quick-start.ts) | Creating a client, reading your shelf, rate-limit state |
+| [sign-in.ts](sign-in.ts) | OAuth sign-in on React Native and on a TV, secure token storage, sign-out |
 | [shelve-a-book.ts](shelve-a-book.ts) | Add, status, rating, review, remove |
 | [reading-progress.ts](reading-progress.ts) | Progress in pages / percent / seconds, backdating with `occurredAt`, a re-read |
 | [bulk-scan-to-list.ts](bulk-scan-to-list.ts) | Scanning barcodes into a list by exact ISBN, one or a whole shelf |

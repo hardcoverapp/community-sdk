@@ -6,19 +6,32 @@ import type { WithJsonColumns } from "../core/json-columns.ts";
 
 export type Me = WithJsonColumns<MeQuery["me"][number]>;
 
-/** The token's user. Fetched once per client and shared by resources that need the user id. */
+/**
+ * The token's user. Fetched once per client and shared by resources that need
+ * the user id. With an OAuth session, it's fetched again after a different
+ * sign-in or a sign-out.
+ */
 export class MeResource {
   #cached: Promise<Me> | undefined;
 
-  private readonly client: HardcoverClient;
+  /** The auth's user version the cache was filled under. */
+  #cachedFor = 0;
 
-  constructor(client: HardcoverClient) {
+  private readonly client: HardcoverClient;
+  readonly #userVersion: () => number;
+
+  constructor(client: HardcoverClient, userVersion: () => number = () => 0) {
     this.client = client;
+    this.#userVersion = userVersion;
   }
 
   /** Concurrent callers share one request. Scopes: `read:me`. */
   get({ refresh = false }: { refresh?: boolean } = {}): Promise<Me> {
+    // Someone else signed in, or nobody is: the cached user isn't theirs.
+    if (this.#cachedFor !== this.#userVersion()) this.forget();
+
     if (!this.#cached || refresh) {
+      this.#cachedFor = this.#userVersion();
       this.#cached = this.client.request(operations.Me).then(({ me }) => {
         const user = me[0];
         if (!user) throw new HardcoverError("The API returned no user for this token");
@@ -29,6 +42,11 @@ export class MeResource {
       });
     }
     return this.#cached;
+  }
+
+  /** Drops the cached user, so the next call asks the server. Scopes: none (no request). */
+  forget(): void {
+    this.#cached = undefined;
   }
 
   /** Scopes: `read:me`. */

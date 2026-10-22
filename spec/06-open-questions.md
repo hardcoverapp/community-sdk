@@ -190,14 +190,38 @@ read-only production token. The mobile apps come next and will likely hit the sa
     to `write:notifications` would avoid the bulk `where:` form for "mark
     read". Also `bookles` is still in the scope map but gone from prod.
 
+39. **A lost refresh response signs the user out.** If the server rotates a
+    refresh token but the response never reaches the app (network drop,
+    app killed), the app still holds the old refresh token. Its next refresh
+    is a replay, and the server revokes the whole family. No client can
+    avoid this. A short grace window (accept the previous refresh token once,
+    for a few seconds, and return the same new pair) is the common fix.
+40. **OIDC isn't in the docs yet.** The docs site's OAuth pages don't cover
+    the identity scopes, `id_token`, `nonce`, `userinfo`, or that an
+    identity-only grant has no refresh token.
+41. **A blank `API_ROOT_URL` sends `iss=` on redirects.** The authorize
+    controller's `issuer` is `ENV.fetch("API_ROOT_URL", nil)`, and `if
+    issuer` is true for an empty string, so a server with the variable set
+    but blank (local Docker, seen 2026-10-22) redirects with an empty `iss`.
+    The same blank value makes discovery return 503 and leaves the id
+    token's `iss` claim empty. `.presence` on both
+    would fix it. The SDK treats an empty `iss` as absent.
+42. **A revoked access token keeps working for up to 5 minutes in
+    production.** The gateway caches each token lookup for 5 minutes
+    (`AuthenticationToken.find_cached_info`), and nothing clears the entry
+    when a token is revoked: sign-out, rotation, a replay that revokes the
+    family, or the user removing the app on the website. Locally the cache
+    is a null store, so the live checks pass immediately. Clearing the cache
+    key on revoke (or a much shorter TTL for OAuth tokens) would close it.
+
 ## Environment and access
 
 7. **Staging web host.** `api-staging.hardcover.app` is confirmed. What's the
    staging web host for `/oauth2/authorize` and `/link`?
 8. **Staging data.** Is staging restored from prod ? If so, prod ids can be reused in
    `live-targets.json`, and staging test accounts may be reset without warning.
-9. **Test accounts.** Tokens and OAuth are gated on the `api_tokens` and
-   `oauth_apps` feature flags. We need dedicated flagged test users on staging
+9. **Test accounts.** Tokens and OAuth were gated on the `api_tokens` and
+   `oauth_apps` feature flags (both shipped to everyone by 2026-10-10). We need dedicated flagged test users on staging
    (and prod, read-only), plus an OAuth app with device grant enabled for smoke
    tests.
 10. **Rate limit for CI.** Should the CI test account get a per-token override,
