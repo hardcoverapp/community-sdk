@@ -4,6 +4,7 @@ export const environments = {
   "prod": {
     "graphql": "https://api.hardcover.app/v1/graphql",
     "oauth": "https://api.hardcover.app/oauth2",
+    "issuer": "https://api.hardcover.app",
     "authorize": "https://hardcover.app/oauth2/authorize",
     "deviceVerification": "https://hardcover.app/link",
     "capabilities": "https://api.hardcover.app/capabilities",
@@ -12,6 +13,7 @@ export const environments = {
   "staging": {
     "graphql": "https://api-staging.hardcover.app/v1/graphql",
     "oauth": "https://api-staging.hardcover.app/oauth2",
+    "issuer": "https://api-staging.hardcover.app",
     "authorize": null,
     "deviceVerification": null,
     "capabilities": "https://api-staging.hardcover.app/capabilities",
@@ -20,6 +22,7 @@ export const environments = {
   "local": {
     "graphql": "http://localhost:8081/v1/graphql",
     "oauth": "http://localhost:8081/oauth2",
+    "issuer": "http://localhost:8081",
     "authorize": "http://localhost:3000/oauth2/authorize",
     "deviceVerification": "http://localhost:3000/link",
     "capabilities": "http://localhost:8081/capabilities",
