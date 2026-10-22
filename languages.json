@@ -207,7 +207,7 @@
       "id": "typescript",
       "name": "TypeScript",
       "path": "packages/typescript",
-      "package": "TBD (npm)",
+      "package": "@hardcover/sdk (npm)",
       "tier": "first",
       "support": {
         "transport": "done",
