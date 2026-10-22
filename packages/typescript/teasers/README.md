@@ -21,6 +21,7 @@ drawn from it for display. Every image says so.
 | [shelve.webp](shelve.webp) | `library.add`, `setStatus`, `rate`: shelving a book |
 | [journal.webp](journal.webp) | `journal.add`: saving a quote |
 | [vibes.webp](vibes.webp) | `vibes.create`: a recommendation vibe from weighted signals |
+| [oauth.webp](oauth.webp) | `OAuthSession`: sign-in, then what the session handled in a live run (2026-10-22, local) |
 
 Rendered at 1200 px wide (2x), with the same outer margin on every image; the
 height follows the content. WebP keeps them small in the repo.

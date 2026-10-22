@@ -116,7 +116,7 @@ The same names are used in every language.
 | `HARDCOVER_RECORD` | Planned: `1` writes scrubbed responses into `shared/fixtures/` |
 | `HARDCOVER_TEST_BOOK_ID` | Pins the write tests' randomly chosen book, to repeat a run exactly. Each run logs the one it chose |
 | `HARDCOVER_ALLOW_REMOTE_WRITES` | Required, on top of the writes command, for writes against any remote target (staging or prod). Local data is disposable; remote data isn't |
-| `HARDCOVER_OAUTH_CLIENT_ID` | Enables the device-grant smoke test, which is interactive and never runs in CI |
+| `HARDCOVER_OAUTH_CLIENT_ID` | For `scripts/oauth-smoke.ts` (modes `browser`, `device`, `identity`, `offline`, and `rejections [step]` for every refusal: unknown client, unallowed scope, refresh replay, denied consent and device code, app removed on the website; `HARDCOVER_OAUTH_NO_DEVICE_CLIENT_ID` adds a device-grant-off app), which is interactive and never runs in CI. Register a native app with redirect `http://127.0.0.1/callback` (any port matches) |
 
 Developers put these in an untracked `.env` file. CI reads them from
 environment-scoped secrets (`staging`, `prod`), and the live job is a
