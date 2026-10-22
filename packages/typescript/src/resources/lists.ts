@@ -98,6 +98,7 @@ type Match = { key: string; bookId: number; editionId: number };
 /** What happened to one match: its new list row, or why it failed. */
 type Outcome = { listBookId: number } | { error: Error };
 
+/** Lists: yours and other readers', their books, order, following and members. */
 export class ListsResource {
   private readonly client: HardcoverClient;
 

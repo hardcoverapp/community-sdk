@@ -2,6 +2,7 @@
   "$comment": "Stable ID enums the API expects as raw integers or strings. Each SDK generates idiomatic enums from this file.",
   "UserBookStatus": {
     "type": "int",
+    "description": "Where a book is on a reader's shelves.",
     "values": [
       {
         "id": 1,
@@ -43,6 +44,7 @@
   },
   "PrivacySetting": {
     "type": "int",
+    "description": "Who can see something: everyone, followers, or only the reader.",
     "values": [
       {
         "id": 1,
@@ -268,6 +270,7 @@
   },
   "DatePrecision": {
     "type": "int",
+    "description": "How exact a finished date is, for when only the month or year is known.",
     "field": "finished_at_precision",
     "values": [
       {
@@ -291,6 +294,7 @@
   "SearchType": {
     "source": "docs: src/content/docs/api/guides/Searching.mdx",
     "type": "string",
+    "description": "What to search. Defaults to books.",
     "field": "query_type",
     "caseInsensitive": true,
     "default": "book",
@@ -503,6 +507,7 @@
   },
   "VibeSignalType": {
     "type": "string",
+    "description": "What a vibe signal points at.",
     "field": "signal_type",
     "values": [
       {
@@ -771,6 +776,7 @@
   },
   "VibeAxiom": {
     "type": "string",
+    "description": "Suggested axiom signals for a vibe: how the world works.",
     "suggested": true,
     "values": [
       {
@@ -792,6 +798,7 @@
   },
   "VibeAudience": {
     "type": "string",
+    "description": "Suggested audience signals for a vibe.",
     "suggested": true,
     "values": [
       {
@@ -823,6 +830,7 @@
   },
   "VibeFormat": {
     "type": "string",
+    "description": "Suggested format signals for a vibe.",
     "suggested": true,
     "values": [
       {
@@ -854,6 +862,7 @@
   },
   "VibeSeries": {
     "type": "string",
+    "description": "Suggested series signals for a vibe: where in a series a book sits.",
     "suggested": true,
     "values": [
       {
@@ -875,6 +884,7 @@
   },
   "DynamicSignalCategory": {
     "type": "string",
+    "description": "Signals the server fills in from the reader's own activity.",
     "suggested": true,
     "values": [
       {

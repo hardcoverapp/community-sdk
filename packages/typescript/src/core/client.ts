@@ -119,24 +119,120 @@ function networkBackoffMs(attempt: number): number {
  * The Hardcover API client. Resources (`library`, `books`, …) cover what apps
  * usually need; `request()` runs any generated operation and `graphql()` any
  * query. Every call shares the same auth, pacing, retries and errors.
+ *
+ * @see {@link https://docs.hardcover.app/api/getting-started/ | Getting started} with the API
  */
 export class HardcoverClient {
+  /** The GraphQL URL this client sends requests to. */
   readonly endpoint: string;
+  /**
+   * The signed-in user: `get()` their profile, `id()`. Fetched once and
+   * cached per client. Scopes: `read:me:content` (any `read:me` scope).
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/users/ | Users} in the API docs
+   */
   readonly me: MeResource;
+  /**
+   * The signed-in user's books: list and count by status, add, update
+   * status, rating and review, owned editions, and `changes()` for
+   * incremental sync. Scopes: `read:library`, `write:library`; reviews also
+   * need `write:reviews`, owned editions `read:lists` and `write:lists`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/userbooks/ | User books} in the API docs
+   * @see {@link https://docs.hardcover.app/api/guides/gettingbookswithstatus/ | Getting books with a status} in the API docs
+   */
   readonly library: LibraryResource;
+  /**
+   * Reading sessions on a library entry: start and finish dates, progress in
+   * pages, percent or seconds, re-reads, and finished reads by date. Scopes:
+   * `read:library`, `write:library`.
+   * @see {@link https://docs.hardcover.app/api/guides/updatingabooksprogress/ | Updating a book's progress} in the API docs
+   * @see {@link https://docs.hardcover.app/api/guides/gettingbooksprogress/ | Getting a book's progress} in the API docs
+   */
   readonly reads: ReadsResource;
+  /**
+   * Lists: yours and other readers', books on them (one or many, by ISBN
+   * too), order, following, and shared lists with members. Scopes:
+   * `read:lists`, `write:lists`; adding by ISBN also `read:catalog`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/lists/ | Lists} in the API docs
+   */
   readonly lists: ListsResource;
+  /**
+   * Search books, authors, series, characters, lists, prompts, publishers
+   * and users, ranked by the API. Scopes: `read:catalog`.
+   * @see {@link https://docs.hardcover.app/api/guides/searching/ | Searching} in the API docs
+   */
   readonly search: SearchResource;
+  /**
+   * Books and editions: by id, slug, ISBN or external id (e.g. Goodreads),
+   * trending, new releases, and friends who read a book. Scopes:
+   * `read:catalog` (friends: `read:social`).
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/books/ | Books} in the API docs
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/editions/ | Editions} in the API docs
+   */
   readonly books: BooksResource;
+  /**
+   * Reading journal entries for a book: notes and quotes. The server
+   * journals status, progress and list changes on its own. Scopes:
+   * `read:journal`, `write:library`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/readingjournals/ | Reading journals} in the API docs
+   * @see {@link https://docs.hardcover.app/api/guides/updatingreadingjournal/ | Updating the reading journal} in the API docs
+   */
   readonly journal: JournalResource;
+  /**
+   * Reading challenges: create, update, archive, and progress in books,
+   * pages or hours. Scopes: `read:goals`, `write:goals`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/goals/ | Goals} in the API docs
+   */
   readonly goals: GoalsResource;
+  /**
+   * Recommendation vibes built from weighted signals, and the books they
+   * rank. Creating one is a Supporter perk. Scopes: `read:vibes`,
+   * `write:vibes`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/vibes/ | Vibes} in the API docs
+   */
   readonly vibes: VibesResource;
+  /**
+   * Community prompts ("books that…"): browse, see the most-picked books,
+   * answer, follow, and ask your own. Scopes: `read:prompts`,
+   * `write:prompts`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/prompts/ | Prompts} in the API docs
+   */
   readonly prompts: PromptsResource;
+  /**
+   * Authors: by id or slug, with their books and series. Scopes:
+   * `read:catalog`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/authors/ | Authors} in the API docs
+   */
   readonly authors: AuthorsResource;
+  /**
+   * Series: by id or slug, with their books in order. Scopes:
+   * `read:catalog`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/series/ | Series} in the API docs
+   * @see {@link https://docs.hardcover.app/api/guides/gettingbooksinseries/ | Getting books in a series} in the API docs
+   */
   readonly series: SeriesResource;
+  /**
+   * Other readers: profiles, followers and following, follow, block. Scopes:
+   * `read:users`, `read:social`, `write:social`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/users/ | Users} in the API docs
+   */
   readonly users: UsersResource;
+  /**
+   * Like and unlike reviews, lists, prompts and other content. Scopes:
+   * `write:social`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/likes/ | Likes} in the API docs
+   */
   readonly likes: LikesResource;
+  /**
+   * Activity feeds: a reader's, a book's, and the people you follow, and
+   * deleting your own. Scopes: `read:social`; deleting `write:social`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/activities/ | Activities} in the API docs
+   */
   readonly activities: ActivitiesResource;
+  /**
+   * The notification bell: list, unread count, mark read. Scopes:
+   * `read:notifications`, `write:notifications`.
+   * @see {@link https://docs.hardcover.app/api/graphql/schemas/notifications/ | Notifications} in the API docs
+   */
   readonly notifications: NotificationsResource;
 
   /** Set for a static token, so those requests skip the TokenSource round trip. */

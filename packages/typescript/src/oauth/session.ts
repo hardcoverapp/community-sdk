@@ -42,6 +42,14 @@ export interface OAuthSessionOptions extends OAuthConfig {
   onSignedOut?: (reason: SignedOutReason) => void;
 }
 
+/**
+ * Signs users in with OAuth and keeps their tokens working: refreshes them
+ * before they expire, never spends a refresh token twice, stores each new
+ * pair before using it, and calls `onSignedOut` once when the user needs to
+ * sign in again. Pass it to `new HardcoverClient({ auth: session })`.
+ *
+ * @see {@link https://docs.hardcover.app/api/oauth/ | OAuth} in the API docs
+ */
 export class OAuthSession implements TokenSource {
   readonly #config: ResolvedOAuthConfig;
   readonly #store: TokenStore;
@@ -110,6 +118,8 @@ export class OAuthSession implements TokenSource {
    * Signs in on a device without a browser (a TV, a CLI). `onCode` gets the
    * code to show the user; this resolves once they approve it at
    * `verificationUri`, and the tokens are stored.
+   *
+   * @see {@link https://docs.hardcover.app/api/oauth/getting-started-device/ | Device sign-in} in the API docs
    */
   async signInWithDevice(options: {
     scopes: readonly string[];

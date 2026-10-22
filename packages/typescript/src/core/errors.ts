@@ -1,13 +1,18 @@
 // Mirrors shared/errors.json. Names and hierarchy are canonical across SDKs.
 
+/** Extra details an error carries. Used when creating errors, e.g. in a custom transport or a test. */
 export interface HardcoverErrorOptions {
+  /** The HTTP status, when the failure came from a response. */
   status?: number;
+  /** The underlying error, kept on `error.cause`. */
   cause?: unknown;
   /** The GraphQL operation that failed, e.g. "AddUserBook". */
   operationName?: string;
 }
 
+/** Every error the SDK throws extends this, so one `instanceof` check catches them all. */
 export class HardcoverError extends Error {
+  /** The HTTP status, when the failure came from a response. */
   readonly status: number | undefined;
   /** The GraphQL operation that failed, when the request had one (e.g. "AddUserBook"). */
   readonly operationName: string | undefined;
@@ -20,6 +25,10 @@ export class HardcoverError extends Error {
   }
 }
 
+/**
+ * The token isn't valid: expired, revoked or mistyped. With an OAuth session
+ * the client has already refreshed once and retried before throwing this.
+ */
 export class AuthenticationError extends HardcoverError {}
 
 // Reasons mirror shared/auth.json.
@@ -37,6 +46,7 @@ export type SignedOutReason = "not-signed-in" | "signed-out" | "revoked" | "expi
  * The session already cleared its store and called `onSignedOut`.
  */
 export class SignedOutError extends AuthenticationError {
+  /** Why: `not-signed-in`, `signed-out`, `revoked` or `expired`. */
   readonly reason: SignedOutReason;
 
   constructor(reason: SignedOutReason, options?: HardcoverErrorOptions) {
@@ -55,8 +65,11 @@ const SIGNED_OUT_MESSAGES: Record<SignedOutReason, string> = {
 /**
  * The token lacks scopes this request needs. `missingScopes` lists every one,
  * exactly as the server reported them; ask the user to grant these.
+ *
+ * @see {@link https://docs.hardcover.app/api/pat-link-builder/ | Token link builder}, for a token with the right scopes
  */
 export class ScopeError extends HardcoverError {
+  /** Every scope the request needed and the token lacks, e.g. `["write:reviews"]`. */
   readonly missingScopes: string[];
 
   constructor(message: string, missingScopes: string[], options?: HardcoverErrorOptions) {
@@ -65,16 +78,30 @@ export class ScopeError extends HardcoverError {
   }
 }
 
+/** API tokens can't use this operation at all, whatever their scopes. */
 export class UnsupportedOperationError extends HardcoverError {}
 
+/**
+ * The request asked for more top-level fields than one request may. Only
+ * `graphql()` can hit this; the SDK splits its own requests to fit.
+ */
 export class RequestTooLargeError extends HardcoverError {}
 
+/** `burst`: the short-term allowance that refills every second. `daily`: the cap per day. */
 export type RateLimitWindow = "burst" | "daily";
 
+/**
+ * Too many requests. The client already waits out short (burst) limits and
+ * retries; this reaches you when retries run out or the daily cap is spent.
+ */
 export class RateLimitError extends HardcoverError {
+  /** How long to wait before trying again. */
   readonly retryAfterSeconds: number;
+  /** Which limit ran out: `burst` (refills in seconds) or `daily` (resets once a day). */
   readonly window: RateLimitWindow;
+  /** That window's limit, when the server said. */
   readonly limit: number | undefined;
+  /** Requests left in that window, when the server said. */
   readonly remaining: number | undefined;
 
   constructor(
@@ -93,15 +120,22 @@ export class RateLimitError extends HardcoverError {
   }
 }
 
+/** The server couldn't accept the request as sent (HTTP 400), e.g. a malformed query. */
 export class InvalidRequestError extends HardcoverError {}
 
+/** One GraphQL error from the API. */
 export interface GraphQLErrorDetail {
+  /** What went wrong, in the API's words. */
   message: string;
+  /** Where in the query it happened, e.g. `books_by_pk.title`. */
   path: string | undefined;
+  /** The API's error code, when it sent one. */
   code: string | undefined;
 }
 
+/** The API answered with GraphQL errors, e.g. a variable of the wrong type. */
 export class GraphQLError extends HardcoverError {
+  /** Each error the API returned, with its message, path and code. */
   readonly errors: GraphQLErrorDetail[];
   /** Partial data the API returned alongside the errors, if any. */
   readonly data: unknown;
@@ -120,8 +154,11 @@ export class GraphQLError extends HardcoverError {
  * that refused.
  */
 export class ActionError extends HardcoverError {
+  /** The action that refused, e.g. `insert_user_book`. */
   readonly operation: string;
+  /** The server's reasons, in its words. */
   readonly messages: string[];
+  /** Whatever else the action returned. */
   readonly data: unknown;
 
   constructor(operation: string, messages: string[], data: unknown, options?: HardcoverErrorOptions) {
@@ -138,7 +175,9 @@ export class ActionError extends HardcoverError {
  * redirect checks: `state_mismatch`, `issuer_mismatch`.
  */
 export class OAuthError extends HardcoverError {
+  /** The error code, e.g. `access_denied` when the user declined. */
   readonly code: string;
+  /** The server's explanation, when it gave one. */
   readonly description: string | undefined;
 
   constructor(code: string, description: string | undefined, options?: HardcoverErrorOptions) {
@@ -153,7 +192,9 @@ export class OAuthError extends HardcoverError {
  * there. Lookups that can find nothing (get, forBook, current) return null.
  */
 export class NotFoundError extends HardcoverError {
+  /** What was missing, e.g. `goal`. */
   readonly resource: string;
+  /** The id that wasn't found. */
   readonly id: number;
 
   constructor(resource: string, id: number, options?: HardcoverErrorOptions) {
@@ -163,6 +204,7 @@ export class NotFoundError extends HardcoverError {
   }
 }
 
+/** The server failed (HTTP 5xx). Reads were already retried; writes never are. */
 export class ServerError extends HardcoverError {}
 
 /** Thrown for a server 408 or a client-side deadline. */
@@ -176,6 +218,7 @@ export class TimeoutError extends HardcoverError {
   }
 }
 
+/** The request never got an answer: offline, DNS, connection reset. Reads were already retried. */
 export class NetworkError extends HardcoverError {
   /** True when a mutation failed in flight and the write may still have landed. */
   readonly mayHaveSucceeded: boolean;
