@@ -2,16 +2,16 @@
  * A reader's year, owned editions, and reads edited by hand.
  * Reading needs `read:me:content` and `read:library`; edits need `write:library`.
  */
-import { DatePrecision, HardcoverClient } from "@hardcover/sdk";
+import { allPages, DatePrecision, HardcoverClient } from "@hardcover/sdk";
 
 export async function yearInReview(hc: HardcoverClient, year: number) {
   // Every read finished that year, newest first, each with its book.
+  const thatYear = (page: { limit: number; offset: number }) =>
+    hc.reads.finished({ from: `${year}-01-01`, to: `${year}-12-31`, ...page });
+
+  // allPages fetches one page after another until the last.
   const finished = [];
-  for (let offset = 0; ; offset += 100) {
-    const page = await hc.reads.finished({ from: `${year}-01-01`, to: `${year}-12-31`, limit: 100, offset });
-    finished.push(...page.items);
-    if (!page.hasMore) break;
-  }
+  for await (const read of allPages(thatYear)) finished.push(read);
 
   const pages = finished.reduce((sum, read) => sum + (read.edition?.pages ?? 0), 0);
   console.log(`${finished.length} books, about ${pages} pages`);
