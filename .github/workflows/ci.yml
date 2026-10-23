@@ -1,7 +1,12 @@
-# Dormant until GitHub Actions is enabled for the repo. Mirrors the local
-# checks: every language-independent check, then the TypeScript package. Live
-# API tests are never run here implicitly (spec/04); they'd be a separate,
-# manually triggered workflow with environment-scoped secrets.
+# Dormant until GitHub Actions is enabled for the repo. Runs on every pull
+# request and on every push to main: the language-independent checks, then the
+# TypeScript package on the Node version CI builds with and on the oldest one
+# the package supports. Nothing here deploys or publishes.
+#
+# Live API tests never run here (spec/04): they need a real account, so they'd
+# be a separate, manually triggered workflow with environment-scoped secrets.
+# The same goes for the schema drift check (pnpm snapshot:check), which needs a
+# token and the docs repo.
 name: CI
 
 on:
@@ -9,40 +14,81 @@ on:
   push:
     branches: [main]
 
+# Read-only: pull requests from forks get no write access or secrets.
+permissions:
+  contents: read
+
+# A new push to a pull request cancels its run in progress; main runs every time.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   shared:
     name: Shared contract
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      # pnpm's version comes from packageManager in package.json.
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Every operation in shared/operations is valid against api-snapshot.
       - run: pnpm validate:operations
+      # The README's language matrix matches languages.json.
       - run: pnpm matrix:check
 
   typescript:
     name: TypeScript
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: packages/typescript
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Generated code is committed and up to date with shared/.
       - run: pnpm codegen:check
       - run: pnpm typecheck
+      # Unit, conformance and catalog tests. No network.
       - run: pnpm test
       # Syntax check with the current Hermes compiler (runtime checks need HERMES_BIN).
       - run: pnpm hermes:smoke
       # Build the package, install the tarball in a fresh project, and check
-      # import, require and types the way an app would.
+      # the import and types the way an app would.
       - run: pnpm pack:check
+
+  oldest-node:
+    name: TypeScript on Node 22.12
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: packages/typescript
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      # pnpm itself needs a newer Node than the package's oldest, so install
+      # with Node 24, then switch to Node 22.12 (engines in package.json) for
+      # the tests and the packaged build.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.12.0
+      - run: node --version
+      - run: ./node_modules/.bin/vitest run
+      - run: node scripts/pack-check.mjs
