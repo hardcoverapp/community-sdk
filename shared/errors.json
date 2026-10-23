@@ -1,5 +1,5 @@
 {
-  "$comment": "Every SDK maps raw API failures onto this taxonomy. Class names are canonical; languages may adapt the suffix (Error / Exception) but not the hierarchy. `match` describes how to recognize the raw response. The conformance suite in shared/conformance exercises each one. Every error carries baseFields: `operationName` is the GraphQL operation that failed (e.g. AddUserBook), when the request had one.",
+  "$comment": "Every SDK maps raw API failures onto this taxonomy. Class names are canonical; languages may adapt the suffix (Error / Exception) but not the hierarchy. `match` describes how to recognize the raw response. The conformance suite in shared/conformance exercises each one. Every error carries baseFields: `operationName` is the GraphQL operation that failed (e.g. AddUserBook), when the request had one. `fields` are the properties an error adds beyond baseFields (`status`, `operationName`); the API's own error_description goes into the message.",
   "base": "HardcoverError",
   "errors": [
     {
@@ -11,9 +11,7 @@
           "body.error": "invalid_token"
         }
       ],
-      "fields": [
-        "description"
-      ],
+      "fields": [],
       "retry": false,
       "notes": "Expired, revoked or malformed token, or an anonymous JWT. With a refreshable OAuth token provider, the client refreshes once and replays before surfacing this."
     },
@@ -47,8 +45,7 @@
         }
       ],
       "fields": [
-        "missingScopes",
-        "description"
+        "missingScopes"
       ],
       "retry": false,
       "notes": "body.scope is a SPACE-SEPARATED list of every missing scope, e.g. \"write:library write:reviews\". Split it into missingScopes. The server is authoritative; SDKs never check scopes before sending. Also raised for protected columns (users.email, users.librarian_roles) and protected arguments (review_* fields need write:reviews)."
@@ -62,9 +59,7 @@
           "body.error": "unsupported_operation"
         }
       ],
-      "fields": [
-        "description"
-      ],
+      "fields": [],
       "retry": false,
       "notes": "Operation is blocked for tokens entirely (e.g. update_user, insert_report)."
     },
@@ -81,11 +76,9 @@
           "body.error": "top_level_limit_exceeded"
         }
       ],
-      "fields": [
-        "description"
-      ],
+      "fields": [],
       "retry": false,
-      "notes": "Too many top-level fields in one request. The SDK chunks its own batches to avoid this; users hit it only via the raw escape hatch. Two codes because docs and gateway disagree (spec/06-open-questions.md)."
+      "notes": "Too many top-level fields in one request: more than the token's burst capacity, the only per-request limit (app PR #3744). The SDK chunks its own batches to avoid this; users hit it only via the raw escape hatch. top_level_limit_exceeded is the code from the earlier flat limits, still matched in case an older gateway answers."
     },
     {
       "name": "RateLimitError",
@@ -117,9 +110,7 @@
           "body.error": "invalid_query"
         }
       ],
-      "fields": [
-        "description"
-      ],
+      "fields": [],
       "retry": false,
       "notes": "Unparseable query, or a banned filter operator (_like, _ilike, _regex, _similar)."
     },
@@ -133,9 +124,8 @@
         }
       ],
       "fields": [
-        "errors[].message",
-        "errors[].path",
-        "errors[].code"
+        "errors",
+        "data"
       ],
       "retry": false,
       "notes": "Standard Hasura errors array. data may be partial; the SDK throws by default and exposes partial data on the error."
@@ -155,7 +145,8 @@
       ],
       "fields": [
         "operation",
-        "messages"
+        "messages",
+        "data"
       ],
       "retry": false,
       "notes": "Hasura actions return HTTP 200 with a failure inside data. Outputs use either `error: String` (UserBookIdType, SearchOutput, FollowedUserType, TrendingBookType) or `errors: [String]` (ListIdType, GoalIdType, ReadingJournalOutput). Normalize both to messages[]."
@@ -219,10 +210,7 @@
           ]
         }
       ],
-      "fields": [
-        "status",
-        "description"
-      ],
+      "fields": [],
       "retry": "queries only, with backoff",
       "notes": "Includes 503 oauth_gateway_unavailable."
     },
@@ -237,6 +225,9 @@
           "client": "deadline exceeded"
         }
       ],
+      "fields": [
+        "mayHaveSucceeded"
+      ],
       "retry": "queries only",
       "notes": "Server query timeout is 30s (search 2s)."
     },
@@ -247,6 +238,9 @@
         {
           "client": "connection failed or dropped before a response"
         }
+      ],
+      "fields": [
+        "mayHaveSucceeded"
       ],
       "retry": "queries only",
       "notes": "Mutations are NOT retried on a dropped connection; the write may have landed."

@@ -1,6 +1,8 @@
 // Runs the language-neutral cases in shared/conformance against this SDK.
 // These cases define parity across languages; see spec/04-testing.md.
 import type { DocumentTypeDecoration } from "../src/core/decoration.ts";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import cases from "../../../shared/conformance/cases.json" with { type: "json" };
 import errorSpec from "../../../shared/errors.json" with { type: "json" };
@@ -91,6 +93,24 @@ describe("conformance", () => {
 });
 
 describe("error taxonomy", () => {
+  // The properties each error adds, read from errors.ts, are the ones errors.json
+  // lists, so every language exposes the same fields.
+  const source = readFileSync(join(import.meta.dirname, "../src/core/errors.ts"), "utf8");
+
+  function ownFields(name: string): string[] {
+    const body = source.split(new RegExp(`^export class ${name} extends \\w+ \\{`, "m"))[1]?.split(/^\}/m)[0] ?? "";
+    return [...body.matchAll(/^ {2}readonly (\w+)/gm)].map((match) => match[1]!);
+  }
+
+  it("HardcoverError carries the base fields", () => {
+    const own = source.split(/^export class HardcoverError extends Error \{/m)[1]?.split(/^\}/m)[0] ?? "";
+    expect([...own.matchAll(/^ {2}readonly (\w+)/gm)].map((m) => m[1])).toEqual(["status", ...errorSpec.baseFields.filter((f) => f !== "status")]);
+  });
+
+  it.each(errorSpec.errors.map((e) => [e.name, e.fields ?? []] as const))("%s adds exactly the fields errors.json lists", (name, fields) => {
+    expect(ownFields(name)).toEqual(fields);
+  });
+
   it.each(errorSpec.errors.map((e) => [e.name, e.parent] as const))("exports %s extending %s", (name, parent) => {
     const exported = sdk as unknown as Record<string, new (...args: never[]) => Error>;
     expect(exported[name], `${name} is not exported`).toBeTypeOf("function");
