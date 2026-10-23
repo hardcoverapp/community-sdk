@@ -93,10 +93,10 @@ changing it.
 | Live integration tests: reads (opt-in) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Live integration tests: writes (opt-in, real-user flows) | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 | **Runtimes** |  |  |  |  |  |
-| Node + browser (docs site) | 🟡 | ➖ | ➖ | ➖ | ➖ |
+| Node + browser (docs site) | ✅ | ➖ | ➖ | ➖ | ➖ |
 | React Native (Hermes) | 🟡 | ➖ | ➖ | ➖ | ➖ |
 | **Release** |  |  |  |  |  |
-| Published to package registry | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Published to package registry | ✅ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ✅ done · 🟡 partial · ⬜ planned · ➖ not applicable
 <!-- MATRIX:END -->
